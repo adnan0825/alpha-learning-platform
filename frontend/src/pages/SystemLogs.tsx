@@ -1,0 +1,178 @@
+/**
+ * Admin System Logs / Activity - Integrated with backend API
+ */
+import React, { useEffect, useState } from "react";
+import { adminAPI } from "@/lib/api";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { motion } from "framer-motion";
+import { Activity, Search, User, BookOpen, Shield, LogIn, Trash2, CheckCircle, RefreshCw, Clock } from "lucide-react";
+
+const typeColors: Record<string, string> = {
+  user_created: "bg-info/10 text-info",
+  course_created: "bg-accent/10 text-accent",
+  enrollment: "bg-success/10 text-success",
+  auth: "bg-info/10 text-info",
+  admin: "bg-destructive/10 text-destructive",
+};
+
+const typeIcons: Record<string, React.ReactNode> = {
+  user_created: <User size={14} />,
+  course_created: <BookOpen size={14} />,
+  enrollment: <CheckCircle size={14} />,
+  auth: <LogIn size={14} />,
+  admin: <Shield size={14} />,
+};
+
+const formatTime = (timestamp: string) => {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+};
+
+const SystemLogs: React.FC = () => {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  const fetchLogs = async () => {
+    try {
+      const data = await adminAPI.getLogs();
+      setLogs(data);
+    } catch (err) {
+      console.error("Failed to load logs:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchLogs();
+  };
+
+  const filtered = logs.filter(log => {
+    const detailString = JSON.stringify(log.data).toLowerCase();
+    const typeString = log.event_type.toLowerCase();
+    const matchesSearch = detailString.includes(search.toLowerCase()) || typeString.includes(search.toLowerCase());
+    const matchesFilter = filter === "all" || log.event_type === filter;
+    return matchesSearch && matchesFilter;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw size={32} className="animate-spin text-accent" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="space-y-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+              <Activity size={24} className="text-accent" /> System Logs
+            </h1>
+            <p className="text-muted-foreground text-sm">Track all platform activity and events</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+            <RefreshCw size={14} className={`mr-1.5 ${refreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </motion.div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Search logs..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-card" />
+          </div>
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-48 bg-card">
+              <SelectValue placeholder="All Event Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Event Types</SelectItem>
+              <SelectItem value="user_created">User Registrations</SelectItem>
+              <SelectItem value="course_created">Course Creations</SelectItem>
+              <SelectItem value="enrollment">Student Enrollments</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Card className="shadow-card">
+          <CardContent className="p-0">
+            {filtered.length === 0 ? (
+              <div className="py-16 text-center text-muted-foreground">
+                <Activity size={40} className="mx-auto mb-3 opacity-20" />
+                <p>No activity logs found</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border/50">
+                {filtered.map((log, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: i * 0.02 }}
+                    className="flex items-start gap-4 p-4 hover:bg-muted/20 transition-colors"
+                  >
+                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${typeColors[log.event_type] || "bg-muted"}`}>
+                      {typeIcons[log.event_type] || <Activity size={14} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-foreground capitalize">
+                          {log.event_type.replace('_', ' ')}
+                        </span>
+                        <Badge variant="outline" className="text-[9px] uppercase tracking-wider">{log.event_type}</Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {log.event_type === 'user_created' && (
+                          <span>New user <strong>{log.data.user}</strong> ({log.data.email}) joined as {log.data.role}</span>
+                        )}
+                        {log.event_type === 'course_created' && (
+                          <span>Instructor <strong>{log.data.instructor}</strong> created course <strong>{log.data.course}</strong></span>
+                        )}
+                        {log.event_type === 'enrollment' && (
+                          <span>Student <strong>{log.data.student}</strong> enrolled in <strong>{log.data.course}</strong></span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1.5 text-[10px] text-muted-foreground/60">
+                        <Clock size={10} />
+                        <span>{formatTime(log.timestamp)} • {new Date(log.timestamp).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </>
+  );
+};
+
+export default SystemLogs;

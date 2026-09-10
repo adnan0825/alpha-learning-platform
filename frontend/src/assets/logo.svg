@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- Outer circle -->
+  <circle cx="60" cy="60" r="58" fill="#0a1628" stroke="#c9a84c" stroke-width="3"/>
+  <!-- Inner decorative ring -->
+  <circle cx="60" cy="60" r="50" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <!-- Graduation cap -->
+  <polygon points="60,22 90,38 60,54 30,38" fill="#c9a84c"/>
+  <rect x="84" y="38" width="3" height="18" fill="#c9a84c"/>
+  <ellipse cx="85.5" cy="57" rx="5" ry="3" fill="#c9a84c"/>
+  <!-- Board/diploma lines -->
+  <rect x="42" y="58" width="36" height="4" rx="2" fill="#c9a84c" opacity="0.8"/>
+  <rect x="46" y="66" width="28" height="3" rx="1.5" fill="#c9a84c" opacity="0.6"/>
+  <rect x="50" y="73" width="20" height="3" rx="1.5" fill="#c9a84c" opacity="0.4"/>
+  <!-- Academy initials -->
+  <text x="60" y="100" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-weight="bold" fill="#c9a84c" letter-spacing="2">SOTA</text>
+</svg>

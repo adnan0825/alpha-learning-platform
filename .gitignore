@@ -1,0 +1,58 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# pg_dump artifacts (e.g. sync-db.sh); canonical schema is under backend/src/config/
+/*.sql
+
+# Deployment scripts (keep secrets local; use *.example templates in repo)
+/deploy-all.sh
+/sync-db.sh
+
+# Environment — never commit real credentials (examples stay tracked)
+**/.env
+!**/.env.example
+
+# User uploads (avatars, receipts); create dir on deploy or use .gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Cursor / local agent state
+.junie/
+
+# Keys and local secrets
+*.pem
+*.key
+*.p12
+*.pfx
+*.secret
+*.secrets
+*credentials*
+*credential*
+*service-account*
+*api-key*
+*apikey*
+.env
+.env.production.local
+.env.local

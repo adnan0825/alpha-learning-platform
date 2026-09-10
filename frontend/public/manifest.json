@@ -1,0 +1,17 @@
+{
+  "name": "Alpha",
+  "short_name": "SOTA",
+  "description": "Master technology, build your future with curated video courses",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f6f8",
+  "theme_color": "#1a1f36",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}
