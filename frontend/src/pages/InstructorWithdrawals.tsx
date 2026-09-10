@@ -16,10 +16,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import StatCard from "@/components/StatCard";
 
-import { useLanguage } from "@/contexts/LanguageContext";
-
 const InstructorWithdrawals: React.FC = () => {
-  const { t } = useLanguage();
   const { toast } = useToast();
 
   // Mock data
@@ -50,8 +47,8 @@ const InstructorWithdrawals: React.FC = () => {
 
   const handleRequest = () => {
     toast({
-      title: t("notify.success.withdrawalRequested"),
-      description: t("notify.success.withdrawalDesc"),
+      title: "Withdrawal Requested",
+      description: "Your request has been sent to admin for approval.",
     });
   };
 

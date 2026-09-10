@@ -301,21 +301,21 @@ const Index: React.FC = () => {
 
   const testimonials = [
     {
-      name: t("testimonials.name1"),
-      role: t("testimonials.role1"),
-      text: t("testimonials.text1"),
+      name: "Ahmed Ibrahim",
+      role: "Web Developer",
+      text: "Alpha has completely transformed my understanding of web development. The instruction makes complex topics easy to grasp.",
       avatar: "A",
     },
     {
-      name: t("testimonials.name2"),
-      role: t("testimonials.role2"),
-      text: t("testimonials.text2"),
+      name: "Fatima Hassan",
+      role: "Freelancer",
+      text: "I landed my first freelancing job within two months of completing the Digital Marketing course. Best investment I've made!",
       avatar: "F",
     },
     {
-      name: t("testimonials.name3"),
-      role: t("testimonials.role3"),
-      text: t("testimonials.text3"),
+      name: "Mohammed Abdella",
+      role: "Parent",
+      text: "My son's confidence in technology has grown tremendously since joining. The courses are well-structured and the support is excellent.",
       avatar: "M",
     },
   ];

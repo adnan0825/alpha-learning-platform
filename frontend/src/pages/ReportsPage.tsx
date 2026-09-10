@@ -99,7 +99,7 @@ const ReportsPage: React.FC = () => {
       });
     } catch (err: any) {
       toast({
-        title: t("notify.error.exportFailed"),
+        title: "Export failed",
         description: err.message,
         variant: "destructive",
       });

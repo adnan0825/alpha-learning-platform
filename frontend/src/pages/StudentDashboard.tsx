@@ -102,15 +102,15 @@ const StudentDashboard: React.FC = () => {
             </div>
             <h1 className="font-display mt-4 text-2xl font-bold leading-tight tracking-tight lg:text-3xl">
               <span className="hero-headline-gradient">
-                {t("dashboard.welcome")}, {firstName}
+                Welcome back, {firstName}
               </span>
             </h1>
             <p className="mt-2 max-w-lg text-sm text-muted-foreground">
-              {t("dashboard.continueJourney")}. You&apos;ve completed{" "}
+              Continue your learning journey. You&apos;ve completed{" "}
               <span className="font-medium text-foreground">
                 {completedCourses}
               </span>{" "}
-              {t("dashboard.completedCourses")}
+              course{completedCourses !== 1 ? "s" : ""} so far.
             </p>
           </div>
         </motion.div>
@@ -118,14 +118,14 @@ const StudentDashboard: React.FC = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <StatCard
-            label={t("dashboard.enrolled")}
+            label="Enrolled"
             value={enrolledCourses.length}
             icon={<BookOpen size={18} />}
             gradient="info"
             delay={0.1}
           />
           <StatCard
-            label={t("dashboard.completed")}
+            label="Completed"
             value={completedCourses}
             icon={<Trophy size={18} />}
             gradient="success"
@@ -133,14 +133,14 @@ const StudentDashboard: React.FC = () => {
             trend={{ value: `${completedCourses}`, positive: true }}
           />
           <StatCard
-            label={t("dashboard.certificates")}
+            label="Certificates"
             value={certificates.length}
             icon={<Award size={18} />}
             gradient="accent"
             delay={0.3}
           />
           <StatCard
-            label={t("dashboard.avgProgress")}
+            label="Avg Progress"
             value={`${totalProgress}%`}
             icon={<TrendingUp size={18} />}
             gradient="primary"
@@ -152,7 +152,7 @@ const StudentDashboard: React.FC = () => {
         <div>
           <div className="flex items-center justify-between mb-5">
             <h2 className="font-display text-lg font-semibold text-foreground">
-              {t("nav.myCourses")}
+              Continue Learning
             </h2>
             <Button
               variant="ghost"
@@ -160,7 +160,7 @@ const StudentDashboard: React.FC = () => {
               onClick={() => navigate("/browse")}
               className="text-accent hover:text-accent/80"
             >
-              {t("nav.browseCourses")} <ArrowRight size={14} className="ml-1" />
+              Browse All <ArrowRight size={14} className="ml-1" />
             </Button>
           </div>
           {loading ? (

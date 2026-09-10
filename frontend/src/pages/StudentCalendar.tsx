@@ -13,30 +13,27 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 const StudentCalendar: React.FC = () => {
-  const { t } = useLanguage();
-
   // Mock calendar data
   const currentMonth = "April 2025";
   const days = Array.from({ length: 30 }, (_, i) => i + 1);
   const events = [
     {
       day: 5,
-      title: t("calendar.event.reactQuiz"),
+      title: "React Quiz",
       type: "quiz",
       color: "bg-accent/20 text-accent",
     },
     {
       day: 10,
-      title: t("calendar.event.finalProject"),
+      title: "Final Project Proposal",
       type: "assignment",
       color: "bg-info/20 text-info",
     },
     {
       day: 15,
-      title: t("calendar.event.liveQA"),
+      title: "Live Q&A Session",
       type: "live",
       color: "bg-success/20 text-success",
     },

@@ -23,10 +23,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-import { useLanguage } from "@/contexts/LanguageContext";
-
 const PaymentsPage: React.FC = () => {
-  const { t } = useLanguage();
   const { toast } = useToast();
   const [payments, setPayments] = useState<any[]>([]);
   const [manualReceipts, setManualReceipts] = useState<any[]>([]);
@@ -68,14 +65,14 @@ const PaymentsPage: React.FC = () => {
     try {
       await paymentsAPI.approveManualReceipt(id);
       toast({
-        title: t("notify.success.approvedEnrolled"),
-        description: t("notify.success.approvedEnrolledDesc"),
+        title: "Approved",
+        description: "Student enrolled in the course (if not already).",
       });
       await fetchData();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Could not approve";
       toast({
-        title: t("notify.error.approveFailed"),
+        title: "Approve failed",
         description: msg,
         variant: "destructive",
       });
@@ -95,14 +92,14 @@ const PaymentsPage: React.FC = () => {
     try {
       await paymentsAPI.deleteManualReceipt(id);
       toast({
-        title: t("notify.success.receiptsDeleted"),
-        description: t("notify.success.receiptsDeletedDesc"),
+        title: "Deleted",
+        description: "Manual receipt removed.",
       });
       setManualReceipts((prev) => prev.filter((r) => r.id !== id));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Could not delete";
       toast({
-        title: t("notify.error.deleteFailed"),
+        title: "Delete failed",
         description: msg,
         variant: "destructive",
       });

@@ -22,12 +22,10 @@ import {
   Save,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 const ProfilePage: React.FC = () => {
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
-  const { t } = useLanguage();
   const [displayName, setDisplayName] = useState(profile?.displayName || "");
   const [bio, setBio] = useState(profile?.bio || "");
   const [photoURL, setPhotoURL] = useState(profile?.photoURL || "");
@@ -45,10 +43,10 @@ const ProfilePage: React.FC = () => {
     try {
       await usersAPI.update(user.id, { displayName, bio, photoURL });
       await refreshProfile();
-      toast({ title: t("notify.success.profileUpdated") });
+      toast({ title: "Profile updated successfully!" });
     } catch (err: any) {
       toast({
-        title: t("notify.error.updatingUser"),
+        title: "Error updating profile",
         description: err.message,
         variant: "destructive",
       });

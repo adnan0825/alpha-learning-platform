@@ -66,13 +66,13 @@ const AdminCourses: React.FC = () => {
       await coursesAPI.delete(deleteConfirm.courseId);
       setCourses((prev) => prev.filter((c) => c.id !== deleteConfirm.courseId));
       toast({
-        title: t("notify.success.deleted"),
+        title: "Course deleted successfully",
         description: `"${deleteConfirm.courseTitle}" has been permanently removed`,
       });
       setDeleteConfirm({ open: false, courseId: "", courseTitle: "" });
     } catch (err: any) {
       toast({
-        title: t("notify.error.deletingCourse"),
+        title: "Error deleting course",
         description: err.message,
         variant: "destructive",
       });

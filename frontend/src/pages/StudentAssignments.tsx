@@ -44,7 +44,6 @@ import { Label } from "@/components/ui/label";
 
 const StudentAssignments: React.FC = () => {
   const { user } = useAuth();
-  const { t } = useLanguage();
   const { toast } = useToast();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -92,13 +91,13 @@ const StudentAssignments: React.FC = () => {
         submissionContent + "\n" + submissionLink,
       );
       setSubmissions([...submissions, sub]);
-      toast({ title: t("notify.success.assignmentSubmitted") });
+      toast({ title: "Assignment submitted successfully!" });
       setShowSubmit(null);
       setSubmissionContent("");
       setSubmissionLink("");
     } catch (err: any) {
       toast({
-        title: t("notify.error.submittingAssignment"),
+        title: "Submission failed",
         description: err.message,
         variant: "destructive",
       });

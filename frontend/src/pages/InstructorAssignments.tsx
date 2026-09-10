@@ -40,7 +40,6 @@ import {
 
 const InstructorAssignments: React.FC = () => {
   const { user } = useAuth();
-  const { t } = useLanguage();
   const { toast } = useToast();
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -113,11 +112,11 @@ const InstructorAssignments: React.FC = () => {
         ),
       );
 
-      toast({ title: t("notify.success.gradeSubmitted") });
+      toast({ title: "Grade submitted successfully" });
       setGradingSubmission(null);
     } catch (err: any) {
       toast({
-        title: t("notify.error.submittingGrade"),
+        title: "Error submitting grade",
         description: err.message,
         variant: "destructive",
       });

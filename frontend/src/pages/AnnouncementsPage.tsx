@@ -88,7 +88,7 @@ const AnnouncementsPage: React.FC = () => {
       toast({ title: "Announcement posted!" });
     } catch (err: any) {
       toast({
-        title: t("notify.error.postingAnnouncement"),
+        title: "Error posting announcement",
         description: err.message,
         variant: "destructive",
       });
@@ -99,10 +99,10 @@ const AnnouncementsPage: React.FC = () => {
     try {
       await announcementsAPI.delete(id);
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
-      toast({ title: t("notify.success.announcementDeleted") });
+      toast({ title: "Announcement deleted" });
     } catch (err: any) {
       toast({
-        title: t("notify.error.deletingAnnouncement"),
+        title: "Error deleting announcement",
         description: err.message,
         variant: "destructive",
       });

@@ -20,7 +20,6 @@ function newId() {
 
 const AdminFAQ: React.FC = () => {
   const { toast } = useToast();
-  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [items, setItems] = useState<FaqItem[]>([]);
@@ -72,7 +71,7 @@ const AdminFAQ: React.FC = () => {
         cleaned.length ? cleaned : [{ id: newId(), question: "", answer: "" }],
       );
       toast({
-        title: t("notify.success.faqSaved"),
+        title: "FAQ saved",
         description: "The landing page will show these items.",
       });
     } catch (e: unknown) {

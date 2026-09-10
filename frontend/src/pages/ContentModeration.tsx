@@ -57,10 +57,10 @@ const ContentModeration: React.FC = () => {
     try {
       await adminAPI.deleteDiscussion(id);
       setDiscussions((prev) => prev.filter((d) => d.id !== id));
-      toast({ title: t("notify.success.discussionDeleted") });
+      toast({ title: "Discussion deleted" });
     } catch (err: any) {
       toast({
-        title: t("notify.error.deletingAnnouncement"),
+        title: "Error deleting discussion",
         description: err.message,
         variant: "destructive",
       });
@@ -71,10 +71,10 @@ const ContentModeration: React.FC = () => {
     try {
       await adminAPI.deleteReview(id);
       setReviews((prev) => prev.filter((r) => r.id !== id));
-      toast({ title: t("notify.success.reviewDeleted") });
+      toast({ title: "Review deleted" });
     } catch (err: any) {
       toast({
-        title: t("notify.error.deletingAnnouncement"),
+        title: "Error deleting review",
         description: err.message,
         variant: "destructive",
       });
