@@ -81,7 +81,7 @@ const PaymentReceipt: React.FC = () => {
       >
         {/* Print Header - Only visible when printing */}
         <div className="hidden print:block print:mb-6">
-          <h1 className="text-2xl font-bold">Payment Receipt</h1>
+          <h1 className="text-2xl font-bold">{t("receipt.title")}</h1>
           <p className="text-sm text-muted-foreground">Alpha</p>
         </div>
 
@@ -93,40 +93,46 @@ const PaymentReceipt: React.FC = () => {
                 <CheckCircle className="w-12 h-12 text-green-600" />
               </div>
               <h1 className="text-2xl font-bold text-green-600 mb-2">
-                Payment Successful!
+                {t("receipt.success")}
               </h1>
-              <p className="text-muted-foreground">
-                Your payment has been processed successfully
-              </p>
+              <p className="text-muted-foreground">{t("receipt.processed")}</p>
             </div>
 
             {/* Receipt Details */}
             <div className="bg-muted/50 rounded-lg p-6 space-y-4 mb-8 print:bg-white">
-              <h2 className="font-semibold text-lg mb-4">Payment Details</h2>
+              <h2 className="font-semibold text-lg mb-4">
+                {t("receipt.details")}
+              </h2>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    Transaction ID
+                    {t("receipt.transaction")}
                   </p>
                   <p className="font-mono text-sm font-medium">
                     {paymentData.tx_ref}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Status</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("receipt.status")}
+                  </p>
                   <p className="text-sm font-medium text-green-600 capitalize">
                     {paymentData.status || paymentData.payment_status}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Amount Paid</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("receipt.amount")}
+                  </p>
                   <p className="text-lg font-bold">
                     {paymentData.amount} {paymentData.currency}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Payment Date</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("receipt.date")}
+                  </p>
                   <p className="text-sm font-medium">
                     {new Date(
                       paymentData.completed_at || paymentData.created_at,
@@ -135,16 +141,22 @@ const PaymentReceipt: React.FC = () => {
                 </div>
                 {paymentData.course_title && (
                   <div className="col-span-2">
-                    <p className="text-sm text-muted-foreground">Course</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("receipt.course")}
+                    </p>
                     <p className="font-medium">{paymentData.course_title}</p>
                   </div>
                 )}
                 <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("receipt.email")}
+                  </p>
                   <p className="text-sm font-medium">{paymentData.email}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Payer Name</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("receipt.payer")}
+                  </p>
                   <p className="text-sm font-medium">
                     {paymentData.first_name} {paymentData.last_name}
                   </p>
@@ -155,7 +167,7 @@ const PaymentReceipt: React.FC = () => {
             {/* Institution Info */}
             <div className="text-center text-sm text-muted-foreground mb-6 print:block">
               <p className="font-medium">Alpha</p>
-              <p>Thank you for your enrollment!</p>
+              <p>{t("receipt.thankYou")}</p>
             </div>
 
             {/* Actions - Hidden when printing */}
@@ -165,7 +177,7 @@ const PaymentReceipt: React.FC = () => {
                 className="flex-1 gradient-accent text-accent-foreground"
               >
                 <Printer size={16} className="mr-2" />
-                Print Receipt
+                {t("receipt.print")}
               </Button>
               <Button
                 variant="outline"
@@ -173,7 +185,7 @@ const PaymentReceipt: React.FC = () => {
                 className="flex-1"
               >
                 <Download size={16} className="mr-2" />
-                Save as PDF
+                {t("receipt.pdf")}
               </Button>
             </div>
 

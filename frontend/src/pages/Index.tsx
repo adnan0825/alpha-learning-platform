@@ -3,7 +3,7 @@
  * Premium editorial design with real imagery, refined typography, and smooth animations.
  */
 import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useLanguage, type TranslationKey } from "@/contexts/LanguageContext";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -107,10 +107,9 @@ type ShowcaseCourse = {
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [activeCategory, setActiveCategory] = useState("All");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [courseSearch, setCourseSearch] = useState("");
@@ -168,17 +167,34 @@ const Index: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (searchParams.get("feedback") === "1" && user) {
-      setFeedbackOpen(true);
-      const next = new URLSearchParams(searchParams);
-      next.delete("feedback");
-      setSearchParams(next, { replace: true });
-    }
-  }, [searchParams, user, setSearchParams]);
-
   const faqDisplayItems: FaqItem[] = useMemo(() => {
-    const fromApi = faqItems.filter((f) => f.question.trim());
+    const fromApi = faqItems
+      .filter(
+        (f) =>
+          f.question?.trim() ||
+          f.questionSm?.trim() ||
+          f.questionSomali?.trim() ||
+          f.question_sm?.trim(),
+      )
+      .map((f) => ({
+        ...f,
+        question:
+          lang === "sm"
+            ? f.questionSm?.trim() ||
+              f.questionSomali?.trim() ||
+              f.question_sm?.trim() ||
+              f.question?.trim() ||
+              ""
+            : f.question?.trim() || f.questionSm?.trim() || "",
+        answer:
+          lang === "sm"
+            ? f.answerSm?.trim() ||
+              f.answerSomali?.trim() ||
+              f.answer_sm?.trim() ||
+              f.answer?.trim() ||
+              ""
+            : f.answer?.trim() || f.answerSm?.trim() || "",
+      }));
     if (fromApi.length > 0) return fromApi;
     return [
       {
@@ -197,7 +213,7 @@ const Index: React.FC = () => {
         answer: t("landing.faqDefault3A"),
       },
     ];
-  }, [faqItems, t]);
+  }, [faqItems, lang, t]);
 
   const showcaseCourses: ShowcaseCourse[] = useMemo(() => {
     return apiCourses.map((c) => {
@@ -290,7 +306,7 @@ const Index: React.FC = () => {
       descKey: "features.offer.programming.desc",
     },
     {
-      icon: <Languages size={22} />,
+      icon: <Languages size={22 } />,
       labelKey: "features.offer.fluent90",
       taglineKey: "features.offer.fluent90.tagline",
       descKey: "features.offer.fluent90.desc",
@@ -302,20 +318,20 @@ const Index: React.FC = () => {
   const testimonials = [
     {
       name: "Ahmed Ibrahim",
-      role: "Web Developer",
-      text: "Alpha has completely transformed my understanding of web development. The instruction makes complex topics easy to grasp.",
+      role: t("landing.testimonial.ahmed.role"),
+      text: t("landing.testimonial.ahmed.text"),
       avatar: "A",
     },
     {
       name: "Fatima Hassan",
-      role: "Freelancer",
-      text: "I landed my first freelancing job within two months of completing the Digital Marketing course. Best investment I've made!",
+      role: t("landing.testimonial.fatima.role"),
+      text: t("landing.testimonial.fatima.text"),
       avatar: "F",
     },
     {
       name: "Mohammed Abdella",
-      role: "Parent",
-      text: "My son's confidence in technology has grown tremendously since joining. The courses are well-structured and the support is excellent.",
+      role: t("landing.testimonial.mohammed.role"),
+      text: t("landing.testimonial.mohammed.text"),
       avatar: "M",
     },
   ];
@@ -405,7 +421,7 @@ const Index: React.FC = () => {
             <button
               type="button"
               className="rounded-lg p-2 text-foreground md:hidden hover:bg-muted/60"
-              aria-label="Menu"
+              aria-label={t("landing.menu")}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
@@ -675,7 +691,7 @@ const Index: React.FC = () => {
               />
               <input
                 type="search"
-                placeholder="Search courses…"
+                placeholder={t("landing.searchCourses")}
                 value={courseSearch}
                 onChange={(e) => setCourseSearch(e.target.value)}
                 className="h-11 w-full rounded-2xl border border-border/60 bg-card/90 py-2 pl-10 pr-4 text-sm text-foreground shadow-sm ring-1 ring-border/15 backdrop-blur-md placeholder:text-muted-foreground/80 transition-[box-shadow,border-color] focus:border-accent/35 focus:outline-none focus:ring-2 focus:ring-accent/25 dark:border-border/45 dark:bg-card/75 dark:ring-border/10"
@@ -794,7 +810,7 @@ const Index: React.FC = () => {
                             {course.instructor}
                           </p>
                           <p className="text-[11px] text-muted-foreground">
-                            Instructor
+                            {t("landing.courseInstructor")}
                           </p>
                         </div>
                       </div>
@@ -814,14 +830,14 @@ const Index: React.FC = () => {
                             size={12}
                             className="shrink-0 text-accent/80"
                           />
-                          {course.lectures} lessons
+                          {course.lectures} {t("landing.lessons")}
                         </span>
                       </div>
                       <div className="mt-auto flex flex-col gap-3 border-t border-border/45 pt-4 dark:border-border/35">
                         <div className="flex items-end justify-between gap-3">
                           <div>
                             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                              From
+                              {t("landing.from")}
                             </p>
                             <div className="mt-0.5 flex flex-wrap items-baseline gap-2">
                               <span className="font-display text-2xl font-bold tabular-nums text-foreground">
@@ -846,7 +862,7 @@ const Index: React.FC = () => {
                               />
                             </div>
                             <p className="text-[11px] text-muted-foreground">
-                              {course.reviews} reviews
+                              {course.reviews} {t("landing.reviews")}
                             </p>
                           </div>
                         </div>
@@ -869,11 +885,11 @@ const Index: React.FC = () => {
                                 fill="currentColor"
                                 aria-hidden
                               />
-                              Watch intro (free)
+                              {t("landing.watchIntro")}
                             </button>
                           ) : null}
                           <div className="flex items-center justify-center gap-2 rounded-xl border border-accent/15 bg-accent/[0.07] py-2.5 text-xs font-semibold text-accent transition-colors group-hover:border-accent/25 group-hover:bg-accent/[0.11]">
-                            View course & preview
+                            {t("landing.viewCoursePreview")}
                             <ArrowRight
                               size={14}
                               className="transition-transform group-hover:translate-x-0.5"
@@ -892,8 +908,8 @@ const Index: React.FC = () => {
           {!coursesLoading && filteredCourses.length === 0 && (
             <p className="text-center text-sm text-muted-foreground py-12">
               {showcaseCourses.length === 0
-                ? "No published courses yet."
-                : "No courses match your filters."}
+                ? t("landing.noPublishedCourses")
+                : t("landing.noMatchingCourses")}
             </p>
           )}
         </div>
@@ -1214,10 +1230,10 @@ const Index: React.FC = () => {
       >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{introDialog?.title ?? "Course intro"}</DialogTitle>
-            <DialogDescription>
-              No account required — this preview is free.
-            </DialogDescription>
+            <DialogTitle>
+              {introDialog?.title ?? t("landing.courseIntro")}
+            </DialogTitle>
+            <DialogDescription>{t("landing.freePreview")}</DialogDescription>
           </DialogHeader>
           {introDialog ? (
             <div className="pt-1">
@@ -1226,7 +1242,7 @@ const Index: React.FC = () => {
           ) : null}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIntroDialog(null)}>
-              Close
+              {t("landing.close")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1306,8 +1322,7 @@ const Index: React.FC = () => {
                 </div>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
-                Quality tech education in Somali and English. Building the next
-                generation of tech leaders from Ethiopia.
+                {t("landing.footerDescription")}
               </p>
               <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {t("footer.followUs")}
@@ -1366,25 +1381,25 @@ const Index: React.FC = () => {
               </h4>
               <ul className="space-y-2.5 text-sm text-muted-foreground">
                 <li className="hover:text-foreground transition-colors cursor-pointer">
-                  Web Development
+                  {t("landing.webDevelopment")}
                 </li>
                 <li className="hover:text-foreground transition-colors cursor-pointer">
-                  Mobile App Development
+                  {t("landing.mobileDevelopment")}
                 </li>
                 <li className="hover:text-foreground transition-colors cursor-pointer">
-                  AI & Data Science
+                  {t("landing.aiData")}
                 </li>
                 <li className="hover:text-foreground transition-colors cursor-pointer">
-                  Digital Marketing
+                  {t("landing.digitalMarketing")}
                 </li>
                 <li className="hover:text-foreground transition-colors cursor-pointer">
-                  Design & Video Editing
+                  {t("landing.designVideo")}
                 </li>
                 <li className="hover:text-foreground transition-colors cursor-pointer">
-                  Upwork & Freelancing
+                  {t("landing.freelancing")}
                 </li>
                 <li className="hover:text-foreground transition-colors cursor-pointer">
-                  Programming
+                  {t("landing.programming")}
                 </li>
               </ul>
             </div>
@@ -1395,7 +1410,7 @@ const Index: React.FC = () => {
               <ul className="space-y-3 text-sm text-muted-foreground">
                 <li className="flex items-center gap-3">
                   <MapPin size={15} className="text-accent shrink-0" />{" "}
-                  Ethiopia, Addis Ababa
+                  {t("landing.location")}
                 </li>
                 <li className="flex items-center gap-3">
                   <Phone size={15} className="text-accent shrink-0" /> +251 97

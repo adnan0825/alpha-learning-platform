@@ -9,8 +9,10 @@ import CertificateTemplate from "@/components/CertificateTemplate";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const VerifyPage: React.FC = () => {
+  const { t } = useLanguage();
   const { certificateNumber } = useParams<{ certificateNumber: string }>();
   const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [status, setStatus] = useState<
@@ -54,7 +56,7 @@ const VerifyPage: React.FC = () => {
             <span className="font-semibold text-foreground">Alpha</span>
           </Link>
           <span className="ml-2 text-xs text-muted-foreground">
-            — Certificate Verification
+            — {t("verify.title")}
           </span>
         </div>
       </header>
@@ -63,7 +65,7 @@ const VerifyPage: React.FC = () => {
         {status === "loading" && (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 size={40} className="animate-spin text-accent" />
-            <p className="text-muted-foreground">Verifying certificate…</p>
+            <p className="text-muted-foreground">{t("verify.loading")}</p>
           </div>
         )}
 
@@ -71,18 +73,16 @@ const VerifyPage: React.FC = () => {
           <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
             <XCircle size={56} className="text-destructive" />
             <h1 className="font-display text-2xl font-bold text-foreground">
-              Certificate Not Found
+              {t("verify.notFound")}
             </h1>
             <p className="text-muted-foreground max-w-md">
-              No certificate matching{" "}
+              {t("verify.notFoundDescription")}{" "}
               <span className="font-mono font-semibold text-foreground">
                 {certificateNumber}
               </span>{" "}
-              was found in our records. It may have been entered incorrectly or
-              does not exist.
             </p>
             <Button asChild variant="outline" className="mt-2">
-              <Link to="/">Go to Homepage</Link>
+              <Link to="/">{t("verify.home")}</Link>
             </Button>
           </div>
         )}
@@ -91,10 +91,10 @@ const VerifyPage: React.FC = () => {
           <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
             <XCircle size={56} className="text-destructive" />
             <h1 className="font-display text-2xl font-bold text-foreground">
-              Verification Failed
+              {t("verify.failed")}
             </h1>
             <p className="text-muted-foreground">
-              Something went wrong. Please try again later.
+              {t("verify.failedDescription")}
             </p>
           </div>
         )}
@@ -106,10 +106,10 @@ const VerifyPage: React.FC = () => {
               <CheckCircle size={28} className="text-green-600 shrink-0" />
               <div>
                 <p className="font-semibold text-green-800 dark:text-green-400">
-                  Certificate Verified
+                  {t("verify.verified")}
                 </p>
                 <p className="text-sm text-green-700 dark:text-green-500">
-                  This certificate is authentic and was issued by Alpha.
+                  {t("verify.authentic")}
                 </p>
               </div>
             </div>
@@ -122,11 +122,14 @@ const VerifyPage: React.FC = () => {
             {/* Details summary */}
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 text-sm">
               {[
-                { label: "Student", value: certificate.studentName },
-                { label: "Course", value: certificate.courseTitle },
-                { label: "Instructor", value: certificate.instructorName },
+                { label: t("verify.student"), value: certificate.studentName },
+                { label: t("verify.course"), value: certificate.courseTitle },
                 {
-                  label: "Issued",
+                  label: t("verify.instructor"),
+                  value: certificate.instructorName,
+                },
+                {
+                  label: t("verify.issued"),
                   value: new Date(certificate.issuedAt).toLocaleDateString(
                     "en-US",
                     { year: "numeric", month: "long", day: "numeric" },

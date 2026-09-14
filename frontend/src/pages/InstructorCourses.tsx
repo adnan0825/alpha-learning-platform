@@ -7,15 +7,24 @@ import { coursesAPI, CourseData } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import CourseCard from "@/components/CourseCard";
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, PlusCircle, ArrowRight, Search, Settings, PlayCircle } from "lucide-react";
+import {
+  BookOpen,
+  PlusCircle,
+  ArrowRight,
+  Search,
+  Settings,
+  PlayCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const InstructorCourses: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -24,14 +33,18 @@ const InstructorCourses: React.FC = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       if (!user) return;
-      try { setCourses(await coursesAPI.getByInstructor(user.id)); }
-      catch (err) { console.error(err); }
-      finally { setLoading(false); }
+      try {
+        setCourses(await coursesAPI.getByInstructor(user.id));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchCourses();
   }, [user]);
 
-  const filtered = courses.filter(c => {
+  const filtered = courses.filter((c) => {
     const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === "all" || c.status === filter;
     return matchesSearch && matchesFilter;
@@ -41,19 +54,29 @@ const InstructorCourses: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">My Courses</h1>
-          <p className="text-sm text-muted-foreground mt-1">{courses.length} courses total</p>
+          <h1 className="font-display text-2xl font-bold text-foreground">
+            {t("courses.my")}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {courses.length} {t("courses.total")}
+          </p>
         </div>
-        <Button onClick={() => navigate("/instructor/add-course")} className="gradient-accent text-accent-foreground hover:opacity-90 shadow-glow-accent">
-          <PlusCircle size={18} className="mr-2" /> Add Course
+        <Button
+          onClick={() => navigate("/instructor/add-course")}
+          className="gradient-accent text-accent-foreground hover:opacity-90 shadow-glow-accent"
+        >
+          <PlusCircle size={18} className="mr-2" /> {t("courses.add")}
         </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
-            placeholder="Search courses..."
+            placeholder={t("courses.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -61,23 +84,38 @@ const InstructorCourses: React.FC = () => {
         </div>
         <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
           <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="published">Published</TabsTrigger>
-            <TabsTrigger value="draft">Draft</TabsTrigger>
+            <TabsTrigger value="all">{t("courses.all")}</TabsTrigger>
+            <TabsTrigger value="published">
+              {t("courses.published")}
+            </TabsTrigger>
+            <TabsTrigger value="draft">{t("courses.draft")}</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => <div key={i} className="h-72 rounded-2xl bg-muted animate-pulse" />)}
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-72 rounded-2xl bg-muted animate-pulse" />
+          ))}
         </div>
       ) : filtered.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((course, i) => (
-            <motion.div key={course.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+            <motion.div
+              key={course.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+            >
               <div className="relative group">
-                <CourseCard course={course} onClick={() => navigate(`/instructor/courses/${course.id}/manager`)} index={i} />
+                <CourseCard
+                  course={course}
+                  onClick={() =>
+                    navigate(`/instructor/courses/${course.id}/manager`)
+                  }
+                  index={i}
+                />
                 {/* Action buttons on hover */}
                 <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
@@ -88,9 +126,10 @@ const InstructorCourses: React.FC = () => {
                       e.stopPropagation();
                       navigate(`/instructor/courses/${course.id}/manager`);
                     }}
-                    title="Manage Lessons & Quizzes"
+                    title={t("courses.manageLessons")}
                   >
-                    <Settings size={14} className="mr-1" /> Manage Course
+                    <Settings size={14} className="mr-1" />{" "}
+                    {t("courses.manage")}
                   </Button>
                   <Button
                     variant="outline"
@@ -100,9 +139,10 @@ const InstructorCourses: React.FC = () => {
                       e.stopPropagation();
                       navigate(`/course/${course.id}`);
                     }}
-                    title="View as Student"
+                    title={t("courses.viewAsStudent")}
                   >
-                    <PlayCircle size={14} className="mr-1" /> View
+                    <PlayCircle size={14} className="mr-1" />{" "}
+                    {t("courses.view")}
                   </Button>
                 </div>
               </div>
@@ -116,14 +156,21 @@ const InstructorCourses: React.FC = () => {
               <BookOpen size={28} className="text-accent-foreground" />
             </div>
             <h3 className="font-display text-lg font-semibold text-foreground mb-1">
-              {search || filter !== "all" ? "No matching courses" : "No courses yet"}
+              {search || filter !== "all"
+                ? t("courses.noMatching")
+                : t("courses.noCourses")}
             </h3>
             <p className="text-sm text-muted-foreground mb-6">
-              {search || filter !== "all" ? "Try adjusting your filters" : "Create your first course to get started"}
+              {search || filter !== "all"
+                ? t("courses.adjustFilters")
+                : t("courses.createFirst")}
             </p>
             {!search && filter === "all" && (
-              <Button onClick={() => navigate("/instructor/add-course")} className="gradient-accent text-accent-foreground hover:opacity-90 shadow-glow-accent">
-                Create Course <ArrowRight size={16} className="ml-2" />
+              <Button
+                onClick={() => navigate("/instructor/add-course")}
+                className="gradient-accent text-accent-foreground hover:opacity-90 shadow-glow-accent"
+              >
+                {t("courses.create")} <ArrowRight size={16} className="ml-2" />
               </Button>
             )}
           </CardContent>

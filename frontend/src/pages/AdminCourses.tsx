@@ -29,6 +29,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const AdminCourses: React.FC = () => {
   const [courses, setCourses] = useState<CourseData[]>([]);
@@ -40,6 +41,7 @@ const AdminCourses: React.FC = () => {
     courseTitle: string;
   }>({ open: false, courseId: "", courseTitle: "" });
   const { toast } = useToast();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -66,13 +68,13 @@ const AdminCourses: React.FC = () => {
       await coursesAPI.delete(deleteConfirm.courseId);
       setCourses((prev) => prev.filter((c) => c.id !== deleteConfirm.courseId));
       toast({
-        title: "Course deleted successfully",
-        description: `"${deleteConfirm.courseTitle}" has been permanently removed`,
+        title: t("admin.courses.deleted"),
+        description: `"${deleteConfirm.courseTitle}" ${t("admin.courses.deletedDescription")}`,
       });
       setDeleteConfirm({ open: false, courseId: "", courseTitle: "" });
     } catch (err: any) {
       toast({
-        title: "Error deleting course",
+        title: t("admin.courses.deleteError"),
         description: err.message,
         variant: "destructive",
       });
@@ -96,10 +98,11 @@ const AdminCourses: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="font-display text-2xl lg:text-3xl font-bold">
-                Manage All Courses
+                {t("admin.courses.title")}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Admin control - manage {courses.length} courses
+                {t("admin.courses.subtitle")} · {courses.length}{" "}
+                {t("admin.courses.count")}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -107,13 +110,15 @@ const AdminCourses: React.FC = () => {
                 variant="outline"
                 onClick={() => navigate("/admin/analytics")}
               >
-                <GraduationCap size={18} className="mr-2" /> Analytics
+                <GraduationCap size={18} className="mr-2" />{" "}
+                {t("admin.courses.analytics")}
               </Button>
               <Button
                 onClick={() => navigate("/instructor/add-course")}
                 className="gradient-accent text-accent-foreground"
               >
-                <PlusCircle size={18} className="mr-2" /> Add Course
+                <PlusCircle size={18} className="mr-2" />{" "}
+                {t("admin.courses.add")}
               </Button>
             </div>
           </div>
@@ -130,14 +135,15 @@ const AdminCourses: React.FC = () => {
                 />
                 <input
                   type="text"
-                  placeholder="Search by course title, category, or instructor..."
+                  placeholder={t("admin.courses.search")}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                 />
               </div>
               <div className="text-sm text-muted-foreground whitespace-nowrap">
-                {filteredCourses.length} of {courses.length} courses
+                {filteredCourses.length} / {courses.length}{" "}
+                {t("admin.courses.count")}
               </div>
             </div>
           </CardContent>
@@ -158,12 +164,12 @@ const AdminCourses: React.FC = () => {
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
               <BookOpen size={48} className="text-muted-foreground mb-4" />
               <h3 className="font-display text-lg font-semibold text-foreground mb-1">
-                No courses found
+                {t("admin.courses.empty")}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {search
-                  ? "Try adjusting your search"
-                  : "Add your first course to get started"}
+                  ? t("admin.courses.adjustSearch")
+                  : t("admin.courses.addFirst")}
               </p>
             </CardContent>
           </Card>
@@ -196,9 +202,10 @@ const AdminCourses: React.FC = () => {
                         e.stopPropagation();
                         navigate(`/admin/courses/${course.id}/manager`);
                       }}
-                      title="Manage Course (Lessons, Quizzes, Details)"
+                      title={t("admin.courses.manageTitle")}
                     >
-                      <Settings size={14} className="mr-1" /> Manage
+                      <Settings size={14} className="mr-1" />{" "}
+                      {t("admin.courses.manage")}
                     </Button>
                     <Button
                       variant="outline"
@@ -208,9 +215,10 @@ const AdminCourses: React.FC = () => {
                         e.stopPropagation();
                         navigate(`/course/${course.id}`);
                       }}
-                      title="View Course"
+                      title={t("admin.courses.view")}
                     >
-                      <Eye size={14} className="mr-1" /> View
+                      <Eye size={14} className="mr-1" />{" "}
+                      {t("admin.courses.view")}
                     </Button>
                     <Button
                       variant="ghost"
@@ -220,7 +228,7 @@ const AdminCourses: React.FC = () => {
                         e.stopPropagation();
                         confirmDeleteCourse(course.id, course.title);
                       }}
-                      title="Delete Course"
+                      title={t("admin.courses.delete")}
                     >
                       <Trash2 size={14} />
                     </Button>

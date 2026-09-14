@@ -7,13 +7,26 @@ import { coursesAPI, instructorAnalyticsAPI, CourseData } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { GraduationCap, Users, TrendingUp, RefreshCw, Trophy } from "lucide-react";
+import {
+  GraduationCap,
+  Users,
+  TrendingUp,
+  RefreshCw,
+  Trophy,
+} from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface StudentGrade {
   student_id: string;
@@ -30,6 +43,7 @@ interface StudentGrade {
 
 const StudentGrades: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [grades, setGrades] = useState<StudentGrade[]>([]);
@@ -46,10 +60,10 @@ const StudentGrades: React.FC = () => {
           setSelectedCourse(c[0].id);
           await loadGrades(c[0].id);
         }
-      } catch (err) { 
-        console.error("Failed to load courses:", err); 
-      } finally { 
-        setLoading(false); 
+      } catch (err) {
+        console.error("Failed to load courses:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetch();
@@ -69,33 +83,43 @@ const StudentGrades: React.FC = () => {
   };
 
   // Group grades by student
-  const students = grades.reduce((acc, grade) => {
-    if (!acc[grade.student_id]) {
-      acc[grade.student_id] = {
-        id: grade.student_id,
-        name: grade.student_name,
-        email: grade.student_email,
-        avatar: grade.student_avatar,
-        quizzes: [],
-        avgScore: 0,
-      };
-    }
-    acc[grade.student_id].quizzes.push(grade);
-    
-    // Calculate overall average
-    const allScores = acc[grade.student_id].quizzes.flatMap(q => 
-      Array(q.attempts).fill(q.average_score)
-    );
-    acc[grade.student_id].avgScore = allScores.length > 0
-      ? Math.round(allScores.reduce((sum, score) => sum + score, 0) / allScores.length)
-      : 0;
-    
-    return acc;
-  }, {} as Record<string, any>);
+  const students = grades.reduce(
+    (acc, grade) => {
+      if (!acc[grade.student_id]) {
+        acc[grade.student_id] = {
+          id: grade.student_id,
+          name: grade.student_name,
+          email: grade.student_email,
+          avatar: grade.student_avatar,
+          quizzes: [],
+          avgScore: 0,
+        };
+      }
+      acc[grade.student_id].quizzes.push(grade);
+
+      // Calculate overall average
+      const allScores = acc[grade.student_id].quizzes.flatMap((q) =>
+        Array(q.attempts).fill(q.average_score),
+      );
+      acc[grade.student_id].avgScore =
+        allScores.length > 0
+          ? Math.round(
+              allScores.reduce((sum, score) => sum + score, 0) /
+                allScores.length,
+            )
+          : 0;
+
+      return acc;
+    },
+    {} as Record<string, any>,
+  );
 
   const studentsList = Object.values(students);
-  const avgProgress = studentsList.length 
-    ? Math.round(studentsList.reduce((sum, s: any) => sum + s.avgScore, 0) / studentsList.length) 
+  const avgProgress = studentsList.length
+    ? Math.round(
+        studentsList.reduce((sum, s: any) => sum + s.avgScore, 0) /
+          studentsList.length,
+      )
     : 0;
 
   if (loading) {
@@ -122,12 +146,19 @@ const StudentGrades: React.FC = () => {
   return (
     <>
       <div className="space-y-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between"
+        >
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-              <GraduationCap size={24} className="text-accent" /> Student Grades
+              <GraduationCap size={24} className="text-accent" />{" "}
+              {t("grades.title")}
             </h1>
-            <p className="text-muted-foreground text-sm">View student enrollment, progress, and performance</p>
+            <p className="text-muted-foreground text-sm">
+              {t("grades.subtitle")}
+            </p>
           </div>
           <Button
             variant="outline"
@@ -136,31 +167,46 @@ const StudentGrades: React.FC = () => {
             disabled={refreshing}
             className="text-xs"
           >
-            <RefreshCw size={14} className={`mr-1.5 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
+            <RefreshCw
+              size={14}
+              className={`mr-1.5 ${refreshing ? "animate-spin" : ""}`}
+            />
+            {t("grades.refresh")}
           </Button>
         </motion.div>
 
         <div className="flex flex-col sm:flex-row gap-4">
           <Select value={selectedCourse} onValueChange={loadGrades}>
             <SelectTrigger className="w-full max-w-xs bg-card">
-              <SelectValue placeholder="Select a course" />
+              <SelectValue placeholder={t("grades.selectCourse")} />
             </SelectTrigger>
             <SelectContent>
-              {courses.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+              {courses.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.title}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
           <div className="flex gap-4">
             <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border/50">
               <Users size={16} className="text-info" />
-              <span className="text-sm font-semibold text-foreground">{studentsList.length}</span>
-              <span className="text-xs text-muted-foreground">Students</span>
+              <span className="text-sm font-semibold text-foreground">
+                {studentsList.length}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {t("grades.students")}
+              </span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border/50">
               <TrendingUp size={16} className="text-success" />
-              <span className="text-sm font-semibold text-foreground">{avgProgress}%</span>
-              <span className="text-xs text-muted-foreground">Avg Score</span>
+              <span className="text-sm font-semibold text-foreground">
+                {avgProgress}%
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {t("grades.avgScore")}
+              </span>
             </div>
           </div>
         </div>
@@ -172,48 +218,77 @@ const StudentGrades: React.FC = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/30">
-                    <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">Student</th>
-                    <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">Email</th>
-                    <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">Quizzes</th>
-                    <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">Avg Score</th>
-                    <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">Performance</th>
+                    <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+                      {t("grades.students")}
+                    </th>
+                    <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+                      {t("grades.quizzes")}
+                    </th>
+                    <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+                      {t("grades.avgScore")}
+                    </th>
+                    <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+                      {t("grades.performance")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {studentsList.map((s: any, i) => (
-                    <tr key={s.id} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
+                    <tr
+                      key={s.id}
+                      className="border-b last:border-0 hover:bg-muted/20 transition-colors"
+                    >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-full gradient-accent flex items-center justify-center text-accent-foreground text-xs font-bold">
                             {s.avatar ? (
-                              <img src={s.avatar} alt={s.name} className="h-full w-full rounded-full object-cover" />
+                              <img
+                                src={s.avatar}
+                                alt={s.name}
+                                className="h-full w-full rounded-full object-cover"
+                              />
                             ) : (
                               s.name.charAt(0)
                             )}
                           </div>
-                          <span className="font-medium text-foreground">{s.name}</span>
+                          <span className="font-medium text-foreground">
+                            {s.name}
+                          </span>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 text-muted-foreground">{s.email}</td>
+                      <td className="px-5 py-3.5 text-muted-foreground">
+                        {s.email}
+                      </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-1">
                           <Trophy size={14} className="text-accent" />
-                          <span className="text-sm font-medium">{s.quizzes.length} quizzes</span>
+                          <span className="text-sm font-medium">
+                            {s.quizzes.length} {t("grades.quizzes")}
+                          </span>
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className={`text-sm font-bold ${
-                          s.avgScore >= 80 ? "text-success" :
-                          s.avgScore >= 60 ? "text-accent" :
-                          "text-warning"
-                        }`}>
+                        <span
+                          className={`text-sm font-bold ${
+                            s.avgScore >= 80
+                              ? "text-success"
+                              : s.avgScore >= 60
+                                ? "text-accent"
+                                : "text-warning"
+                          }`}
+                        >
                           {s.avgScore}%
                         </span>
                       </td>
                       <td className="px-5 py-3.5 w-48">
                         <div className="flex items-center gap-2">
                           <Progress value={s.avgScore} className="h-2 flex-1" />
-                          <span className="text-xs font-semibold text-foreground w-8">{s.avgScore}%</span>
+                          <span className="text-xs font-semibold text-foreground w-8">
+                            {s.avgScore}%
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -228,8 +303,12 @@ const StudentGrades: React.FC = () => {
               <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
                 <GraduationCap size={28} className="text-muted-foreground" />
               </div>
-              <h3 className="font-display text-lg font-semibold text-foreground mb-1">No Students Yet</h3>
-              <p className="text-sm text-muted-foreground">Students will appear here when they enroll in your course</p>
+              <h3 className="font-display text-lg font-semibold text-foreground mb-1">
+                {t("grades.emptyTitle")}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {t("grades.emptyDescription")}
+              </p>
             </CardContent>
           </Card>
         )}

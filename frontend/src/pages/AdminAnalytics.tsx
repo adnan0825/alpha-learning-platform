@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BarChart3, Users, BookOpen, TrendingUp, Award } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   AreaChart,
   Area,
@@ -23,6 +24,7 @@ import {
 } from "recharts";
 
 const AdminAnalytics: React.FC = () => {
+  const { t } = useLanguage();
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalStudents: 0,
@@ -96,16 +98,17 @@ const AdminAnalytics: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
         >
           <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <BarChart3 size={24} className="text-accent" /> Platform Analytics
+            <BarChart3 size={24} className="text-accent" />{" "}
+            {t("admin.analytics.title")}
           </h1>
           <p className="text-muted-foreground text-sm">
-            Overview of platform performance and metrics
+            {t("admin.analytics.subtitle")}
           </p>
         </motion.div>
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard
-            label="Total Users"
+            label={t("admin.analytics.totalUsers")}
             value={stats.totalUsers}
             icon={<Users size={18} />}
             gradient="info"
@@ -113,14 +116,14 @@ const AdminAnalytics: React.FC = () => {
             trend={{ value: `+${stats.recentSignups}`, positive: true }}
           />
           <StatCard
-            label="Total Courses"
+            label={t("admin.analytics.totalCourses")}
             value={stats.totalCourses}
             icon={<BookOpen size={18} />}
             gradient="accent"
             delay={0.2}
           />
           <StatCard
-            label="Total Enrollments"
+            label={t("admin.analytics.totalEnrollments")}
             value={stats.totalEnrollments}
             icon={<TrendingUp size={18} />}
             gradient="success"
@@ -137,7 +140,7 @@ const AdminAnalytics: React.FC = () => {
           <Card className="shadow-card">
             <CardContent className="p-6">
               <h3 className="font-display font-semibold text-foreground mb-4">
-                Growth Trends
+                {t("admin.analytics.growth")}
               </h3>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
@@ -224,14 +227,18 @@ const AdminAnalytics: React.FC = () => {
                     className="h-2.5 w-2.5 rounded-full"
                     style={{ backgroundColor: "hsl(210, 92%, 55%)" }}
                   />
-                  <span className="text-muted-foreground">Users</span>
+                  <span className="text-muted-foreground">
+                    {t("admin.analytics.users")}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <div
                     className="h-2.5 w-2.5 rounded-full"
                     style={{ backgroundColor: "hsl(38, 92%, 50%)" }}
                   />
-                  <span className="text-muted-foreground">Enrollments</span>
+                  <span className="text-muted-foreground">
+                    {t("admin.analytics.enrollments")}
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -248,7 +255,7 @@ const AdminAnalytics: React.FC = () => {
             <Card className="shadow-card h-full">
               <CardContent className="p-6">
                 <h3 className="font-display font-semibold text-foreground mb-4">
-                  Category Distribution
+                  {t("admin.analytics.categories")}
                 </h3>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">

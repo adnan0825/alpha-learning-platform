@@ -60,6 +60,46 @@ function normalizeFaqValue(raw: unknown): unknown[] {
   return [];
 }
 
+function normalizeFaqItem(raw: unknown): Record<string, unknown> | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const item = raw as Record<string, unknown>;
+  const question = item.question;
+  const answer = item.answer;
+  const questionLocales =
+    question && typeof question === "object"
+      ? (question as Record<string, unknown>)
+      : {};
+  const answerLocales =
+    answer && typeof answer === "object"
+      ? (answer as Record<string, unknown>)
+      : {};
+  const firstText = (...values: unknown[]) =>
+    values.find((value) => typeof value === "string" && value.trim()) || "";
+
+  return {
+    ...item,
+    question:
+      firstText(item.question, item.questionEn, questionLocales.en) || "",
+    answer: firstText(item.answer, item.answerEn, answerLocales.en) || "",
+    questionSm:
+      firstText(
+        item.questionSm,
+        item.questionSomali,
+        item.question_sm,
+        item.somaliQuestion,
+        questionLocales.sm,
+      ) || "",
+    answerSm:
+      firstText(
+        item.answerSm,
+        item.answerSomali,
+        item.answer_sm,
+        item.somaliAnswer,
+        answerLocales.sm,
+      ) || "",
+  };
+}
+
 // GET /api/settings/faq - Public FAQ items for landing page
 router.get("/faq", async (req, res: Response) => {
   try {
@@ -67,7 +107,9 @@ router.get("/faq", async (req, res: Response) => {
       "faq",
     ]);
     const value = result.rows[0]?.value;
-    const items = normalizeFaqValue(value);
+    const items = normalizeFaqValue(value)
+      .map(normalizeFaqItem)
+      .filter((item): item is Record<string, unknown> => item !== null);
     res.json({ items });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -87,7 +129,7 @@ router.get("/translations", async (_req, res: Response) => {
   }
 });
 
-// PUT /api/settings/translations - Admin: full map of translation keys → { en, om }
+// PUT /api/settings/translations - Admin: full map of translation keys → { en, sm }
 router.put(
   "/translations",
   authenticate,

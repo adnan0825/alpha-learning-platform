@@ -22,10 +22,12 @@ import {
 import { motion } from "framer-motion";
 import { Megaphone, Plus, Trash2, Clock, Users, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const AnnouncementsPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -85,10 +87,10 @@ const AnnouncementsPage: React.FC = () => {
       setContent("");
       setIsPinned(false);
       setShowCreate(false);
-      toast({ title: "Announcement posted!" });
+      toast({ title: t("announcements.posted") });
     } catch (err: any) {
       toast({
-        title: "Error posting announcement",
+        title: t("announcements.postError"),
         description: err.message,
         variant: "destructive",
       });
@@ -99,10 +101,10 @@ const AnnouncementsPage: React.FC = () => {
     try {
       await announcementsAPI.delete(id);
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
-      toast({ title: "Announcement deleted" });
+      toast({ title: t("announcements.deleted") });
     } catch (err: any) {
       toast({
-        title: "Error deleting announcement",
+        title: t("announcements.deleteError"),
         description: err.message,
         variant: "destructive",
       });
@@ -127,24 +129,25 @@ const AnnouncementsPage: React.FC = () => {
         >
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-              <Megaphone size={24} className="text-accent" /> Announcements
+              <Megaphone size={24} className="text-accent" />{" "}
+              {t("announcements.title")}
             </h1>
             <p className="text-muted-foreground text-sm">
-              Post updates and reminders to your students
+              {t("announcements.subtitle")}
             </p>
           </div>
           <Button
             onClick={() => setShowCreate(!showCreate)}
             className="gradient-accent text-accent-foreground hover:opacity-90"
           >
-            <Plus size={16} className="mr-1.5" /> New Post
+            <Plus size={16} className="mr-1.5" /> {t("announcements.new")}
           </Button>
         </motion.div>
 
         <div className="flex items-center gap-4">
           <Select value={selectedCourse} onValueChange={handleCourseChange}>
             <SelectTrigger className="w-full max-w-xs bg-card">
-              <SelectValue placeholder="Select a course" />
+              <SelectValue placeholder={t("announcements.selectCourse")} />
             </SelectTrigger>
             <SelectContent>
               {courses.map((c) => (
@@ -172,13 +175,13 @@ const AnnouncementsPage: React.FC = () => {
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Announcement title..."
+                  placeholder={t("announcements.titlePlaceholder")}
                   className="bg-muted/30 font-semibold"
                 />
                 <Textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="Write your announcement..."
+                  placeholder={t("announcements.contentPlaceholder")}
                   className="min-h-[100px] bg-muted/30"
                 />
                 <div className="flex items-center gap-2">
@@ -193,7 +196,7 @@ const AnnouncementsPage: React.FC = () => {
                     htmlFor="isPinned"
                     className="text-xs text-muted-foreground"
                   >
-                    Pin this announcement
+                    {t("announcements.pin")}
                   </label>
                 </div>
                 <div className="flex gap-2 justify-end">
@@ -201,13 +204,13 @@ const AnnouncementsPage: React.FC = () => {
                     variant="outline"
                     onClick={() => setShowCreate(false)}
                   >
-                    Cancel
+                    {t("announcements.cancel")}
                   </Button>
                   <Button
                     onClick={handleCreateAnnouncement}
                     className="gradient-accent text-accent-foreground hover:opacity-90"
                   >
-                    Post Announcement
+                    {t("announcements.post")}
                   </Button>
                 </div>
               </CardContent>

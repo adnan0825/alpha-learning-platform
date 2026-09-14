@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
 import { HelpCircle, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 function newId() {
   return typeof crypto !== "undefined" && crypto.randomUUID
@@ -20,6 +21,7 @@ function newId() {
 
 const AdminFAQ: React.FC = () => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [items, setItems] = useState<FaqItem[]>([]);
@@ -35,11 +37,30 @@ const AdminFAQ: React.FC = () => {
                 id: x.id || newId(),
                 question: x.question || "",
                 answer: x.answer || "",
+                questionSm:
+                  x.questionSm || x.questionSomali || x.question_sm || "",
+                answerSm: x.answerSm || x.answerSomali || x.answer_sm || "",
               }))
-            : [{ id: newId(), question: "", answer: "" }],
+            : [
+                {
+                  id: newId(),
+                  question: "",
+                  answer: "",
+                  questionSm: "",
+                  answerSm: "",
+                },
+              ],
         );
       } catch {
-        setItems([{ id: newId(), question: "", answer: "" }]);
+        setItems([
+          {
+            id: newId(),
+            question: "",
+            answer: "",
+            questionSm: "",
+            answerSm: "",
+          },
+        ]);
       } finally {
         setLoading(false);
       }
@@ -47,7 +68,10 @@ const AdminFAQ: React.FC = () => {
   }, []);
 
   const addRow = () => {
-    setItems((prev) => [...prev, { id: newId(), question: "", answer: "" }]);
+    setItems((prev) => [
+      ...prev,
+      { id: newId(), question: "", answer: "", questionSm: "", answerSm: "" },
+    ]);
   };
 
   const removeRow = (id: string) => {
@@ -63,21 +87,53 @@ const AdminFAQ: React.FC = () => {
   };
 
   const handleSave = async () => {
-    const cleaned = items.filter((x) => x.question.trim() || x.answer.trim());
+    const cleaned = items.filter(
+      (x) =>
+        x.question.trim() ||
+        x.answer.trim() ||
+        x.questionSm?.trim() ||
+        x.answerSm?.trim(),
+    );
+    const incomplete = cleaned.find(
+      (x) =>
+        !x.question.trim() ||
+        !x.answer.trim() ||
+        !x.questionSm?.trim() ||
+        !x.answerSm?.trim(),
+    );
+    if (incomplete) {
+      toast({
+        title: t("faq.incompleteTitle"),
+        description: t("faq.incompleteDescription"),
+        variant: "destructive",
+      });
+      return;
+    }
     setSaving(true);
     try {
       await adminAPI.updateSettings({ faq: cleaned });
       setItems(
-        cleaned.length ? cleaned : [{ id: newId(), question: "", answer: "" }],
+        cleaned.length
+          ? cleaned
+          : [
+              {
+                id: newId(),
+                question: "",
+                answer: "",
+                questionSm: "",
+                answerSm: "",
+              },
+            ],
       );
       toast({
-        title: "FAQ saved",
-        description: "The landing page will show these items.",
+        title: t("faq.saved"),
+        description: t("faq.savedDescription"),
       });
     } catch (e: unknown) {
       toast({
-        title: "Save failed",
-        description: e instanceof Error ? e.message : "Could not save FAQ.",
+        title: t("faq.saveFailed"),
+        description:
+          e instanceof Error ? e.message : t("faq.saveFailedDescription"),
         variant: "destructive",
       });
     } finally {
@@ -102,15 +158,15 @@ const AdminFAQ: React.FC = () => {
       >
         <div>
           <h1 className="font-display flex items-center gap-2 text-2xl font-bold text-foreground">
-            <HelpCircle size={24} className="text-accent" /> Landing FAQ
+            <HelpCircle size={24} className="text-accent" /> {t("faq.title")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Questions appear in accordions on the homepage, above the footer.
+            {t("faq.description")}
           </p>
         </div>
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={addRow}>
-            <Plus size={16} className="mr-1.5" /> Add question
+            <Plus size={16} className="mr-1.5" /> {t("faq.addQuestion")}
           </Button>
           <Button
             type="button"
@@ -123,7 +179,7 @@ const AdminFAQ: React.FC = () => {
             ) : (
               <Save size={16} className="mr-2" />
             )}
-            {saving ? "Saving…" : "Save"}
+            {saving ? t("profile.saving") : t("common.save")}
           </Button>
         </div>
       </motion.div>
@@ -148,31 +204,63 @@ const AdminFAQ: React.FC = () => {
                     size="icon"
                     className="h-8 w-8 text-destructive"
                     onClick={() => removeRow(row.id)}
-                    aria-label="Remove"
+                    aria-label={t("common.delete")}
                   >
                     <Trash2 size={15} />
                   </Button>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`q-${row.id}`}>Question</Label>
+                  <Label htmlFor={`q-${row.id}`}>
+                    {t("faq.questionEnglish")}
+                  </Label>
                   <Input
                     id={`q-${row.id}`}
                     value={row.question}
                     onChange={(e) =>
                       updateRow(row.id, "question", e.target.value)
                     }
-                    placeholder="e.g. How do I enroll in a course?"
+                    placeholder={t("faq.questionEnglishPlaceholder")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`a-${row.id}`}>Answer</Label>
+                  <Label htmlFor={`a-${row.id}`}>
+                    {t("faq.answerEnglish")}
+                  </Label>
                   <Textarea
                     id={`a-${row.id}`}
                     value={row.answer}
                     onChange={(e) =>
                       updateRow(row.id, "answer", e.target.value)
                     }
-                    placeholder="Short answer shown when expanded."
+                    placeholder={t("faq.answerEnglishPlaceholder")}
+                    rows={4}
+                    className="resize-y min-h-[88px]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`q-sm-${row.id}`}>
+                    {t("faq.questionSomali")}
+                  </Label>
+                  <Input
+                    id={`q-sm-${row.id}`}
+                    value={row.questionSm || ""}
+                    onChange={(e) =>
+                      updateRow(row.id, "questionSm", e.target.value)
+                    }
+                    placeholder={t("faq.questionSomaliPlaceholder")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`a-sm-${row.id}`}>
+                    {t("faq.answerSomali")}
+                  </Label>
+                  <Textarea
+                    id={`a-sm-${row.id}`}
+                    value={row.answerSm || ""}
+                    onChange={(e) =>
+                      updateRow(row.id, "answerSm", e.target.value)
+                    }
+                    placeholder={t("faq.answerSomaliPlaceholder")}
                     rows={4}
                     className="resize-y min-h-[88px]"
                   />

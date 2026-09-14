@@ -12,9 +12,9 @@ interface LanguageSwitcherProps {
   variant?: "default" | "onDark";
 }
 
-const LABEL: Record<"en" | "om", string> = {
+const LABEL: Record<"en" | "sm", string> = {
   en: "English",
-  om: "Somali",
+  sm: "Somali",
 };
 
 const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
@@ -23,7 +23,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
 }) => {
   const { lang, setLang } = useLanguage();
   const onDark = variant === "onDark";
-  const other: "en" | "om" = lang === "en" ? "om" : "en";
+  const other: "en" | "sm" = lang === "en" ? "sm" : "en";
 
   return (
     <button

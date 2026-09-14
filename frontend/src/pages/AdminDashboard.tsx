@@ -33,6 +33,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 import {
   PieChart,
@@ -79,6 +80,7 @@ const AdminDashboard: React.FC = () => {
   const [deletingFeedback, setDeletingFeedback] = useState(false);
   const [pendingReceiptsCount, setPendingReceiptsCount] = useState(0);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const pathDefault = location.pathname.includes("/admin/courses")
     ? "courses"
@@ -164,7 +166,7 @@ const AdminDashboard: React.FC = () => {
             : c,
         ),
       );
-      toast({ title: `Course ${newStatus}` });
+      toast({ title: `${t("dashboard.courses")} ${newStatus}` });
     } catch (err) {
       console.error(err);
     }
@@ -174,7 +176,7 @@ const AdminDashboard: React.FC = () => {
     try {
       await coursesAPI.delete(courseId);
       setCourses((prev) => prev.filter((c) => c.id !== courseId));
-      toast({ title: "Course deleted" });
+      toast({ title: `${t("dashboard.courses")} ${t("dashboard.delete")}` });
     } catch (err) {
       console.error(err);
     }
@@ -184,7 +186,7 @@ const AdminDashboard: React.FC = () => {
     try {
       await usersAPI.delete(userId);
       setUsers((prev) => prev.filter((u) => u.id !== userId));
-      toast({ title: "User removed" });
+      toast({ title: `${t("dashboard.users")} ${t("dashboard.delete")}` });
     } catch (err) {
       console.error(err);
     }
@@ -196,11 +198,14 @@ const AdminDashboard: React.FC = () => {
     try {
       await adminAPI.replyFeedback(id, text);
       setReplyDraft((p) => ({ ...p, [id]: "" }));
-      toast({ title: "Reply sent", description: "The user was notified." });
+      toast({
+        title: t("dashboard.sendReply"),
+        description: t("dashboard.feedback"),
+      });
       await loadFeedback();
     } catch (err: any) {
       toast({
-        title: "Failed to send reply",
+        title: t("dashboard.sendReply"),
         description: err?.message || "Try again",
         variant: "destructive",
       });
@@ -220,11 +225,11 @@ const AdminDashboard: React.FC = () => {
         delete next[feedbackToDelete.id];
         return next;
       });
-      toast({ title: "Feedback deleted" });
+      toast({ title: `${t("dashboard.feedback")} ${t("dashboard.delete")}` });
       setFeedbackToDelete(null);
     } catch (err: any) {
       toast({
-        title: "Could not delete",
+        title: t("dashboard.delete"),
         description: err?.message || "Try again",
         variant: "destructive",
       });
@@ -282,15 +287,16 @@ const AdminDashboard: React.FC = () => {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this message?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("dashboard.deleteMessageTitle")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the question or feedback from the dashboard
-              permanently. The user’s past notifications are not changed.
+              {t("dashboard.deleteMessageDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deletingFeedback}>
-              Cancel
+              {t("common.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -300,7 +306,9 @@ const AdminDashboard: React.FC = () => {
                 confirmDeleteFeedback();
               }}
             >
-              {deletingFeedback ? "Deleting…" : "Delete"}
+              {deletingFeedback
+                ? t("dashboard.deleting")
+                : t("dashboard.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -323,21 +331,23 @@ const AdminDashboard: React.FC = () => {
           />
           <div className="relative p-6 lg:p-8 hero-landing-surface">
             <div className="inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent/[0.08] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-accent">
-              <Shield size={14} /> Admin
+              <Shield size={14} /> {t("dashboard.admin")}
             </div>
             <h1 className="font-display mt-4 text-2xl font-bold leading-tight tracking-tight lg:text-3xl">
-              <span className="hero-headline-gradient">Platform overview</span>
+              <span className="hero-headline-gradient">
+                {t("dashboard.platformOverview")}
+              </span>
             </h1>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Manage{" "}
+              {t("dashboard.manageSummary")}{" "}
               <span className="font-medium text-foreground">
                 {stats.totalUsers}
               </span>{" "}
-              users and{" "}
+              {t("dashboard.users")} {t("dashboard.and")}{" "}
               <span className="font-medium text-foreground">
                 {stats.totalCourses}
               </span>{" "}
-              courses — same look and feel as your public site.
+              {t("dashboard.courses")}.
             </p>
           </div>
         </motion.div>
@@ -345,7 +355,7 @@ const AdminDashboard: React.FC = () => {
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
           <StatCard
-            label="Total Users"
+            label={t("dashboard.users")}
             value={stats.totalUsers}
             icon={<Users size={18} />}
             gradient="info"
@@ -353,7 +363,7 @@ const AdminDashboard: React.FC = () => {
             trend={{ value: `+${stats.recentSignups}`, positive: true }}
           />
           <StatCard
-            label="Students"
+            label={t("dashboard.students")}
             value={stats.totalStudents}
             icon={<GraduationCap size={18} />}
             gradient="success"
@@ -393,10 +403,10 @@ const AdminDashboard: React.FC = () => {
             <Card className="surface-dashboard-card h-full shadow-elevated transition-shadow hover:shadow-elevated hover:ring-1 hover:ring-accent/15">
               <CardContent className="p-6">
                 <h3 className="font-display mb-1 font-semibold text-foreground">
-                  User distribution
+                  {t("dashboard.userDistribution")}
                 </h3>
                 <p className="mb-4 text-xs text-muted-foreground">
-                  By role across the platform
+                  {t("dashboard.byRole")}
                 </p>
                 <div className="h-52 flex items-center justify-center">
                   <ResponsiveContainer width="100%" height="100%">
@@ -456,10 +466,10 @@ const AdminDashboard: React.FC = () => {
             <Card className="surface-dashboard-card h-full shadow-elevated transition-shadow hover:shadow-elevated hover:ring-1 hover:ring-accent/15">
               <CardContent className="p-6">
                 <h3 className="font-display mb-1 font-semibold text-foreground">
-                  Course popularity
+                  {t("dashboard.coursePopularity")}
                 </h3>
                 <p className="mb-4 text-xs text-muted-foreground">
-                  Top courses by enrollments
+                  {t("dashboard.topCourses")}
                 </p>
                 <div className="h-60">
                   <ResponsiveContainer width="100%" height="100%">
@@ -513,7 +523,7 @@ const AdminDashboard: React.FC = () => {
               value="users"
               className="rounded-lg data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-border/40"
             >
-              Users ({users.length})
+              {t("dashboard.users")} ({users.length})
             </TabsTrigger>
             <TabsTrigger
               value="courses"
@@ -526,7 +536,7 @@ const AdminDashboard: React.FC = () => {
               className="rounded-lg gap-1.5 data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-border/40"
             >
               <MessageSquare size={14} />
-              Feedback
+              {t("dashboard.feedback")}
               {openFeedbackCount > 0 ? (
                 <Badge
                   variant="secondary"

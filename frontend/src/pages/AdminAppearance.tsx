@@ -11,9 +11,11 @@ import { Palette, Layout, Save, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "@/components/ImageUpload";
 import { settingsAPI } from "@/lib/api";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const AdminAppearance: React.FC = () => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [logo, setLogo] = useState("");
   const [heroIntroVideoUrl, setHeroIntroVideoUrl] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -31,8 +33,8 @@ const AdminAppearance: React.FC = () => {
         );
       } catch (error) {
         toast({
-          title: "Error fetching settings",
-          description: "Could not load appearance settings from server.",
+          title: t("admin.appearance.loadError"),
+          description: t("admin.appearance.loadErrorDescription"),
           variant: "destructive",
         });
       } finally {
@@ -65,13 +67,13 @@ const AdminAppearance: React.FC = () => {
       window.dispatchEvent(new Event("storage"));
 
       toast({
-        title: "Theme updated",
-        description: "Your changes have been saved successfully and applied.",
+        title: t("admin.appearance.updated"),
+        description: t("admin.appearance.updatedDescription"),
       });
     } catch (error) {
       toast({
-        title: "Save failed",
-        description: "Could not save settings to the server.",
+        title: t("admin.appearance.saveFailed"),
+        description: t("admin.appearance.saveFailedDescription"),
         variant: "destructive",
       });
     } finally {
@@ -96,11 +98,11 @@ const AdminAppearance: React.FC = () => {
       >
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <Palette size={24} className="text-accent" /> Appearance
+            <Palette size={24} className="text-accent" />{" "}
+            {t("admin.appearance.title")}
           </h1>
           <p className="text-muted-foreground text-sm">
-            Logo and hero video apply site-wide. Student and admin dashboards
-            use fixed Alpha brand colors for a consistent experience.
+            {t("admin.appearance.subtitle")}
           </p>
         </div>
         <Button
@@ -113,7 +115,7 @@ const AdminAppearance: React.FC = () => {
           ) : (
             <Save size={16} className="mr-2" />
           )}
-          {isSaving ? "Saving..." : "Save Changes"}
+          {isSaving ? t("profile.saving") : t("profile.saveChanges")}
         </Button>
       </motion.div>
 
@@ -121,15 +123,15 @@ const AdminAppearance: React.FC = () => {
         <Card className="shadow-card">
           <CardContent className="p-6 space-y-6">
             <h3 className="font-semibold text-foreground flex items-center gap-2">
-              <Layout size={18} /> Branding
+              <Layout size={18} /> {t("admin.appearance.branding")}
             </h3>
 
             <div className="space-y-2">
-              <Label>Logo</Label>
+              <Label>{t("admin.appearance.logo")}</Label>
               <ImageUpload
                 value={logo}
                 onChange={setLogo}
-                label="Upload Logo"
+                label={t("admin.appearance.uploadLogo")}
               />
             </div>
           </CardContent>
@@ -138,15 +140,15 @@ const AdminAppearance: React.FC = () => {
         <Card className="shadow-card">
           <CardContent className="space-y-4 p-6">
             <h3 className="flex items-center gap-2 font-semibold text-foreground">
-              <Layout size={18} /> Landing hero video
+              <Layout size={18} /> {t("admin.appearance.heroVideo")}
             </h3>
             <p className="text-xs text-muted-foreground">
-              YouTube or direct file URL (mp4/webm) for the dashboard preview on
-              the homepage. Direct files avoid YouTube’s in-player UI for a
-              fully custom control bar. Leave empty to use the built-in default.
+              {t("admin.appearance.videoHelp")}
             </p>
             <div className="space-y-2">
-              <Label htmlFor="hero-video-url">Intro video URL</Label>
+              <Label htmlFor="hero-video-url">
+                {t("admin.appearance.videoUrl")}
+              </Label>
               <Input
                 id="hero-video-url"
                 value={heroIntroVideoUrl}

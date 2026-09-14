@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   BarChart,
   Bar,
@@ -33,6 +34,7 @@ import {
 const InstructorDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -80,29 +82,30 @@ const InstructorDashboard: React.FC = () => {
           <div className="relative flex flex-col gap-6 p-6 hero-landing-surface sm:flex-row sm:items-center sm:justify-between lg:p-8">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent/[0.08] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-accent">
-                <Sparkles size={14} /> Instructor
+                <Sparkles size={14} /> {t("dashboard.instructor")}
               </div>
               <h1 className="font-display mt-4 text-2xl font-bold leading-tight tracking-tight lg:text-3xl">
                 <span className="hero-headline-gradient">
-                  Your teaching hub
+                  {t("dashboard.teachingHub")}
                 </span>
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">
                   {courses.length}
                 </span>{" "}
-                courses ·{" "}
+                {t("dashboard.coursesEnrolled")} ·{" "}
                 <span className="font-medium text-foreground">
                   {totalStudents}
                 </span>{" "}
-                students enrolled
+                {t("dashboard.studentsEnrolled")}
               </p>
             </div>
             <Button
               onClick={() => navigate("/instructor/add-course")}
               className="gradient-accent shrink-0 text-accent-foreground shadow-glow-accent hover:opacity-90"
             >
-              <PlusCircle size={18} className="mr-2" /> Add course
+              <PlusCircle size={18} className="mr-2" />{" "}
+              {t("dashboard.addCourse")}
             </Button>
           </div>
         </motion.div>
@@ -110,14 +113,14 @@ const InstructorDashboard: React.FC = () => {
         {/* Stats */}
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
           <StatCard
-            label="Total Courses"
+            label={t("dashboard.totalCourses")}
             value={courses.length}
             icon={<BookOpen size={18} />}
             gradient="info"
             delay={0.1}
           />
           <StatCard
-            label="Published"
+            label={t("dashboard.published")}
             value={publishedCount}
             icon={<TrendingUp size={18} />}
             gradient="success"
@@ -128,7 +131,7 @@ const InstructorDashboard: React.FC = () => {
             }}
           />
           <StatCard
-            label="Total Students"
+            label={t("dashboard.totalStudents")}
             value={totalStudents}
             icon={<Users size={18} />}
             gradient="accent"
@@ -146,10 +149,10 @@ const InstructorDashboard: React.FC = () => {
             <Card className="surface-dashboard-card shadow-elevated ring-1 ring-border/20 transition-shadow hover:ring-accent/15">
               <CardContent className="p-6">
                 <h3 className="font-display mb-1 font-semibold text-foreground">
-                  Students per course
+                  {t("dashboard.studentsPerCourse")}
                 </h3>
                 <p className="mb-4 text-xs text-muted-foreground">
-                  Enrollment count by course
+                  {t("dashboard.enrollmentByCourse")}
                 </p>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
@@ -200,7 +203,7 @@ const InstructorDashboard: React.FC = () => {
         <div>
           <div className="flex items-center justify-between mb-5">
             <h2 className="font-display text-lg font-semibold text-foreground">
-              Your Courses
+              {t("dashboard.yourCourses")}
             </h2>
           </div>
           {loading ? (
@@ -230,16 +233,17 @@ const InstructorDashboard: React.FC = () => {
                   <BookOpen size={28} className="text-accent-foreground" />
                 </div>
                 <h3 className="font-display text-lg font-semibold text-foreground mb-1">
-                  No courses yet
+                  {t("dashboard.noCourses")}
                 </h3>
                 <p className="text-sm text-muted-foreground mb-6">
-                  Create your first course to get started
+                  {t("dashboard.createFirstCourse")}
                 </p>
                 <Button
                   onClick={() => navigate("/instructor/add-course")}
                   className="gradient-accent text-accent-foreground hover:opacity-90 shadow-glow-accent"
                 >
-                  Create Course <ArrowRight size={16} className="ml-2" />
+                  {t("dashboard.createCourse")}{" "}
+                  <ArrowRight size={16} className="ml-2" />
                 </Button>
               </CardContent>
             </Card>

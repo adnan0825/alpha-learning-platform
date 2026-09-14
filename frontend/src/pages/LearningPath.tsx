@@ -4,23 +4,44 @@
  */
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { learningPathsAPI, enrollmentsAPI, coursesAPI, CourseData, LearningPath as LearningPathType } from "@/lib/api";
+import {
+  learningPathsAPI,
+  enrollmentsAPI,
+  coursesAPI,
+  CourseData,
+  LearningPath as LearningPathType,
+} from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { Map as MapIcon, CheckCircle, Circle, ArrowRight, BookOpen, Lock, Trophy, Target } from "lucide-react";
+import {
+  Map as MapIcon,
+  CheckCircle,
+  Circle,
+  ArrowRight,
+  BookOpen,
+  Lock,
+  Trophy,
+  Target,
+} from "lucide-react";
 
 const LearningPath: React.FC = () => {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [availablePaths, setAvailablePaths] = useState<LearningPathType[]>([]);
-  const [selectedPath, setSelectedPath] = useState<LearningPathType | null>(null);
+  const [selectedPath, setSelectedPath] = useState<LearningPathType | null>(
+    null,
+  );
   const [pathCourses, setPathCourses] = useState<CourseData[]>([]);
-  const [enrolledCourses, setEnrolledCourses] = useState<Map<string, { progress: number; completed: boolean }>>(new Map());
+  const [enrolledCourses, setEnrolledCourses] = useState<
+    Map<string, { progress: number; completed: boolean }>
+  >(new Map());
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
 
@@ -31,7 +52,7 @@ const LearningPath: React.FC = () => {
         // Load available learning paths
         const paths = await learningPathsAPI.getAll();
         setAvailablePaths(paths);
-        
+
         if (paths.length > 0) {
           // Load first path by default
           const firstPath = paths[0];
@@ -42,7 +63,10 @@ const LearningPath: React.FC = () => {
 
         // Load user's enrolled courses and progress
         const enrollments = await enrollmentsAPI.getMyCourses();
-        const progressMap = new Map<string, { progress: number; completed: boolean }>();
+        const progressMap = new Map<
+          string,
+          { progress: number; completed: boolean }
+        >();
         for (const enrollment of enrollments) {
           progressMap.set(enrollment.courseId, {
             progress: enrollment.progress,
@@ -60,9 +84,9 @@ const LearningPath: React.FC = () => {
   }, [user]);
 
   const handleSelectPath = async (pathId: string) => {
-    const path = availablePaths.find(p => p.id === pathId);
+    const path = availablePaths.find((p) => p.id === pathId);
     if (!path) return;
-    
+
     setSelectedPath(path);
     try {
       const courses = await learningPathsAPI.getCourses(pathId);
@@ -90,7 +114,7 @@ const LearningPath: React.FC = () => {
   const calculatePathProgress = () => {
     if (pathCourses.length === 0) return 0;
     let completed = 0;
-    pathCourses.forEach(course => {
+    pathCourses.forEach((course) => {
       const enrollment = enrolledCourses.get(course.id);
       if (enrollment?.completed) completed++;
     });
@@ -127,16 +151,23 @@ const LearningPath: React.FC = () => {
   return (
     <>
       <div className="space-y-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <MapIcon size={24} className="text-accent" /> Learning Paths
+            <MapIcon size={24} className="text-accent" /> {t("path.title")}
           </h1>
-          <p className="text-muted-foreground text-sm">Curated roadmaps to master new skills</p>
+          <p className="text-muted-foreground text-sm">{t("path.subtitle")}</p>
         </motion.div>
 
         {/* Path Selector */}
         {availablePaths.length > 1 && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
             <div className="flex gap-2 overflow-x-auto pb-2">
               {availablePaths.map((path) => (
                 <Button
@@ -156,32 +187,49 @@ const LearningPath: React.FC = () => {
 
         {/* Overall Progress */}
         {selectedPath && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
             <Card className="shadow-card">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="font-display font-semibold text-foreground">{selectedPath.title}</h3>
-                    <p className="text-sm text-muted-foreground">{selectedPath.description}</p>
+                    <h3 className="font-display font-semibold text-foreground">
+                      {selectedPath.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedPath.description}
+                    </p>
                   </div>
                   <div className="text-right">
-                    <span className="font-display font-bold text-accent text-2xl">{overallProgress}%</span>
-                    <p className="text-xs text-muted-foreground">Complete</p>
+                    <span className="font-display font-bold text-accent text-2xl">
+                      {overallProgress}%
+                    </span>
+                    <p className="text-xs text-muted-foreground">
+                      {t("path.complete")}
+                    </p>
                   </div>
                 </div>
                 <Progress value={overallProgress} className="h-3" />
                 <div className="flex items-center justify-between mt-3">
                   <p className="text-xs text-muted-foreground">
                     <Target size={12} className="inline mr-1" />
-                    {pathCourses.filter(c => getCourseStatus(c) === "completed").length} of {pathCourses.length} courses completed
+                    {
+                      pathCourses.filter(
+                        (c) => getCourseStatus(c) === "completed",
+                      ).length
+                    }{" "}
+                    of {pathCourses.length} courses completed
                   </p>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     className="gradient-accent text-accent-foreground text-xs"
                     onClick={handleEnrollInPath}
                     disabled={enrolling}
                   >
-                    {enrolling ? "Enrolling..." : "Enroll in Path"}
+                    {enrolling ? t("path.enrolling") : t("path.enroll")}
                   </Button>
                 </div>
               </CardContent>
@@ -199,7 +247,10 @@ const LearningPath: React.FC = () => {
               const status = getCourseStatus(course);
               const completed = status === "completed";
               const inProgress = status === "in-progress";
-              const locked = i > 0 && pathCourses[i - 1] && getCourseStatus(pathCourses[i - 1]) === "not-enrolled";
+              const locked =
+                i > 0 &&
+                pathCourses[i - 1] &&
+                getCourseStatus(pathCourses[i - 1]) === "not-enrolled";
 
               return (
                 <motion.div
@@ -210,22 +261,36 @@ const LearningPath: React.FC = () => {
                   className="relative flex items-start gap-4 pl-2"
                 >
                   {/* Node */}
-                  <div className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 ${
-                    completed ? "bg-success border-success text-success-foreground" :
-                    inProgress ? "bg-accent border-accent text-accent-foreground" :
-                    "bg-card border-border text-muted-foreground"
-                  }`}>
-                    {completed ? <CheckCircle size={16} /> : 
-                     locked ? <Lock size={14} /> : 
-                     inProgress ? <Trophy size={14} /> :
-                     <Circle size={14} />}
+                  <div
+                    className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 ${
+                      completed
+                        ? "bg-success border-success text-success-foreground"
+                        : inProgress
+                          ? "bg-accent border-accent text-accent-foreground"
+                          : "bg-card border-border text-muted-foreground"
+                    }`}
+                  >
+                    {completed ? (
+                      <CheckCircle size={16} />
+                    ) : locked ? (
+                      <Lock size={14} />
+                    ) : inProgress ? (
+                      <Trophy size={14} />
+                    ) : (
+                      <Circle size={14} />
+                    )}
                   </div>
 
                   {/* Card */}
-                  <Card className={`flex-1 shadow-card ${
-                    completed ? "border-success/20" : 
-                    inProgress ? "border-accent/20" : ""
-                  }`}>
+                  <Card
+                    className={`flex-1 shadow-card ${
+                      completed
+                        ? "border-success/20"
+                        : inProgress
+                          ? "border-accent/20"
+                          : ""
+                    }`}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
@@ -239,60 +304,68 @@ const LearningPath: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <h4 className="font-display font-semibold text-foreground mt-1">{course.title}</h4>
+                          <h4 className="font-display font-semibold text-foreground mt-1">
+                            {course.title}
+                          </h4>
                           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                             {course.description}
                           </p>
                           <div className="flex items-center gap-4 mt-2">
                             <span className="text-xs text-muted-foreground">
-                              {completed ? "✅ Completed" : 
-                               inProgress ? `📚 In Progress` : 
-                               locked ? "🔒 Locked" : 
-                               "📖 Not started"}
+                              {completed
+                                ? `✅ ${t("path.completed")}`
+                                : inProgress
+                                  ? `📚 ${t("path.inProgress")}`
+                                  : locked
+                                    ? `🔒 ${t("path.locked")}`
+                                    : `📖 ${t("path.notStarted")}`}
                             </span>
                             {inProgress && (
                               <span className="text-xs font-medium text-accent">
-                                {enrolledCourses.get(course.id)?.progress || 0}% complete
+                                {enrolledCourses.get(course.id)?.progress || 0}%
+                                complete
                               </span>
                             )}
                           </div>
                         </div>
                         <div className="flex flex-col gap-2">
                           {inProgress && (
-                            <Button 
-                              size="sm" 
-                              className="gradient-accent text-accent-foreground text-xs" 
+                            <Button
+                              size="sm"
+                              className="gradient-accent text-accent-foreground text-xs"
                               onClick={() => navigate(`/course/${course.id}`)}
                             >
-                              Continue <ArrowRight size={12} className="ml-1" />
+                              {t("path.continue")}{" "}
+                              <ArrowRight size={12} className="ml-1" />
                             </Button>
                           )}
                           {status === "not-enrolled" && !locked && (
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
+                            <Button
+                              size="sm"
+                              variant="outline"
                               className="text-xs"
                               onClick={() => navigate(`/course/${course.id}`)}
                             >
-                              View Course
+                              {t("path.viewCourse")}
                             </Button>
                           )}
                           {locked && (
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
+                            <Button
+                              size="sm"
+                              variant="outline"
                               className="text-xs opacity-50 cursor-not-allowed"
                               disabled
                             >
-                              <Lock size={12} className="mr-1" /> Complete Previous
+                              <Lock size={12} className="mr-1" />{" "}
+                              {t("path.completePrevious")}
                             </Button>
                           )}
                         </div>
                       </div>
                       {inProgress && (
-                        <Progress 
-                          value={enrolledCourses.get(course.id)?.progress || 0} 
-                          className="h-1.5 mt-3" 
+                        <Progress
+                          value={enrolledCourses.get(course.id)?.progress || 0}
+                          className="h-1.5 mt-3"
                         />
                       )}
                     </CardContent>
@@ -306,11 +379,18 @@ const LearningPath: React.FC = () => {
         {pathCourses.length === 0 && (
           <Card>
             <CardContent className="p-8 text-center">
-              <BookOpen size={48} className="mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-display font-semibold text-lg mb-2">No Courses in This Path</h3>
-              <p className="text-muted-foreground mb-4">This learning path doesn't have any courses yet.</p>
+              <BookOpen
+                size={48}
+                className="mx-auto text-muted-foreground mb-4"
+              />
+              <h3 className="font-display font-semibold text-lg mb-2">
+                {t("path.emptyTitle")}
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                {t("path.emptyDescription")}
+              </p>
               <Button onClick={() => navigate("/browse")}>
-                Browse All Courses
+                {t("path.browseAll")}
               </Button>
             </CardContent>
           </Card>

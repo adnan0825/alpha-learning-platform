@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { enrollmentsAPI, coursesAPI, CourseData, Enrollment } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 import CourseCard from "@/components/CourseCard";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,10 @@ import { BookOpen, ArrowRight } from "lucide-react";
 const MyCourses: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [rows, setRows] = useState<{ course: CourseData; progress: number }[]>([]);
+  const { t } = useLanguage();
+  const [rows, setRows] = useState<{ course: CourseData; progress: number }[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,13 +29,15 @@ const MyCourses: React.FC = () => {
           setRows([]);
           return;
         }
-        const coursePromises = enrollments.map((e) => coursesAPI.getById(e.courseId));
+        const coursePromises = enrollments.map((e) =>
+          coursesAPI.getById(e.courseId),
+        );
         const courses = await Promise.all(coursePromises);
         setRows(
           courses.map((course, i) => ({
             course,
             progress: enrollments[i]?.progress ?? 0,
-          }))
+          })),
         );
       } catch (err) {
         console.error("Failed to load my courses:", err);
@@ -46,8 +52,10 @@ const MyCourses: React.FC = () => {
     return (
       <div className="space-y-8 animate-fade-in">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">My Courses</h1>
-          <p className="text-muted-foreground">Loading your courses…</p>
+          <h1 className="font-display text-2xl font-bold text-foreground">
+            {t("courses.my")}
+          </h1>
+          <p className="text-muted-foreground">{t("courses.loading")}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
@@ -62,15 +70,21 @@ const MyCourses: React.FC = () => {
     return (
       <div className="space-y-8 animate-fade-in">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">My Courses</h1>
-          <p className="text-muted-foreground">You are not enrolled in any courses yet</p>
+          <h1 className="font-display text-2xl font-bold text-foreground">
+            {t("courses.my")}
+          </h1>
+          <p className="text-muted-foreground">{t("courses.notEnrolled")}</p>
         </div>
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <BookOpen size={48} className="text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold text-foreground mb-2">No courses yet</h2>
-          <p className="text-muted-foreground mb-6">Browse our catalog and start learning</p>
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            {t("courses.noCourses")}
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            {t("courses.browseCatalog")}
+          </p>
           <Button onClick={() => navigate("/browse")}>
-            Browse Courses <ArrowRight size={16} className="ml-2" />
+            {t("courses.browse")} <ArrowRight size={16} className="ml-2" />
           </Button>
         </div>
       </div>
@@ -80,9 +94,11 @@ const MyCourses: React.FC = () => {
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">My Courses</h1>
+        <h1 className="font-display text-2xl font-bold text-foreground">
+          {t("courses.my")}
+        </h1>
         <p className="text-muted-foreground">
-          {rows.length} course{rows.length > 1 ? "s" : ""} enrolled
+          {rows.length} {t("courses.enrolled")}
         </p>
       </div>
 

@@ -1,5 +1,5 @@
 /**
- * LanguageContext - Bilingual support for Somali (om) and English (en).
+ * LanguageContext - Bilingual support for Somali (sm) and English (en).
  * Strings default from bundled `defaultTranslations`; admin can override via API (settings `ui_translations`).
  */
 import React, {
@@ -17,7 +17,7 @@ import {
 } from "@/lib/mergeTranslations";
 import { settingsAPI } from "@/lib/api";
 
-export type Lang = "en" | "om";
+export type Lang = "en" | "sm";
 
 export const ALPHA_TRANSLATIONS_UPDATED = "alpha-translations-updated";
 
@@ -42,6 +42,17 @@ export const useLanguage = () => useContext(LanguageContext);
 
 export type { TranslationKey };
 
+const normalizeStoredLanguage = (value: string | null): Lang => {
+  if (value === "en" || value === "sm") return value;
+  if (value === "om") {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(SOTA_LANG_KEY, "sm");
+    }
+    return "sm";
+  }
+  return "en";
+};
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -50,7 +61,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
     didMigratePrompt.current = true;
     const s = localStorage.getItem(SOTA_LANG_KEY);
     if (
-      (s === "en" || s === "om") &&
+      (s === "en" || s === "sm" || s === "om") &&
       !localStorage.getItem(SOTA_LANG_PROMPT_SEEN_KEY)
     ) {
       localStorage.setItem(SOTA_LANG_PROMPT_SEEN_KEY, "1");
@@ -58,9 +69,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
   }
 
   const [lang, setLangState] = useState<Lang>(() => {
-    const saved = localStorage.getItem(SOTA_LANG_KEY);
-    if (saved === "en" || saved === "om") return saved;
-    return "en";
+    if (typeof window === "undefined") return "en";
+    return normalizeStoredLanguage(localStorage.getItem(SOTA_LANG_KEY));
   });
 
   const [translationMap, setTranslationMap] = useState<TranslationMap>(() =>

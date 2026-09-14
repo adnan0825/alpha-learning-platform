@@ -3,18 +3,41 @@
  * Uses real backend notes API
  */
 import React, { useEffect, useState } from "react";
-import { notesAPI, enrollmentsAPI, CourseNote as CourseNoteType, Enrollment } from "@/lib/api";
+import {
+  notesAPI,
+  enrollmentsAPI,
+  CourseNote as CourseNoteType,
+  Enrollment,
+} from "@/lib/api";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { StickyNote, Plus, Trash2, Search, BookOpen, Edit2, Save, X, RefreshCw } from "lucide-react";
+import {
+  StickyNote,
+  Plus,
+  Trash2,
+  Search,
+  BookOpen,
+  Edit2,
+  Save,
+  X,
+  RefreshCw,
+} from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const CourseNotes: React.FC = () => {
+  const { t } = useLanguage();
   const [notes, setNotes] = useState<CourseNoteType[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +76,7 @@ const CourseNotes: React.FC = () => {
     setSaving(true);
     try {
       const note = await notesAPI.create(selectedCourse, newNote);
-      setNotes(prev => [note, ...prev]);
+      setNotes((prev) => [note, ...prev]);
       setNewNote("");
       setShowAdd(false);
     } catch (err) {
@@ -66,7 +89,7 @@ const CourseNotes: React.FC = () => {
   const handleDeleteNote = async (id: string) => {
     try {
       await notesAPI.delete(id);
-      setNotes(prev => prev.filter(n => n.id !== id));
+      setNotes((prev) => prev.filter((n) => n.id !== id));
     } catch (err) {
       console.error("Failed to delete note:", err);
     }
@@ -82,7 +105,7 @@ const CourseNotes: React.FC = () => {
     setSaving(true);
     try {
       const updated = await notesAPI.update(id, editContent);
-      setNotes(prev => prev.map(n => n.id === id ? updated : n));
+      setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
       setEditingId(null);
     } catch (err) {
       console.error("Failed to update note:", err);
@@ -96,10 +119,12 @@ const CourseNotes: React.FC = () => {
     setEditContent("");
   };
 
-  const filtered = notes.filter(n =>
-    n.content.toLowerCase().includes(search.toLowerCase()) ||
-    n.courseTitle.toLowerCase().includes(search.toLowerCase()) ||
-    (n.lessonTitle && n.lessonTitle.toLowerCase().includes(search.toLowerCase()))
+  const filtered = notes.filter(
+    (n) =>
+      n.content.toLowerCase().includes(search.toLowerCase()) ||
+      n.courseTitle.toLowerCase().includes(search.toLowerCase()) ||
+      (n.lessonTitle &&
+        n.lessonTitle.toLowerCase().includes(search.toLowerCase())),
   );
 
   if (loading) {
@@ -122,45 +147,63 @@ const CourseNotes: React.FC = () => {
   return (
     <>
       <div className="space-y-6 max-w-3xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between"
+        >
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-              <StickyNote size={24} className="text-accent" /> My Notes
+              <StickyNote size={24} className="text-accent" />{" "}
+              {t("notes.title")}
             </h1>
-            <p className="text-muted-foreground text-sm">{notes.length} notes saved</p>
+            <p className="text-muted-foreground text-sm">
+              {notes.length} {t("notes.count")}
+            </p>
           </div>
-          <Button 
-            onClick={() => setShowAdd(!showAdd)} 
+          <Button
+            onClick={() => setShowAdd(!showAdd)}
             className="gradient-accent text-accent-foreground hover:opacity-90"
           >
-            <Plus size={16} className="mr-1.5" /> New Note
+            <Plus size={16} className="mr-1.5" /> {t("notes.new")}
           </Button>
         </motion.div>
 
         {/* Search */}
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input 
-            placeholder="Search notes..." 
-            value={search} 
-            onChange={e => setSearch(e.target.value)} 
-            className="pl-9 bg-card" 
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            placeholder={t("notes.search")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 bg-card"
           />
         </div>
 
         {/* Add Note */}
         {showAdd && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+          >
             <Card className="shadow-card border-accent/20">
               <CardContent className="p-4 space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Associate with Course</label>
-                  <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                  <label className="text-xs font-medium text-muted-foreground">
+                    {t("notes.associate")}
+                  </label>
+                  <Select
+                    value={selectedCourse}
+                    onValueChange={setSelectedCourse}
+                  >
                     <SelectTrigger className="w-full bg-muted/30">
-                      <SelectValue placeholder="Select a course" />
+                      <SelectValue placeholder={t("notes.selectCourse")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {enrollments.map(e => (
+                      {enrollments.map((e) => (
                         <SelectItem key={e.courseId} value={e.courseId}>
                           {e.courseTitle}
                         </SelectItem>
@@ -169,30 +212,32 @@ const CourseNotes: React.FC = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Note Content</label>
-                  <Textarea 
-                    placeholder="Write your note here..." 
-                    value={newNote} 
-                    onChange={e => setNewNote(e.target.value)} 
-                    className="min-h-[100px] bg-muted/30" 
+                  <label className="text-xs font-medium text-muted-foreground">
+                    {t("notes.content")}
+                  </label>
+                  <Textarea
+                    placeholder={t("notes.write")}
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    className="min-h-[100px] bg-muted/30"
                   />
                 </div>
                 <div className="flex gap-2 justify-end">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setShowAdd(false)}
                     disabled={saving}
                   >
-                    Cancel
+                    {t("notes.cancel")}
                   </Button>
-                  <Button 
-                    size="sm" 
-                    onClick={handleAddNote} 
+                  <Button
+                    size="sm"
+                    onClick={handleAddNote}
                     className="gradient-accent text-accent-foreground hover:opacity-90"
                     disabled={saving || !newNote.trim() || !selectedCourse}
                   >
-                    {saving ? "Saving..." : "Save Note"}
+                    {saving ? t("notes.saving") : t("notes.save")}
                   </Button>
                 </div>
               </CardContent>
@@ -203,10 +248,10 @@ const CourseNotes: React.FC = () => {
         {/* Notes List */}
         <div className="space-y-3">
           {filtered.map((note, i) => (
-            <motion.div 
-              key={note.id} 
-              initial={{ opacity: 0, y: 10 }} 
-              animate={{ opacity: 1, y: 0 }} 
+            <motion.div
+              key={note.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
             >
               <Card className="shadow-card hover:shadow-elevated transition-all group">
@@ -242,16 +287,27 @@ const CourseNotes: React.FC = () => {
                       ) : (
                         <>
                           <div className="flex items-center gap-2 mb-1.5">
-                            <BookOpen size={12} className="text-accent shrink-0" />
-                            <span className="text-xs font-semibold text-accent">{note.courseTitle}</span>
+                            <BookOpen
+                              size={12}
+                              className="text-accent shrink-0"
+                            />
+                            <span className="text-xs font-semibold text-accent">
+                              {note.courseTitle}
+                            </span>
                             {note.lessonTitle && (
                               <>
-                                <span className="text-xs text-muted-foreground">•</span>
-                                <span className="text-xs text-muted-foreground">{note.lessonTitle}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  •
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {note.lessonTitle}
+                                </span>
                               </>
                             )}
                           </div>
-                          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{note.content}</p>
+                          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                            {note.content}
+                          </p>
                           <div className="flex items-center gap-3 mt-2">
                             <p className="text-[10px] text-muted-foreground/60">
                               {formatTime(note.updatedAt || note.createdAt)}
@@ -270,7 +326,7 @@ const CourseNotes: React.FC = () => {
                     </div>
                     {editingId !== note.id && (
                       <Button
-                        variant="ghost" 
+                        variant="ghost"
                         size="icon"
                         className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => handleDeleteNote(note.id)}
@@ -289,9 +345,16 @@ const CourseNotes: React.FC = () => {
                 <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
                   <StickyNote size={28} className="text-muted-foreground" />
                 </div>
-                <h3 className="font-display text-lg font-semibold text-foreground mb-1">No notes yet</h3>
-                <p className="text-sm text-muted-foreground mb-4">Start taking notes on your courses</p>
-                <Button onClick={() => setShowAdd(true)} className="gradient-accent text-accent-foreground">
+                <h3 className="font-display text-lg font-semibold text-foreground mb-1">
+                  No notes yet
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Start taking notes on your courses
+                </p>
+                <Button
+                  onClick={() => setShowAdd(true)}
+                  className="gradient-accent text-accent-foreground"
+                >
                   <Plus size={16} className="mr-1.5" /> Create Your First Note
                 </Button>
               </CardContent>

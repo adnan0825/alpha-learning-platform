@@ -1060,7 +1060,21 @@ export const instructorAnalyticsAPI = {
 };
 
 // ============= SETTINGS API ============
-export type FaqItem = { id: string; question: string; answer: string };
+export type FaqItem = {
+  id: string;
+  question: string;
+  answer: string;
+  questionSm?: string;
+  answerSm?: string;
+  questionSomali?: string;
+  answerSomali?: string;
+  question_sm?: string;
+  answer_sm?: string;
+  somaliQuestion?: string;
+  somaliAnswer?: string;
+  questionEn?: string;
+  answerEn?: string;
+};
 
 export const settingsAPI = {
   async getAppearance(): Promise<any> {
@@ -1076,12 +1090,12 @@ export const settingsAPI = {
     return apiCall("/settings/faq");
   },
   async getTranslations(): Promise<{
-    entries: Record<string, { en?: string; om?: string }>;
+    entries: Record<string, { en?: string; sm?: string; om?: string }>;
   }> {
     return apiCall("/settings/translations");
   },
   async updateTranslations(
-    entries: Record<string, { en: string; om: string }>,
+    entries: Record<string, { en: string; sm: string }>,
   ): Promise<{ message: string }> {
     return apiCall("/settings/translations", {
       method: "PUT",

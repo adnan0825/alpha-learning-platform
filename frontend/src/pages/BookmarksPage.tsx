@@ -11,9 +11,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Bookmark, BookOpen, ArrowRight } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const BookmarksPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [bookmarks, setBookmarks] = useState<BookmarkType[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -37,7 +39,7 @@ const BookmarksPage: React.FC = () => {
     setDeleting(courseId);
     try {
       await bookmarksAPI.remove(courseId);
-      setBookmarks(prev => prev.filter(b => b.courseId !== courseId));
+      setBookmarks((prev) => prev.filter((b) => b.courseId !== courseId));
     } catch (err) {
       console.error("Failed to remove bookmark:", err);
     } finally {
@@ -66,38 +68,49 @@ const BookmarksPage: React.FC = () => {
   return (
     <>
       <div className="space-y-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <Bookmark size={24} className="text-accent" /> Saved Courses
+            <Bookmark size={24} className="text-accent" />{" "}
+            {t("bookmarks.title")}
           </h1>
-          <p className="text-muted-foreground text-sm">Courses you've bookmarked for later</p>
+          <p className="text-muted-foreground text-sm">
+            {t("bookmarks.subtitle")}
+          </p>
         </motion.div>
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map(i => <div key={i} className="h-72 rounded-2xl bg-muted animate-pulse" />)}
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-72 rounded-2xl bg-muted animate-pulse"
+              />
+            ))}
           </div>
         ) : bookmarks.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {bookmarks.map((bookmark, i) => (
-              <motion.div 
-                key={bookmark.id} 
-                initial={{ opacity: 0, y: 20 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                transition={{ delay: i * 0.1 }} 
+              <motion.div
+                key={bookmark.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
                 className="relative"
               >
-                <CourseCard 
-                  course={courseToCardData(bookmark)} 
-                  onClick={() => navigate(`/course/${bookmark.courseId}`)} 
-                  index={i} 
+                <CourseCard
+                  course={courseToCardData(bookmark)}
+                  onClick={() => navigate(`/course/${bookmark.courseId}`)}
+                  index={i}
                 />
                 <Button
                   variant="ghost"
                   size="icon"
                   className="absolute top-3 right-3 z-10 h-8 w-8 bg-card/80 backdrop-blur-sm text-accent hover:text-destructive"
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
+                  onClick={(e) => {
+                    e.stopPropagation();
                     handleRemoveBookmark(bookmark.courseId);
                   }}
                   disabled={deleting === bookmark.courseId}
@@ -117,10 +130,18 @@ const BookmarksPage: React.FC = () => {
               <div className="h-16 w-16 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mb-4">
                 <Bookmark size={28} />
               </div>
-              <h3 className="font-display text-lg font-semibold text-foreground mb-1">No saved courses</h3>
-              <p className="text-sm text-muted-foreground mb-6">Browse courses and save them for later</p>
-              <Button onClick={() => navigate("/browse")} className="gradient-accent text-accent-foreground hover:opacity-90">
-                Browse Courses <ArrowRight size={16} className="ml-2" />
+              <h3 className="font-display text-lg font-semibold text-foreground mb-1">
+                {t("bookmarks.emptyTitle")}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                {t("bookmarks.emptyDescription")}
+              </p>
+              <Button
+                onClick={() => navigate("/browse")}
+                className="gradient-accent text-accent-foreground hover:opacity-90"
+              >
+                {t("bookmarks.browse")}{" "}
+                <ArrowRight size={16} className="ml-2" />
               </Button>
             </CardContent>
           </Card>

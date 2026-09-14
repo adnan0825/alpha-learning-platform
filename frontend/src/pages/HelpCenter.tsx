@@ -18,6 +18,7 @@ import {
   Send,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const faqs = [
   {
@@ -51,6 +52,7 @@ const HelpCenter: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [message, setMessage] = useState("");
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const filteredFaqs = faqs.filter(
     (f) =>
@@ -61,8 +63,8 @@ const HelpCenter: React.FC = () => {
   const sendMessage = () => {
     if (!message.trim()) return;
     toast({
-      title: "Message sent!",
-      description: "We'll get back to you within 24 hours.",
+      title: t("help.sent"),
+      description: t("help.sentDescription"),
     });
     setMessage("");
   };
@@ -75,11 +77,9 @@ const HelpCenter: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
         >
           <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <HelpCircle size={24} className="text-accent" /> Help & Support
+            <HelpCircle size={24} className="text-accent" /> {t("help.title")}
           </h1>
-          <p className="text-muted-foreground text-sm">
-            Find answers or contact our support team
-          </p>
+          <p className="text-muted-foreground text-sm">{t("help.subtitle")}</p>
         </motion.div>
 
         {/* Search */}
@@ -94,7 +94,7 @@ const HelpCenter: React.FC = () => {
             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
           />
           <Input
-            placeholder="Search FAQ..."
+            placeholder={t("help.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-11 border-border/60 bg-card/90 pl-9 backdrop-blur-sm dark:border-border/45 dark:bg-card/70"
@@ -110,7 +110,7 @@ const HelpCenter: React.FC = () => {
           <Card className="surface-dashboard-card shadow-elevated">
             <CardContent className="p-6">
               <h3 className="font-display font-semibold text-foreground mb-4">
-                Frequently Asked Questions
+                {t("help.faqTitle")}
               </h3>
               <div className="space-y-2">
                 {filteredFaqs.map((faq, i) => (
@@ -160,14 +160,14 @@ const HelpCenter: React.FC = () => {
           <Card className="surface-dashboard-card shadow-elevated">
             <CardContent className="space-y-4 p-6">
               <h3 className="font-display font-semibold text-foreground flex items-center gap-2">
-                <MessageCircle size={18} className="text-accent" /> Contact
-                Support
+                <MessageCircle size={18} className="text-accent" />{" "}
+                {t("help.contactTitle")}
               </h3>
               <p className="text-sm text-muted-foreground">
-                Can't find what you're looking for? Send us a message.
+                {t("help.contactDescription")}
               </p>
               <Textarea
-                placeholder="Describe your issue..."
+                placeholder={t("help.issuePlaceholder")}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 className="min-h-[100px] border-border/60 bg-muted/35 dark:border-border/45 dark:bg-muted/25"
@@ -180,7 +180,7 @@ const HelpCenter: React.FC = () => {
                   onClick={sendMessage}
                   className="gradient-accent text-accent-foreground hover:opacity-90"
                 >
-                  <Send size={14} className="mr-1.5" /> Send Message
+                  <Send size={14} className="mr-1.5" /> {t("help.send")}
                 </Button>
               </div>
             </CardContent>

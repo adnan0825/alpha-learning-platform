@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const TELEGRAM = "@alpha_contact";
 const PHONE = "0938350004";
@@ -23,6 +24,7 @@ export default function FloatingContact() {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const handleSend = async () => {
     if (!message.trim()) return;
@@ -38,12 +40,12 @@ export default function FloatingContact() {
         setSubject("");
         setMessageOpen(false);
         setOpen(false);
-        alert("Message sent successfully!");
+        alert(t("contact.messageSent"));
       } else {
-        alert("Failed to send message");
+        alert(t("contact.messageFailed"));
       }
     } catch {
-      alert("Failed to send message");
+      alert(t("contact.messageFailed"));
     }
     setSending(false);
   };
@@ -61,7 +63,7 @@ export default function FloatingContact() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Contact Us</DialogTitle>
+            <DialogTitle>{t("contact.title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <a
@@ -72,7 +74,7 @@ export default function FloatingContact() {
             >
               <MessageCircle className="h-5 w-5 text-accent shrink-0" />
               <div>
-                <p className="font-medium">Telegram</p>
+                <p className="font-medium">{t("contact.telegram")}</p>
                 <p className="text-sm text-muted-foreground">{TELEGRAM}</p>
               </div>
             </a>
@@ -82,7 +84,7 @@ export default function FloatingContact() {
             >
               <Phone className="h-5 w-5 text-accent shrink-0" />
               <div>
-                <p className="font-medium">Phone</p>
+                <p className="font-medium">{t("contact.phone")}</p>
                 <p className="text-sm text-muted-foreground">{PHONE}</p>
               </div>
             </a>
@@ -95,9 +97,9 @@ export default function FloatingContact() {
             >
               <Mail className="h-5 w-5 text-accent shrink-0" />
               <div>
-                <p className="font-medium">Send a Message</p>
+                <p className="font-medium">{t("contact.sendMessage")}</p>
                 <p className="text-sm text-muted-foreground">
-                  Questions & feedback
+                  {t("contact.questionsFeedback")}
                 </p>
               </div>
             </button>
@@ -108,32 +110,32 @@ export default function FloatingContact() {
       <Dialog open={messageOpen} onOpenChange={setMessageOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Send a Message</DialogTitle>
+            <DialogTitle>{t("contact.sendMessage")}</DialogTitle>
             <DialogDescription>
               {user
-                ? "We'll reply in your notifications."
-                : "Sign in so we know who you are and can reply."}
+                ? t("contact.replyNotifications")
+                : t("contact.signInReply")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="space-y-1.5 text-left">
               <label className="text-sm font-medium text-foreground">
-                Subject
+                {t("contact.subject")}
               </label>
               <Input
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="e.g. Enrollment question"
+                placeholder={t("contact.subjectPlaceholder")}
               />
             </div>
             <div className="space-y-1.5 text-left">
               <label className="text-sm font-medium text-foreground">
-                Message
+                {t("contact.message")}
               </label>
               <Textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Your question or feedback..."
+                placeholder={t("contact.messagePlaceholder")}
                 rows={5}
                 className="resize-none"
               />
@@ -141,14 +143,14 @@ export default function FloatingContact() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setMessageOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               className="gradient-accent text-accent-foreground"
               disabled={sending || !message.trim()}
               onClick={handleSend}
             >
-              {sending ? "Sending..." : "Send"}
+              {sending ? t("common.sending") : t("common.send")}
             </Button>
           </DialogFooter>
         </DialogContent>

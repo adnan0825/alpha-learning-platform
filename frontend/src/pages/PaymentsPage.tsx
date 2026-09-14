@@ -22,9 +22,11 @@ import {
   Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const PaymentsPage: React.FC = () => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [payments, setPayments] = useState<any[]>([]);
   const [manualReceipts, setManualReceipts] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
@@ -65,14 +67,14 @@ const PaymentsPage: React.FC = () => {
     try {
       await paymentsAPI.approveManualReceipt(id);
       toast({
-        title: "Approved",
-        description: "Student enrolled in the course (if not already).",
+        title: t("payments.approved"),
+        description: t("payments.approvedDescription"),
       });
       await fetchData();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Could not approve";
+      const msg = e instanceof Error ? e.message : t("payments.approveFailed");
       toast({
-        title: "Approve failed",
+        title: t("payments.approveFailed"),
         description: msg,
         variant: "destructive",
       });
@@ -82,24 +84,19 @@ const PaymentsPage: React.FC = () => {
   };
 
   const deleteReceipt = async (id: number) => {
-    if (
-      !window.confirm(
-        "Remove this receipt record? This does not unenroll the student.",
-      )
-    )
-      return;
+    if (!window.confirm(t("payments.deleteConfirm"))) return;
     setReceiptActionId(id);
     try {
       await paymentsAPI.deleteManualReceipt(id);
       toast({
-        title: "Deleted",
-        description: "Manual receipt removed.",
+        title: t("payments.deleted"),
+        description: t("payments.receiptRemoved"),
       });
       setManualReceipts((prev) => prev.filter((r) => r.id !== id));
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Could not delete";
+      const msg = e instanceof Error ? e.message : t("payments.deleteFailed");
       toast({
-        title: "Delete failed",
+        title: t("payments.deleteFailed"),
         description: msg,
         variant: "destructive",
       });
@@ -140,13 +137,13 @@ const PaymentsPage: React.FC = () => {
           <div className="relative flex flex-col gap-4 p-6 hero-landing-surface sm:flex-row sm:items-center sm:justify-between lg:p-8">
             <div>
               <div className="mb-1 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent">
-                <CreditCard size={14} /> Finance
+                <CreditCard size={14} /> {t("payments.finance")}
               </div>
               <h1 className="font-display text-2xl font-bold hero-headline-gradient lg:text-3xl">
-                Payments & Billing
+                {t("payments.title")}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Track transactions and platform revenue
+                {t("payments.subtitle")}
               </p>
             </div>
             <Button
@@ -160,28 +157,28 @@ const PaymentsPage: React.FC = () => {
                 size={14}
                 className={`mr-1.5 ${refreshing ? "animate-spin" : ""}`}
               />
-              Refresh
+              {t("payments.refresh")}
             </Button>
           </div>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <StatCard
-            label="Total Revenue"
+            label={t("payments.totalRevenue")}
             value={`${Number(stats?.completed_amount ?? 0).toLocaleString()} ETB`}
             icon={<DollarSign size={18} />}
             gradient="accent"
             delay={0.1}
           />
           <StatCard
-            label="Completed Payments"
+            label={t("payments.completed")}
             value={Number(stats?.completed_count ?? 0)}
             icon={<TrendingUp size={18} />}
             gradient="success"
             delay={0.2}
           />
           <StatCard
-            label="Pending Payments"
+            label={t("payments.pending")}
             value={Number(stats?.pending_count ?? 0)}
             icon={<RefreshCcw size={18} />}
             gradient="info"
@@ -196,10 +193,14 @@ const PaymentsPage: React.FC = () => {
         >
           <Tabs value={tab} onValueChange={setTab}>
             <TabsList className="bg-muted/50">
-              <TabsTrigger value="all">All ({payments.length})</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
-              <TabsTrigger value="pending">Pending</TabsTrigger>
-              <TabsTrigger value="failed">Failed</TabsTrigger>
+              <TabsTrigger value="all">
+                {t("payments.all")} ({payments.length})
+              </TabsTrigger>
+              <TabsTrigger value="completed">
+                {t("payments.completed")}
+              </TabsTrigger>
+              <TabsTrigger value="pending">{t("payments.pending")}</TabsTrigger>
+              <TabsTrigger value="failed">{t("payments.failed")}</TabsTrigger>
             </TabsList>
             <TabsContent value={tab} className="mt-4">
               <Card className="surface-dashboard-card overflow-hidden shadow-elevated">
@@ -208,22 +209,22 @@ const PaymentsPage: React.FC = () => {
                     <thead>
                       <tr className="border-b bg-muted/30">
                         <th className="px-5 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                          Transaction ID
+                          {t("payments.transaction")}
                         </th>
                         <th className="px-5 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                          Student
+                          {t("payments.student")}
                         </th>
                         <th className="px-5 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                          Course
+                          {t("payments.course")}
                         </th>
                         <th className="px-5 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                          Amount
+                          {t("payments.amount")}
                         </th>
                         <th className="px-5 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                          Date
+                          {t("payments.date")}
                         </th>
                         <th className="px-5 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                          Status
+                          {t("payments.status")}
                         </th>
                       </tr>
                     </thead>
@@ -234,7 +235,7 @@ const PaymentsPage: React.FC = () => {
                             colSpan={6}
                             className="px-5 py-12 text-center text-muted-foreground"
                           >
-                            No transactions found
+                            {t("payments.empty")}
                           </td>
                         </tr>
                       ) : (

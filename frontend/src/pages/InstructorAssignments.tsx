@@ -37,10 +37,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const InstructorAssignments: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>("");
@@ -112,11 +114,11 @@ const InstructorAssignments: React.FC = () => {
         ),
       );
 
-      toast({ title: "Grade submitted successfully" });
+      toast({ title: t("instructor.assignments.gradeSubmitted") });
       setGradingSubmission(null);
     } catch (err: any) {
       toast({
-        title: "Error submitting grade",
+        title: t("instructor.assignments.submitError"),
         description: err.message,
         variant: "destructive",
       });
@@ -132,10 +134,11 @@ const InstructorAssignments: React.FC = () => {
       >
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <FileText size={24} className="text-accent" /> Assignment Grading
+            <FileText size={24} className="text-accent" />{" "}
+            {t("instructor.assignments.title")}
           </h1>
           <p className="text-muted-foreground text-sm">
-            Review and grade student submissions
+            {t("instructor.assignments.subtitle")}
           </p>
         </div>
       </motion.div>
@@ -143,7 +146,9 @@ const InstructorAssignments: React.FC = () => {
       <div className="flex flex-col sm:flex-row gap-4">
         <Select value={selectedCourse} onValueChange={handleCourseChange}>
           <SelectTrigger className="w-full sm:w-64">
-            <SelectValue placeholder="Select Course" />
+            <SelectValue
+              placeholder={t("instructor.assignments.selectCourse")}
+            />
           </SelectTrigger>
           <SelectContent>
             {courses.map((c) => (
@@ -159,7 +164,10 @@ const InstructorAssignments: React.FC = () => {
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
           />
-          <Input placeholder="Search student name..." className="pl-9" />
+          <Input
+            placeholder={t("instructor.assignments.searchStudent")}
+            className="pl-9"
+          />
         </div>
       </div>
 
@@ -171,7 +179,7 @@ const InstructorAssignments: React.FC = () => {
         <div className="grid gap-4">
           {submissions.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              No submissions found for this course.
+              {t("instructor.assignments.empty")}
             </div>
           ) : (
             submissions.map((sub, i) => (
@@ -218,7 +226,8 @@ const InstructorAssignments: React.FC = () => {
                           variant="outline"
                           className="text-warning border-warning/30 bg-warning/5"
                         >
-                          <Clock size={12} className="mr-1" /> Pending
+                          <Clock size={12} className="mr-1" />{" "}
+                          {t("instructor.assignments.pending")}
                         </Badge>
                       )}
 
@@ -227,7 +236,9 @@ const InstructorAssignments: React.FC = () => {
                         variant="outline"
                         onClick={() => openGrading(sub)}
                       >
-                        {sub.status === "graded" ? "Edit Grade" : "Grade"}
+                        {sub.status === "graded"
+                          ? t("instructor.assignments.editGrade")
+                          : t("instructor.assignments.grade")}
                       </Button>
                     </div>
                   </CardContent>
@@ -245,13 +256,13 @@ const InstructorAssignments: React.FC = () => {
       >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Grade Submission</DialogTitle>
+            <DialogTitle>{t("instructor.assignments.dialogTitle")}</DialogTitle>
           </DialogHeader>
           {gradingSubmission && (
             <div className="space-y-4 py-2">
               <div className="bg-muted p-3 rounded-md text-sm">
                 <p className="font-semibold mb-1 text-foreground">
-                  Student Submission:
+                  {t("instructor.assignments.studentSubmission")}:
                 </p>
                 <p className="text-muted-foreground whitespace-pre-wrap">
                   {gradingSubmission.content}

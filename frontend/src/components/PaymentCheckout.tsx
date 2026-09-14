@@ -124,7 +124,7 @@ function ChapaOnlineCheckoutBlock({
       <div className="space-y-2">
         <Separator />
         <p className="text-center text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Or pay online with Chapa
+          {t("payment.checkout.onlineIntro")}
         </p>
       </div>
 
@@ -158,7 +158,7 @@ function ChapaOnlineCheckoutBlock({
       ) : null}
 
       <div className="space-y-2">
-        <Label htmlFor="amount">Payment Amount (ETB)</Label>
+        <Label htmlFor="amount">{t("payment.checkout.amountLabel")}</Label>
         <div className="relative">
           <Input
             id="amount"
@@ -178,14 +178,11 @@ function ChapaOnlineCheckoutBlock({
 
       <div className="flex items-start gap-2 rounded-lg bg-blue-50 p-3 text-sm text-muted-foreground dark:bg-blue-950/20">
         <Lock size={16} className="mt-0.5 flex-shrink-0" />
-        <p>
-          Your payment is secured with 256-bit SSL encryption. You&apos;ll be
-          redirected to Chapa&apos;s secure payment gateway.
-        </p>
+        <p>{t("payment.checkout.secureNotice")}</p>
       </div>
 
       <div className="space-y-2">
-        <Label>Accepted Payment Methods</Label>
+        <Label>{t("payment.checkout.acceptedMethods")}</Label>
         <div className="flex flex-wrap gap-2">
           <div className="rounded bg-muted px-3 py-1.5 text-xs">Telebirr</div>
           <div className="rounded bg-muted px-3 py-1.5 text-xs">CBE Birr</div>
@@ -198,10 +195,7 @@ function ChapaOnlineCheckoutBlock({
 
       <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-600 dark:bg-amber-950/20">
         <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
-        <p>
-          Make sure to complete the payment on Chapa&apos;s website. You&apos;ll
-          be redirected back after successful payment.
-        </p>
+        <p>{t("payment.checkout.completeGuide")}</p>
       </div>
 
       <Button
@@ -212,10 +206,10 @@ function ChapaOnlineCheckoutBlock({
         {processing ? (
           <>
             <Loader2 className="mr-2 animate-spin" size={20} />
-            Processing...
+            {t("payment.checkout.processing")}
           </>
         ) : (
-          `Pay ${amount} ETB`
+          `${t("payment.checkout.payNow")} ${amount} ETB`
         )}
       </Button>
 

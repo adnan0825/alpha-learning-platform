@@ -26,28 +26,27 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const reports = [
   {
     id: "overview",
-    title: "Platform Overview Report",
-    description: "Summary of users, courses, revenue, and activity growth",
+    titleKey: "reports.overview",
+    descriptionKey: "reports.overviewDescription",
     icon: <TrendingUp size={18} />,
     category: "finance",
   },
   {
     id: "users",
-    title: "User Activity Report",
-    description:
-      "All registered users with enrollment and course creation stats",
+    titleKey: "reports.userActivity",
+    descriptionKey: "reports.userActivityDescription",
     icon: <Users size={18} />,
     category: "users",
   },
   {
     id: "courses",
-    title: "Course Performance Report",
-    description:
-      "Detailed metrics for all courses including ratings and enrollments",
+    titleKey: "reports.coursePerformance",
+    descriptionKey: "reports.coursePerformanceDescription",
     icon: <BookOpen size={18} />,
     category: "courses",
   },
@@ -57,6 +56,7 @@ const ReportsPage: React.FC = () => {
   const [filter, setFilter] = useState("all");
   const [exporting, setExporting] = useState<string | null>(null);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const filtered =
     filter === "all" ? reports : reports.filter((r) => r.category === filter);
@@ -94,12 +94,12 @@ const ReportsPage: React.FC = () => {
 
       downloadData(data, title.toLowerCase().replace(/\s+/g, "_"));
       toast({
-        title: "Report exported!",
-        description: `${title} has been downloaded as JSON.`,
+        title: t("reports.exported"),
+        description: `${title} ${t("reports.downloadedJson")}`,
       });
     } catch (err: any) {
       toast({
-        title: "Export failed",
+        title: t("reports.exportFailed"),
         description: err.message,
         variant: "destructive",
       });
@@ -116,10 +116,10 @@ const ReportsPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
         >
           <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <FileText size={24} className="text-accent" /> Reports & Export
+            <FileText size={24} className="text-accent" /> {t("reports.title")}
           </h1>
           <p className="text-muted-foreground text-sm">
-            Generate and download platform reports from live data
+            {t("reports.subtitle")}
           </p>
         </motion.div>
 
@@ -129,10 +129,10 @@ const ReportsPage: React.FC = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Reports</SelectItem>
-              <SelectItem value="users">Users</SelectItem>
-              <SelectItem value="courses">Courses</SelectItem>
-              <SelectItem value="finance">Finance</SelectItem>
+              <SelectItem value="all">{t("reports.all")}</SelectItem>
+              <SelectItem value="users">{t("reports.users")}</SelectItem>
+              <SelectItem value="courses">{t("reports.courses")}</SelectItem>
+              <SelectItem value="finance">{t("reports.finance")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -153,10 +153,10 @@ const ReportsPage: React.FC = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-display font-semibold text-foreground text-sm">
-                        {report.title}
+                        {t(report.titleKey as any)}
                       </h4>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {report.description}
+                        {t(report.descriptionKey as any)}
                       </p>
 
                       <div className="flex flex-wrap gap-2 mt-4">
@@ -175,13 +175,17 @@ const ReportsPage: React.FC = () => {
                           ) : (
                             <Download size={13} className="mr-1.5" />
                           )}
-                          Download JSON
+                          {t("reports.downloadJson")}
                         </Button>
                         <Badge
                           variant="outline"
                           className="text-[9px] uppercase tracking-wider self-center ml-auto"
                         >
-                          {report.category}
+                          {report.category === "users"
+                            ? t("reports.users")
+                            : report.category === "courses"
+                              ? t("reports.courses")
+                              : t("reports.finance")}
                         </Badge>
                       </div>
                     </div>

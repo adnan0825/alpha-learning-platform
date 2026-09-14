@@ -15,9 +15,11 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import StatCard from "@/components/StatCard";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const InstructorWithdrawals: React.FC = () => {
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   // Mock data
   const balance = 15450;
@@ -47,8 +49,8 @@ const InstructorWithdrawals: React.FC = () => {
 
   const handleRequest = () => {
     toast({
-      title: "Withdrawal Requested",
-      description: "Your request has been sent to admin for approval.",
+      title: t("withdrawals.requested"),
+      description: t("withdrawals.requestDescription"),
     });
   };
 
@@ -59,28 +61,29 @@ const InstructorWithdrawals: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
       >
         <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-          <DollarSign size={24} className="text-accent" /> Withdrawals
+          <DollarSign size={24} className="text-accent" />{" "}
+          {t("withdrawals.title")}
         </h1>
         <p className="text-muted-foreground text-sm">
-          Manage your earnings and payouts
+          {t("withdrawals.subtitle")}
         </p>
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
-          label="Available Balance"
+          label={t("withdrawals.balance")}
           value={`${balance.toLocaleString()} ETB`}
           icon={<DollarSign />}
           gradient="success"
         />
         <StatCard
-          label="Total Withdrawn"
+          label={t("withdrawals.total")}
           value="7,500 ETB"
           icon={<ArrowUpRight />}
           gradient="accent"
         />
         <StatCard
-          label="Pending Request"
+          label={t("withdrawals.pending")}
           value="8,000 ETB"
           icon={<Clock />}
           gradient="warning"
@@ -92,7 +95,7 @@ const InstructorWithdrawals: React.FC = () => {
           <Card className="shadow-card">
             <CardContent className="p-6">
               <h3 className="font-semibold text-foreground mb-4">
-                Withdrawal History
+                {t("withdrawals.history")}
               </h3>
               <div className="space-y-3">
                 {history.map((item, i) => (
@@ -139,10 +142,12 @@ const InstructorWithdrawals: React.FC = () => {
         <div>
           <Card className="shadow-card h-full">
             <CardContent className="p-6 space-y-6">
-              <h3 className="font-semibold text-foreground">Request Payout</h3>
+              <h3 className="font-semibold text-foreground">
+                {t("withdrawals.request")}
+              </h3>
               <div className="p-4 bg-muted/30 rounded-lg border border-border/50 text-center">
                 <p className="text-sm text-muted-foreground mb-1">
-                  Available for withdrawal
+                  {t("withdrawals.available")}
                 </p>
                 <p className="text-2xl font-bold text-foreground">
                   {balance.toLocaleString()} ETB
@@ -175,7 +180,7 @@ const InstructorWithdrawals: React.FC = () => {
                 onClick={handleRequest}
                 className="w-full gradient-accent text-accent-foreground py-6 text-lg font-semibold shadow-glow-accent"
               >
-                Withdraw Now
+                {t("withdrawals.now")}
               </Button>
               <p className="text-xs text-center text-muted-foreground">
                 Minimum withdrawal: 500 ETB

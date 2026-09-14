@@ -28,9 +28,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const AdminCoupons: React.FC = () => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -66,13 +68,13 @@ const AdminCoupons: React.FC = () => {
         parseInt(usageLimit),
       );
       setCoupons([...coupons, newCoupon]);
-      toast({ title: "Coupon created successfully" });
+      toast({ title: t("admin.coupons.created") });
       setShowCreate(false);
       setCode("");
       setDiscount("10");
     } catch (err: any) {
       toast({
-        title: "Error creating coupon",
+        title: t("admin.coupons.createError"),
         description: err.message,
         variant: "destructive",
       });
@@ -83,7 +85,7 @@ const AdminCoupons: React.FC = () => {
     try {
       await couponsAPI.delete(id);
       setCoupons(coupons.filter((c) => c.id !== id));
-      toast({ title: "Coupon deleted" });
+      toast({ title: t("admin.coupons.deleted") });
     } catch (err) {
       console.error(err);
     }
@@ -98,17 +100,18 @@ const AdminCoupons: React.FC = () => {
       >
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <Ticket size={24} className="text-accent" /> Coupons
+            <Ticket size={24} className="text-accent" />{" "}
+            {t("admin.coupons.title")}
           </h1>
           <p className="text-muted-foreground text-sm">
-            Manage discount codes and promotions
+            {t("admin.coupons.subtitle")}
           </p>
         </div>
         <Button
           onClick={() => setShowCreate(true)}
           className="gradient-accent text-accent-foreground"
         >
-          <Plus size={16} className="mr-2" /> Create Coupon
+          <Plus size={16} className="mr-2" /> {t("admin.coupons.create")}
         </Button>
       </motion.div>
 
@@ -134,17 +137,17 @@ const AdminCoupons: React.FC = () => {
                     variant="outline"
                     className="bg-background text-foreground border-border"
                   >
-                    {coupon.discount}% OFF
+                    {coupon.discount}% {t("admin.coupons.discount")}
                   </Badge>
                 </div>
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar size={14} /> Expires:{" "}
+                    <Calendar size={14} /> {t("admin.coupons.expires")}:{" "}
                     {new Date(coupon.expiryDate).toLocaleDateString()}
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users size={14} /> Usage: {coupon.usedCount} /{" "}
-                    {coupon.usageLimit}
+                    <Users size={14} /> {t("admin.coupons.usage")}:{" "}
+                    {coupon.usedCount} / {coupon.usageLimit}
                   </div>
 
                   <div className="w-full bg-muted/50 rounded-full h-1.5 mt-2 overflow-hidden">
@@ -163,7 +166,8 @@ const AdminCoupons: React.FC = () => {
                       onClick={() => handleDelete(coupon.id)}
                       className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8"
                     >
-                      <Trash2 size={14} className="mr-1" /> Delete
+                      <Trash2 size={14} className="mr-1" />{" "}
+                      {t("admin.coupons.delete")}
                     </Button>
                   </div>
                 </CardContent>
@@ -172,7 +176,7 @@ const AdminCoupons: React.FC = () => {
           ))}
           {coupons.length === 0 && (
             <div className="col-span-full text-center py-12 text-muted-foreground">
-              No active coupons found.
+              {t("admin.coupons.empty")}
             </div>
           )}
         </div>
@@ -182,11 +186,11 @@ const AdminCoupons: React.FC = () => {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Coupon</DialogTitle>
+            <DialogTitle>{t("admin.coupons.new")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Coupon Code</Label>
+              <Label>{t("admin.coupons.code")}</Label>
               <Input
                 placeholder="e.g. SUMMER2025"
                 value={code}
@@ -195,7 +199,7 @@ const AdminCoupons: React.FC = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Discount (%)</Label>
+                <Label>{t("admin.coupons.discountPercent")}</Label>
                 <Input
                   type="number"
                   min="1"
@@ -205,7 +209,7 @@ const AdminCoupons: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Usage Limit</Label>
+                <Label>{t("admin.coupons.usageLimit")}</Label>
                 <Input
                   type="number"
                   min="1"
@@ -215,7 +219,7 @@ const AdminCoupons: React.FC = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Expiry Date</Label>
+              <Label>{t("admin.coupons.expiryDate")}</Label>
               <Input
                 type="date"
                 value={expiry}

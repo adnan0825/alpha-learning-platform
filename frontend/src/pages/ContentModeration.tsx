@@ -20,13 +20,32 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
+
+interface DiscussionItem {
+  id: string;
+  user_name: string;
+  created_at: string;
+  course_title: string;
+  content: string;
+}
+
+interface ReviewItem {
+  id: string;
+  user_name: string;
+  created_at: string;
+  course_title: string;
+  rating: number;
+  comment: string;
+}
 
 const ContentModeration: React.FC = () => {
-  const [discussions, setDiscussions] = useState<any[]>([]);
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [discussions, setDiscussions] = useState<DiscussionItem[]>([]);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   useEffect(() => {
     fetchData();
@@ -57,11 +76,11 @@ const ContentModeration: React.FC = () => {
     try {
       await adminAPI.deleteDiscussion(id);
       setDiscussions((prev) => prev.filter((d) => d.id !== id));
-      toast({ title: "Discussion deleted" });
-    } catch (err: any) {
+      toast({ title: t("moderation.discussionDeleted") });
+    } catch (err: unknown) {
       toast({
-        title: "Error deleting discussion",
-        description: err.message,
+        title: t("moderation.deleteDiscussionError"),
+        description: err instanceof Error ? err.message : "",
         variant: "destructive",
       });
     }
@@ -71,11 +90,11 @@ const ContentModeration: React.FC = () => {
     try {
       await adminAPI.deleteReview(id);
       setReviews((prev) => prev.filter((r) => r.id !== id));
-      toast({ title: "Review deleted" });
-    } catch (err: any) {
+      toast({ title: t("moderation.reviewDeleted") });
+    } catch (err: unknown) {
       toast({
-        title: "Error deleting review",
-        description: err.message,
+        title: t("moderation.deleteReviewError"),
+        description: err instanceof Error ? err.message : "",
         variant: "destructive",
       });
     }
@@ -99,11 +118,11 @@ const ContentModeration: React.FC = () => {
         >
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-              <ShieldCheck size={24} className="text-accent" /> Content
-              Moderation
+              <ShieldCheck size={24} className="text-accent" />{" "}
+              {t("moderation.title")}
             </h1>
             <p className="text-muted-foreground text-sm">
-              Review and moderate platform content
+              {t("moderation.subtitle")}
             </p>
           </div>
           <Button
@@ -116,17 +135,17 @@ const ContentModeration: React.FC = () => {
               size={14}
               className={`mr-1.5 ${refreshing ? "animate-spin" : ""}`}
             />
-            Refresh
+            {t("moderation.refresh")}
           </Button>
         </motion.div>
 
         <Tabs defaultValue="discussions">
           <TabsList className="bg-muted/50">
             <TabsTrigger value="discussions">
-              Discussions ({discussions.length})
+              {t("moderation.discussions")} ({discussions.length})
             </TabsTrigger>
             <TabsTrigger value="reviews">
-              Reviews ({reviews.length})
+              {t("moderation.reviews")} ({reviews.length})
             </TabsTrigger>
           </TabsList>
 
@@ -139,7 +158,7 @@ const ContentModeration: React.FC = () => {
                     className="text-muted-foreground/30 mb-3"
                   />
                   <p className="text-sm text-muted-foreground">
-                    No discussions to moderate
+                    {t("moderation.emptyDiscussions")}
                   </p>
                 </CardContent>
               </Card>
@@ -168,7 +187,7 @@ const ContentModeration: React.FC = () => {
                               </span>
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              in {d.course_title}
+                              {t("moderation.in")} {d.course_title}
                             </p>
                             <p className="text-sm text-foreground mt-2 bg-muted/30 p-3 rounded-lg border border-border/50">
                               {d.content}
@@ -197,7 +216,7 @@ const ContentModeration: React.FC = () => {
                 <CardContent className="py-16 flex flex-col items-center justify-center text-center">
                   <Star size={40} className="text-muted-foreground/30 mb-3" />
                   <p className="text-sm text-muted-foreground">
-                    No reviews to moderate
+                    {t("moderation.emptyReviews")}
                   </p>
                 </CardContent>
               </Card>
@@ -236,7 +255,7 @@ const ContentModeration: React.FC = () => {
                               </div>
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              in {r.course_title} •{" "}
+                              {t("moderation.in")} {r.course_title} •{" "}
                               {new Date(r.created_at).toLocaleDateString()}
                             </p>
                             <p className="text-sm text-foreground mt-2 italic">

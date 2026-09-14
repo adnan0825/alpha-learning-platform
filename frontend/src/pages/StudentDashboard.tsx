@@ -102,15 +102,15 @@ const StudentDashboard: React.FC = () => {
             </div>
             <h1 className="font-display mt-4 text-2xl font-bold leading-tight tracking-tight lg:text-3xl">
               <span className="hero-headline-gradient">
-                Welcome back, {firstName}
+                {t("dashboard.welcomeBack")}, {firstName}
               </span>
             </h1>
             <p className="mt-2 max-w-lg text-sm text-muted-foreground">
-              Continue your learning journey. You&apos;ve completed{" "}
+              {t("dashboard.continueJourney")}{" "}
               <span className="font-medium text-foreground">
                 {completedCourses}
               </span>{" "}
-              course{completedCourses !== 1 ? "s" : ""} so far.
+              {t("dashboard.courseSoFar")}
             </p>
           </div>
         </motion.div>
@@ -118,14 +118,14 @@ const StudentDashboard: React.FC = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <StatCard
-            label="Enrolled"
+            label={t("dashboard.enrolled")}
             value={enrolledCourses.length}
             icon={<BookOpen size={18} />}
             gradient="info"
             delay={0.1}
           />
           <StatCard
-            label="Completed"
+            label={t("dashboard.completed")}
             value={completedCourses}
             icon={<Trophy size={18} />}
             gradient="success"
@@ -133,14 +133,14 @@ const StudentDashboard: React.FC = () => {
             trend={{ value: `${completedCourses}`, positive: true }}
           />
           <StatCard
-            label="Certificates"
+            label={t("dashboard.certificates")}
             value={certificates.length}
             icon={<Award size={18} />}
             gradient="accent"
             delay={0.3}
           />
           <StatCard
-            label="Avg Progress"
+            label={t("dashboard.avgProgress")}
             value={`${totalProgress}%`}
             icon={<TrendingUp size={18} />}
             gradient="primary"
@@ -152,7 +152,7 @@ const StudentDashboard: React.FC = () => {
         <div>
           <div className="flex items-center justify-between mb-5">
             <h2 className="font-display text-lg font-semibold text-foreground">
-              Continue Learning
+              {t("dashboard.continueLearning")}
             </h2>
             <Button
               variant="ghost"
@@ -160,7 +160,8 @@ const StudentDashboard: React.FC = () => {
               onClick={() => navigate("/browse")}
               className="text-accent hover:text-accent/80"
             >
-              Browse All <ArrowRight size={14} className="ml-1" />
+              {t("dashboard.browseAll")}{" "}
+              <ArrowRight size={14} className="ml-1" />
             </Button>
           </div>
           {loading ? (
@@ -187,8 +188,7 @@ const StudentDashboard: React.FC = () => {
           ) : availableCourses.length > 0 ? (
             <div>
               <p className="text-sm text-muted-foreground mb-4">
-                You haven't enrolled in any courses yet. Check out these popular
-                courses:
+                {t("dashboard.notEnrolled")}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {availableCourses.slice(0, 6).map((course, i) => (
@@ -202,7 +202,8 @@ const StudentDashboard: React.FC = () => {
               </div>
               <div className="mt-6 text-center">
                 <Button onClick={() => navigate("/browse")} variant="outline">
-                  View All Courses <ArrowRight size={16} className="ml-2" />
+                  {t("dashboard.viewAllCourses")}{" "}
+                  <ArrowRight size={16} className="ml-2" />
                 </Button>
               </div>
             </div>
@@ -217,16 +218,17 @@ const StudentDashboard: React.FC = () => {
                     <BookOpen size={28} className="text-accent-foreground" />
                   </div>
                   <h3 className="font-display text-lg font-semibold text-foreground mb-1">
-                    No courses yet
+                    {t("dashboard.noCourses")}
                   </h3>
                   <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
-                    Browse and enroll in courses to start your learning journey
+                    {t("dashboard.browseEnroll")}
                   </p>
                   <Button
                     onClick={() => navigate("/browse")}
                     className="gradient-accent text-accent-foreground hover:opacity-90 shadow-glow-accent"
                   >
-                    Browse Courses <ArrowRight size={16} className="ml-2" />
+                    {t("courses.browse")}{" "}
+                    <ArrowRight size={16} className="ml-2" />
                   </Button>
                 </CardContent>
               </Card>
@@ -239,7 +241,7 @@ const StudentDashboard: React.FC = () => {
           <div>
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-display text-lg font-semibold text-foreground">
-                Your Certificates
+                {t("dashboard.yourCertificates")}
               </h2>
               <Button
                 variant="ghost"
@@ -247,7 +249,8 @@ const StudentDashboard: React.FC = () => {
                 onClick={() => navigate("/certificates")}
                 className="text-accent hover:text-accent/80"
               >
-                View All <ArrowRight size={14} className="ml-1" />
+                {t("dashboard.viewAll")}{" "}
+                <ArrowRight size={14} className="ml-1" />
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
