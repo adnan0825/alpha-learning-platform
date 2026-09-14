@@ -13,8 +13,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const StudentCalendar: React.FC = () => {
+  const { t } = useLanguage();
   // Mock calendar data
   const currentMonth = "April 2025";
   const days = Array.from({ length: 30 }, (_, i) => i + 1);
@@ -52,10 +54,11 @@ const StudentCalendar: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
       >
         <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-          <CalendarIcon size={24} className="text-accent" /> Learning Schedule
+          <CalendarIcon size={24} className="text-accent" />{" "}
+          {t("calendar.title")}
         </h1>
         <p className="text-muted-foreground text-sm">
-          Keep track of your deadlines and events
+          {t("calendar.subtitle")}
         </p>
       </motion.div>
 
@@ -125,7 +128,7 @@ const StudentCalendar: React.FC = () => {
         <Card className="shadow-card md:col-span-2">
           <CardContent className="p-6">
             <h3 className="font-semibold text-foreground mb-4">
-              Upcoming Deadlines
+              {t("calendar.upcoming")}
             </h3>
             <div className="space-y-3">
               {events
@@ -160,29 +163,32 @@ const StudentCalendar: React.FC = () => {
 
         <Card className="shadow-card">
           <CardContent className="p-6">
-            <h3 className="font-semibold text-foreground mb-4">Study Stats</h3>
+            <h3 className="font-semibold text-foreground mb-4">
+              {t("calendar.studyStats")}
+            </h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  Study Streak
+                  {t("calendar.studyStreak")}
                 </span>
                 <span className="font-bold text-accent">5 Days 🔥</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  Time Spent
+                  {t("calendar.timeSpent")}
                 </span>
                 <span className="font-bold text-foreground">12h 30m</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  Lessons Completed
+                  {t("calendar.lessonsCompleted")}
                 </span>
                 <span className="font-bold text-foreground">8</span>
               </div>
               <div className="pt-4 mt-2 border-t border-border/50">
                 <Button className="w-full gradient-accent text-accent-foreground">
-                  <BookOpen size={16} className="mr-2" /> Continue Learning
+                  <BookOpen size={16} className="mr-2" />{" "}
+                  {t("calendar.continue")}
                 </Button>
               </div>
             </div>

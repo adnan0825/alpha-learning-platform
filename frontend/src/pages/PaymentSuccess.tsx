@@ -9,10 +9,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowLeft, Loader2, Play } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const PaymentSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [verifying, setVerifying] = useState(true);
   const [paymentData, setPaymentData] = useState<any>(null);
 
@@ -56,9 +58,11 @@ const PaymentSuccess: React.FC = () => {
             {verifying ? (
               <>
                 <Loader2 className="w-16 h-16 text-accent animate-spin mx-auto" />
-                <h1 className="text-2xl font-semibold">Verifying Payment...</h1>
+                <h1 className="text-2xl font-semibold">
+                  {t("payment.verifying")}
+                </h1>
                 <p className="text-muted-foreground">
-                  Please wait while we confirm your payment
+                  {t("payment.waitConfirm")}
                 </p>
               </>
             ) : paymentData || status === "success" ? (
@@ -68,10 +72,10 @@ const PaymentSuccess: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                   <h1 className="text-2xl font-semibold text-green-600">
-                    Payment Successful!
+                    {t("payment.success")}
                   </h1>
                   <p className="text-muted-foreground">
-                    You've successfully enrolled in the course
+                    {t("payment.enrolledSuccess")}
                   </p>
                 </div>
 
@@ -79,7 +83,7 @@ const PaymentSuccess: React.FC = () => {
                   <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
-                        Amount Paid:
+                        {t("payment.amountPaid")}:
                       </span>
                       <span className="font-medium">
                         {paymentData.amount} {paymentData.currency}
@@ -87,14 +91,16 @@ const PaymentSuccess: React.FC = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
-                        Transaction ID:
+                        {t("payment.transactionId")}:
                       </span>
                       <span className="font-mono text-xs">
                         {paymentData.tx_ref}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Date:</span>
+                      <span className="text-muted-foreground">
+                        {t("payment.date")}:
+                      </span>
                       <span className="font-medium">
                         {new Date(
                           paymentData.completed_at || paymentData.created_at,
@@ -109,7 +115,7 @@ const PaymentSuccess: React.FC = () => {
                     onClick={() => navigate("/student/dashboard")}
                     className="flex-1 gradient-accent text-accent-foreground"
                   >
-                    Go to My Courses
+                    {t("payment.myCourses")}
                   </Button>
                   <Button
                     variant="outline"
@@ -117,7 +123,7 @@ const PaymentSuccess: React.FC = () => {
                     className="flex-1"
                   >
                     <ArrowLeft size={16} className="mr-2" />
-                    Back to Home
+                    {t("payment.backHome")}
                   </Button>
                 </div>
 
@@ -131,7 +137,7 @@ const PaymentSuccess: React.FC = () => {
                       className="w-full"
                     >
                       <Play size={16} className="mr-2" />
-                      Start Learning: {paymentData.course_title}
+                      {t("payment.startLearning")}: {paymentData.course_title}
                     </Button>
                   </div>
                 )}
@@ -142,17 +148,16 @@ const PaymentSuccess: React.FC = () => {
                   <CheckCircle className="w-12 h-12 text-amber-600" />
                 </div>
                 <h1 className="text-2xl font-semibold">
-                  Payment Status Unknown
+                  {t("payment.unknown")}
                 </h1>
                 <p className="text-muted-foreground">
-                  We couldn't verify your payment status. Please check your
-                  email for confirmation.
+                  {t("payment.unknownDescription")}
                 </p>
                 <Button
                   onClick={() => navigate("/courses")}
                   className="gradient-accent text-accent-foreground"
                 >
-                  Go to My Courses
+                  {t("payment.goMyCourses")}
                 </Button>
               </>
             )}

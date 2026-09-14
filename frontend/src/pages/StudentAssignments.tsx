@@ -41,10 +41,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const StudentAssignments: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -91,13 +93,13 @@ const StudentAssignments: React.FC = () => {
         submissionContent + "\n" + submissionLink,
       );
       setSubmissions([...submissions, sub]);
-      toast({ title: "Assignment submitted successfully!" });
+      toast({ title: t("assignments.submittedSuccess") });
       setShowSubmit(null);
       setSubmissionContent("");
       setSubmissionLink("");
     } catch (err: any) {
       toast({
-        title: "Submission failed",
+        title: t("assignments.submissionFailed"),
         description: err.message,
         variant: "destructive",
       });
@@ -108,18 +110,18 @@ const StudentAssignments: React.FC = () => {
     const sub = submissions.find((s) => s.assignmentId === assignmentId);
     if (!sub)
       return {
-        label: "Pending",
+        label: t("assignments.pending"),
         color: "text-muted-foreground bg-muted",
         icon: <Clock size={14} />,
       };
     if (sub.status === "graded")
       return {
-        label: `Graded: ${sub.grade}/100`,
+        label: `${t("assignments.graded")}: ${sub.grade}/100`,
         color: "text-success bg-success/10",
         icon: <CheckCircle size={14} />,
       };
     return {
-      label: "Submitted",
+      label: t("assignments.submitted"),
       color: "text-info bg-info/10",
       icon: <CheckCircle size={14} />,
     };
@@ -139,10 +141,11 @@ const StudentAssignments: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
       >
         <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-          <FileText size={24} className="text-accent" /> My Assignments
+          <FileText size={24} className="text-accent" />{" "}
+          {t("assignments.title")}
         </h1>
         <p className="text-muted-foreground text-sm">
-          Track and submit your course assignments
+          {t("assignments.subtitle")}
         </p>
       </motion.div>
 
@@ -150,10 +153,10 @@ const StudentAssignments: React.FC = () => {
       <div className="flex gap-4">
         <Select value={selectedCourse} onValueChange={setSelectedCourse}>
           <SelectTrigger className="w-64">
-            <SelectValue placeholder="Filter by Course" />
+            <SelectValue placeholder={t("assignments.filterCourse")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Courses</SelectItem>
+            <SelectItem value="all">{t("assignments.allCourses")}</SelectItem>
             {enrollments.map((e) => (
               <SelectItem key={e.courseId} value={e.courseId}>
                 {e.courseTitle}

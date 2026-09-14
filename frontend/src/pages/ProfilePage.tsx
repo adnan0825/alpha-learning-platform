@@ -22,10 +22,12 @@ import {
   Save,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const ProfilePage: React.FC = () => {
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [displayName, setDisplayName] = useState(profile?.displayName || "");
   const [bio, setBio] = useState(profile?.bio || "");
   const [photoURL, setPhotoURL] = useState(profile?.photoURL || "");
@@ -43,10 +45,10 @@ const ProfilePage: React.FC = () => {
     try {
       await usersAPI.update(user.id, { displayName, bio, photoURL });
       await refreshProfile();
-      toast({ title: "Profile updated successfully!" });
+      toast({ title: t("profile.updated") });
     } catch (err: any) {
       toast({
-        title: "Error updating profile",
+        title: t("profile.updateError"),
         description: err.message,
         variant: "destructive",
       });
@@ -60,9 +62,9 @@ const ProfilePage: React.FC = () => {
       <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">
-            My Profile
+            {t("profile.title")}
           </h1>
-          <p className="text-muted-foreground">Manage your account settings</p>
+          <p className="text-muted-foreground">{t("profile.subtitle")}</p>
         </div>
 
         <Card className="shadow-card">
@@ -86,7 +88,7 @@ const ProfilePage: React.FC = () => {
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Member since{" "}
+                  {t("profile.memberSince")}{" "}
                   {profile
                     ? new Date(profile.createdAt).toLocaleDateString()
                     : ""}
@@ -95,16 +97,16 @@ const ProfilePage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Profile Photo</Label>
+              <Label>{t("profile.photo")}</Label>
               <ImageUpload
                 value={photoURL}
                 onChange={setPhotoURL}
-                label="Upload profile photo"
+                label={t("profile.uploadPhoto")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="name">Display Name</Label>
+              <Label htmlFor="name">{t("profile.displayName")}</Label>
               <div className="relative">
                 <User
                   size={16}
@@ -136,12 +138,12 @@ const ProfilePage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
+              <Label htmlFor="bio">{t("profile.bio")}</Label>
               <Textarea
                 id="bio"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell us about yourself..."
+                placeholder={t("profile.bioPlaceholder")}
                 rows={3}
               />
             </div>
@@ -151,7 +153,8 @@ const ProfilePage: React.FC = () => {
               disabled={saving}
               className="w-full gradient-accent text-accent-foreground font-semibold h-11 hover:opacity-90 gap-2"
             >
-              <Save size={16} /> {saving ? "Saving..." : "Save Changes"}
+              <Save size={16} />{" "}
+              {saving ? t("profile.saving") : t("profile.saveChanges")}
             </Button>
           </CardContent>
         </Card>

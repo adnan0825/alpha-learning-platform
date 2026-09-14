@@ -36,6 +36,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -51,6 +52,7 @@ const AdminUsers: React.FC = () => {
     user: UserProfile | null;
   }>({ open: false, user: null });
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -75,13 +77,13 @@ const AdminUsers: React.FC = () => {
       await usersAPI.delete(deleteConfirm.userId);
       setUsers((prev) => prev.filter((u) => u.id !== deleteConfirm.userId));
       toast({
-        title: "User removed successfully",
-        description: `${deleteConfirm.userName} has been removed from the platform`,
+        title: t("admin.users.removed"),
+        description: `${deleteConfirm.userName} ${t("admin.users.removedDescription")}`,
       });
       setDeleteConfirm({ open: false, userId: "", userName: "" });
     } catch (err: any) {
       toast({
-        title: "Error deleting user",
+        title: t("admin.users.deleteError"),
         description: err.message,
         variant: "destructive",
       });
@@ -106,12 +108,12 @@ const AdminUsers: React.FC = () => {
       );
       setEditUser({ open: false, user: null });
       toast({
-        title: "User updated successfully",
-        description: `${editUser.user.displayName}'s profile has been updated`,
+        title: t("admin.users.updated"),
+        description: `${editUser.user.displayName} ${t("admin.users.updatedDescription")}`,
       });
     } catch (err: any) {
       toast({
-        title: "Error updating user",
+        title: t("admin.users.updateError"),
         description: err.message,
         variant: "destructive",
       });
@@ -143,10 +145,10 @@ const AdminUsers: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
       >
         <h1 className="font-display text-2xl lg:text-3xl font-bold">
-          Manage Users
+          {t("admin.users.title")}
         </h1>
         <p className="text-muted-foreground mt-1">
-          View and manage all platform users
+          {t("admin.users.subtitle")}
         </p>
       </motion.div>
 
@@ -160,14 +162,14 @@ const AdminUsers: React.FC = () => {
               />
               <input
                 type="text"
-                placeholder="Search users..."
+                placeholder={t("admin.users.search")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
             <div className="text-sm text-muted-foreground">
-              {filteredUsers.length} users
+              {filteredUsers.length} {t("admin.users.count")}
             </div>
           </div>
 
@@ -176,19 +178,19 @@ const AdminUsers: React.FC = () => {
               <thead>
                 <tr className="border-b bg-muted/30">
                   <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                    Name
+                    {t("admin.users.name")}
                   </th>
                   <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                    Email
+                    {t("admin.users.email")}
                   </th>
                   <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                    Role
+                    {t("admin.users.role")}
                   </th>
                   <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                    Joined
+                    {t("admin.users.joined")}
                   </th>
                   <th className="px-5 py-3.5 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                    Actions
+                    {t("admin.users.actions")}
                   </th>
                 </tr>
               </thead>
@@ -199,7 +201,7 @@ const AdminUsers: React.FC = () => {
                       colSpan={5}
                       className="px-5 py-8 text-center text-muted-foreground"
                     >
-                      Loading...
+                      {t("admin.users.loading")}
                     </td>
                   </tr>
                 ) : filteredUsers.length === 0 ? (
@@ -208,7 +210,7 @@ const AdminUsers: React.FC = () => {
                       colSpan={5}
                       className="px-5 py-8 text-center text-muted-foreground"
                     >
-                      No users found
+                      {t("admin.users.empty")}
                     </td>
                   </tr>
                 ) : (

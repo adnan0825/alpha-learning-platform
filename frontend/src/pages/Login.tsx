@@ -29,8 +29,8 @@ const Login: React.FC = () => {
     const url = buildGoogleOAuthAuthorizationUrl(redirectUri);
     if (!url) {
       toast({
-        title: "Sign-in unavailable",
-        description: "Google client ID is not configured.",
+        title: t("login.googleUnavailableTitle"),
+        description: t("login.googleUnavailableDescription"),
         variant: "destructive",
       });
       return;
@@ -166,19 +166,7 @@ const Login: React.FC = () => {
               </Button>
             ) : (
               <p className="rounded-lg border border-dashed border-border/60 bg-muted/30 px-3 py-3 text-center text-sm leading-relaxed text-muted-foreground">
-                Google Sign-In is not available in this build. Set{" "}
-                <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
-                  VITE_GOOGLE_CLIENT_ID
-                </code>{" "}
-                in{" "}
-                <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
-                  frontend/.env.production
-                </code>{" "}
-                (or the build environment), then run{" "}
-                <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
-                  npm run build
-                </code>{" "}
-                again.
+                {t("login.googleUnavailableHelp")}
               </p>
             )}
           </CardContent>

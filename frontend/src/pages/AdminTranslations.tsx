@@ -34,7 +34,7 @@ const AdminTranslations: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<SavingState>(false);
   const [search, setSearch] = useState("");
-  /** When true, filter also matches EN/OM — clearing text can hide the row while this matches. */
+  /** When true, filter also matches EN/SM — clearing text can hide the row while this matches. */
   const [searchInText, setSearchInText] = useState(false);
   const [form, setForm] = useState<TranslationMap | null>(null);
 
@@ -65,11 +65,11 @@ const AdminTranslations: React.FC = () => {
       if (k.toLowerCase().includes(q)) return true;
       if (!searchInText) return false;
       const v = form[k];
-      return v.en.toLowerCase().includes(q) || v.om.toLowerCase().includes(q);
+      return v.en.toLowerCase().includes(q) || v.sm.toLowerCase().includes(q);
     });
   }, [search, searchInText, form]);
 
-  const patch = (key: TranslationKey, field: "en" | "om", value: string) => {
+  const patch = (key: TranslationKey, field: "en" | "sm", value: string) => {
     setForm((prev) =>
       prev ? { ...prev, [key]: { ...prev[key], [field]: value } } : prev,
     );
@@ -86,15 +86,20 @@ const AdminTranslations: React.FC = () => {
     setSaving(key);
     try {
       const { entries: server } = await settingsAPI.getTranslations();
-      const next: Record<string, { en: string; om: string }> = {};
+      const next: Record<string, { en: string; sm: string }> = {};
       if (server && typeof server === "object" && !Array.isArray(server)) {
         for (const [k, v] of Object.entries(
-          server as Record<string, { en?: string; om?: string }>,
+          server as Record<string, { en?: string; sm?: string; om?: string }>,
         )) {
           if (v && typeof v === "object") {
             next[k] = {
               en: typeof v.en === "string" ? v.en : "",
-              om: typeof v.om === "string" ? v.om : "",
+              sm:
+                typeof v.sm === "string"
+                  ? v.sm
+                  : typeof v.om === "string"
+                    ? v.om
+                    : "",
             };
           }
         }
@@ -102,11 +107,11 @@ const AdminTranslations: React.FC = () => {
       const v = form[key];
       const d = defaultTranslations[key];
       const matchesBundled =
-        v.en.trim() === d.en.trim() && v.om.trim() === d.om.trim();
+        v.en.trim() === d.en.trim() && v.sm.trim() === d.sm.trim();
       if (matchesBundled) {
         delete next[key];
       } else {
-        next[key] = { en: v.en, om: v.om };
+        next[key] = { en: v.en, sm: v.sm };
       }
       await settingsAPI.updateTranslations(next);
       window.dispatchEvent(new Event(ALPHA_TRANSLATIONS_UPDATED));
@@ -158,7 +163,7 @@ const AdminTranslations: React.FC = () => {
     setSaving("all");
     try {
       await settingsAPI.updateTranslations(
-        {} as Record<string, { en: string; om: string }>,
+        {} as Record<string, { en: string; sm: string }>,
       );
       setForm(mergeTranslationLayers(null));
       window.dispatchEvent(new Event(ALPHA_TRANSLATIONS_UPDATED));
@@ -330,8 +335,8 @@ const AdminTranslations: React.FC = () => {
                       Somali
                     </Label>
                     <Textarea
-                      value={form[key].om}
-                      onChange={(e) => patch(key, "om", e.target.value)}
+                      value={form[key].sm}
+                      onChange={(e) => patch(key, "sm", e.target.value)}
                       rows={2}
                       className="min-h-[2.25rem] max-h-24 resize-y text-xs leading-snug py-1.5"
                     />

@@ -29,7 +29,7 @@ const FirstVisitLanguageDialog: React.FC = () => {
     }
   }, [lang]);
 
-  const choose = (next: "en" | "om") => {
+  const choose = (next: "en" | "sm") => {
     setLang(next);
     setOpen(false);
   };
@@ -62,7 +62,7 @@ const FirstVisitLanguageDialog: React.FC = () => {
             type="button"
             variant="outline"
             className="h-10 w-full justify-center border-border/70 font-medium"
-            onClick={() => choose("om")}
+            onClick={() => choose("sm")}
           >
             {t("langModal.afanOromo")}
           </Button>

@@ -86,21 +86,21 @@ const navItems: NavItem[] = [
     path: "/",
     icon: <Home size={18} />,
     roles: ["student", "instructor", "admin"],
-    section: "Menu",
+    section: "sidebar.menu",
   },
   {
     labelKey: "nav.dashboard",
     path: "/dashboard",
     icon: <LayoutDashboard size={18} />,
     roles: ["student", "instructor", "admin"],
-    section: "Menu",
+    section: "sidebar.menu",
   },
   {
     labelKey: "nav.browseCourses",
     path: "/browse",
     icon: <Video size={18} />,
     roles: ["student"],
-    section: "Learning",
+    section: "sidebar.learning",
   },
   {
     labelKey: "nav.myCourses",
@@ -109,22 +109,19 @@ const navItems: NavItem[] = [
     roles: ["student"],
   },
   {
-    label: "Learning Path",
-    labelKey: "",
+    labelKey: "sidebar.learningPath",
     path: "/learning-path",
     icon: <Map size={18} />,
     roles: ["student"],
   },
   {
-    label: "My Assignments",
-    labelKey: "",
+    labelKey: "sidebar.myAssignments",
     path: "/student/assignments",
     icon: <FileText size={18} />,
     roles: ["student"],
   },
   {
-    label: "Calendar",
-    labelKey: "",
+    labelKey: "sidebar.calendar",
     path: "/student/calendar",
     icon: <Calendar size={18} />,
     roles: ["student"],
@@ -136,30 +133,26 @@ const navItems: NavItem[] = [
     roles: ["student"],
   },
   {
-    label: "Leaderboard",
-    labelKey: "",
+    labelKey: "sidebar.leaderboard",
     path: "/leaderboard",
     icon: <Trophy size={18} />,
     roles: ["student"],
-    section: "Community",
+    section: "sidebar.community",
   },
   {
-    label: "Bookmarks",
-    labelKey: "",
+    labelKey: "sidebar.bookmarks",
     path: "/bookmarks",
     icon: <Bookmark size={18} />,
     roles: ["student"],
   },
   {
-    label: "My Notes",
-    labelKey: "",
+    labelKey: "sidebar.myNotes",
     path: "/notes",
     icon: <StickyNote size={18} />,
     roles: ["student"],
   },
   {
-    label: "Notifications",
-    labelKey: "",
+    labelKey: "sidebar.notifications",
     path: "/notifications",
     icon: <Bell size={18} />,
     roles: ["student"],
@@ -169,11 +162,10 @@ const navItems: NavItem[] = [
     path: "/profile",
     icon: <User size={18} />,
     roles: ["student"],
-    section: "Account",
+    section: "sidebar.account",
   },
   {
-    label: "Help & Support",
-    labelKey: "",
+    labelKey: "sidebar.helpSupport",
     path: "/help",
     icon: <HelpCircle size={18} />,
     roles: ["student"],
@@ -185,7 +177,7 @@ const navItems: NavItem[] = [
     path: "/instructor/courses",
     icon: <BookOpen size={18} />,
     roles: ["instructor"],
-    section: "Courses",
+    section: "sidebar.courses",
   },
   {
     labelKey: "nav.addCourse",
@@ -194,26 +186,23 @@ const navItems: NavItem[] = [
     roles: ["instructor"],
   },
   {
-    label: "Quiz Manager",
-    labelKey: "",
+    labelKey: "sidebar.quizManager",
     path: "/instructor/quizzes",
     icon: <FileQuestion size={18} />,
     roles: ["instructor"],
   },
   {
-    label: "Assignments",
-    labelKey: "",
+    labelKey: "sidebar.assignments",
     path: "/instructor/assignments",
     icon: <FileText size={18} />,
     roles: ["instructor"],
   },
   {
-    label: "Student Grades",
-    labelKey: "",
+    labelKey: "sidebar.studentGrades",
     path: "/instructor/grades",
     icon: <GraduationCap size={18} />,
     roles: ["instructor"],
-    section: "Students",
+    section: "sidebar.students",
   },
   {
     labelKey: "nav.studentProgress",
@@ -222,24 +211,21 @@ const navItems: NavItem[] = [
     roles: ["instructor"],
   },
   {
-    label: "Announcements",
-    labelKey: "",
+    labelKey: "sidebar.announcements",
     path: "/instructor/announcements",
     icon: <Megaphone size={18} />,
     roles: ["instructor"],
-    section: "Communication",
+    section: "sidebar.communication",
   },
   {
-    label: "Revenue",
-    labelKey: "",
+    labelKey: "sidebar.revenue",
     path: "/instructor/revenue",
     icon: <DollarSign size={18} />,
     roles: ["instructor"],
-    section: "Finance",
+    section: "sidebar.finance",
   },
   {
-    label: "Withdrawals",
-    labelKey: "",
+    labelKey: "sidebar.withdrawals",
     path: "/instructor/withdrawals",
     icon: <CreditCard size={18} />,
     roles: ["instructor"],
@@ -249,7 +235,7 @@ const navItems: NavItem[] = [
     path: "/profile",
     icon: <User size={18} />,
     roles: ["instructor"],
-    section: "Account",
+    section: "sidebar.account",
   },
 
   // Admin
@@ -258,7 +244,7 @@ const navItems: NavItem[] = [
     path: "/admin/users",
     icon: <Users size={18} />,
     roles: ["admin"],
-    section: "Management",
+    section: "sidebar.management",
   },
   {
     labelKey: "nav.manageCourses",
@@ -267,27 +253,25 @@ const navItems: NavItem[] = [
     roles: ["admin"],
   },
   {
-    label: "Add Course",
+    labelKey: "sidebar.addCourse",
     path: "/admin/add-course",
     icon: <Plus size={18} />,
     roles: ["admin"],
   },
   {
-    label: "Quiz Manager",
+    labelKey: "sidebar.quizManager",
     path: "/admin/quizzes",
     icon: <FileQuestion size={18} />,
     roles: ["admin"],
   },
   {
-    label: "Content Moderation",
-    labelKey: "",
+    labelKey: "sidebar.contentModeration",
     path: "/admin/moderation",
     icon: <ShieldCheck size={18} />,
     roles: ["admin"],
   },
   {
-    label: "Coupons",
-    labelKey: "",
+    labelKey: "sidebar.coupons",
     path: "/admin/coupons",
     icon: <Tag size={18} />,
     roles: ["admin"],
@@ -297,54 +281,48 @@ const navItems: NavItem[] = [
     path: "/admin/analytics",
     icon: <BarChart3 size={18} />,
     roles: ["admin"],
-    section: "Insights",
+    section: "sidebar.insights",
   },
   {
-    label: "System Logs",
-    labelKey: "",
+    labelKey: "sidebar.systemLogs",
     path: "/admin/logs",
     icon: <Activity size={18} />,
     roles: ["admin"],
   },
   {
-    label: "Reports",
-    labelKey: "",
+    labelKey: "sidebar.reports",
     path: "/admin/reports",
     icon: <FileText size={18} />,
     roles: ["admin"],
   },
   {
-    label: "Payments",
-    labelKey: "",
+    labelKey: "sidebar.payments",
     path: "/admin/payments",
     icon: <CreditCard size={18} />,
     roles: ["admin"],
-    section: "Finance",
+    section: "sidebar.finance",
   },
   {
     labelKey: "nav.settings",
     path: "/admin/settings",
     icon: <Settings size={18} />,
     roles: ["admin"],
-    section: "System",
+    section: "sidebar.system",
   },
   {
-    label: "Appearance",
-    labelKey: "",
+    labelKey: "sidebar.appearance",
     path: "/admin/appearance",
     icon: <Palette size={18} />,
     roles: ["admin"],
   },
   {
-    label: "Landing FAQ",
-    labelKey: "",
+    labelKey: "sidebar.landingFaq",
     path: "/admin/faq",
     icon: <HelpCircle size={18} />,
     roles: ["admin"],
   },
   {
-    label: "UI translations",
-    labelKey: "",
+    labelKey: "sidebar.uiTranslations",
     path: "/admin/translations",
     icon: <Languages size={18} />,
     roles: ["admin"],
@@ -500,9 +478,9 @@ const Layout: React.FC = () => {
   };
 
   const roleLabel = {
-    student: "Student",
-    instructor: "Instructor",
-    admin: "Administrator",
+    student: t("sidebar.student"),
+    instructor: t("sidebar.instructor"),
+    admin: t("sidebar.administrator"),
   };
 
   const handleLogout = async () => {
@@ -617,7 +595,9 @@ const Layout: React.FC = () => {
                         sidebarCollapsed && "lg:hidden",
                       )}
                     >
-                      {item.section}
+                      {item.section.startsWith("sidebar.")
+                        ? t(item.section as any)
+                        : item.section}
                     </p>
                   )}
                   {sidebarCollapsed ? (
@@ -740,7 +720,7 @@ const Layout: React.FC = () => {
               onClick={toggleSidebarCollapsed}
               aria-expanded={!sidebarCollapsed}
               aria-label={
-                sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+                sidebarCollapsed ? t("sidebar.expand") : t("sidebar.collapse")
               }
             >
               {sidebarCollapsed ? (
@@ -758,7 +738,7 @@ const Layout: React.FC = () => {
                 size="icon"
                 className="relative h-9 w-9"
                 onClick={() => navigate("/notifications")}
-                aria-label="Notifications"
+                aria-label={t("sidebar.notifications")}
               >
                 <Bell size={18} />
                 {notificationUnread > 0 ? (
