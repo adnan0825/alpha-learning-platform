@@ -11,9 +11,10 @@ import {
   QuizQuestion,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage, type TranslationKey } from "@/contexts/LanguageContext";
 
 import ImageUpload from "@/components/ImageUpload";
+import VideoUpload from "@/components/VideoUpload";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,7 +53,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const categoryLabels = [
+const categoryLabels: Array<{ value: string; labelKey: TranslationKey }> = [
   { value: "Programming", labelKey: "course.categoryProgramming" },
   { value: "Design", labelKey: "course.categoryDesign" },
   { value: "Business", labelKey: "course.categoryBusiness" },
@@ -62,7 +63,10 @@ const categoryLabels = [
   { value: "Mobile", labelKey: "course.categoryMobile" },
   { value: "Other", labelKey: "course.categoryOther" },
 ] as const;
-const difficultyLabels = [
+const difficultyLabels: Array<{
+  value: "beginner" | "intermediate" | "advanced";
+  labelKey: TranslationKey;
+}> = [
   { value: "beginner", labelKey: "course.beginnerLevel" },
   { value: "intermediate", labelKey: "course.intermediateLevel" },
   { value: "advanced", labelKey: "course.advancedLevel" },
@@ -176,7 +180,7 @@ const AddCourse: React.FC = () => {
   const handleUpdateLesson = (
     index: number,
     field: keyof VideoLesson,
-    value: any,
+    value: string | number | boolean,
   ) => {
     const updated = [...lessons];
     updated[index] = {
@@ -240,7 +244,7 @@ const AddCourse: React.FC = () => {
   const updateQuestion = (
     index: number,
     field: keyof QuizQuestion,
-    value: any,
+    value: string | number | number[],
   ) => {
     const updated = [...quizQuestions];
     updated[index] = { ...updated[index], [field]: value };
@@ -311,10 +315,11 @@ const AddCourse: React.FC = () => {
         description: t("course.create.successDescription"),
       });
       navigate("/instructor/courses");
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: t("course.create.errorTitle"),
-        description: err.message,
+        description:
+          err instanceof Error ? err.message : t("common.uploadError"),
         variant: "destructive",
       });
     } finally {
@@ -405,13 +410,14 @@ const AddCourse: React.FC = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start">
             <TabsTrigger value="details" className="gap-2">
-              <Settings size={16} /> Course Details
+              <Settings size={16} /> {t("course.form.courseDetailsTab")}
             </TabsTrigger>
             <TabsTrigger value="lessons" className="gap-2">
-              <Video size={16} /> Lessons ({lessons.length})
+              <Video size={16} /> {t("course.form.lessonsTab")} (
+              {lessons.length})
             </TabsTrigger>
             <TabsTrigger value="quizzes" className="gap-2">
-              <ClipboardList size={16} /> Quizzes (
+              <ClipboardList size={16} /> {t("course.form.quizzesTab")} (
               {lessons.filter((l) => l.quiz).length})
             </TabsTrigger>
           </TabsList>
@@ -421,32 +427,36 @@ const AddCourse: React.FC = () => {
             <Card className="shadow-card">
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="thumbnail">Course Thumbnail</Label>
+                  <Label htmlFor="thumbnail">
+                    {t("course.form.thumbnail")}
+                  </Label>
                   <ImageUpload
                     value={thumbnail}
                     onChange={setThumbnail}
-                    label="Upload thumbnail"
+                    label={t("course.form.uploadThumbnail")}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="title">Course Title *</Label>
+                  <Label htmlFor="title">{t("course.form.title")}</Label>
                   <Input
                     id="title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g., Complete Web Development Bootcamp"
+                    placeholder={t("course.form.titlePlaceholder")}
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description *</Label>
+                  <Label htmlFor="description">
+                    {t("course.form.description")}
+                  </Label>
                   <Textarea
                     id="description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="What will students learn from this course?"
+                    placeholder={t("course.form.descriptionPlaceholder")}
                     rows={4}
                     required
                   />
@@ -454,14 +464,18 @@ const AddCourse: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="category">Category *</Label>
+                    <Label htmlFor="category">
+                      {t("course.form.category")}
+                    </Label>
                     <Select
                       value={category}
                       onValueChange={setCategory}
                       required
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
+                        <SelectValue
+                          placeholder={t("course.form.selectCategory")}
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         {categoryLabels.map((cat) => (
@@ -474,10 +488,16 @@ const AddCourse: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="difficulty">Difficulty *</Label>
+                    <Label htmlFor="difficulty">
+                      {t("course.form.difficulty")}
+                    </Label>
                     <Select
                       value={difficulty}
-                      onValueChange={(v) => setDifficulty(v as any)}
+                      onValueChange={(v) =>
+                        setDifficulty(
+                          v as "beginner" | "intermediate" | "advanced",
+                        )
+                      }
                       required
                     >
                       <SelectTrigger>
@@ -498,23 +518,25 @@ const AddCourse: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="duration">Duration</Label>
+                    <Label htmlFor="duration">
+                      {t("course.form.duration")}
+                    </Label>
                     <Input
                       id="duration"
                       value={duration}
                       onChange={(e) => setDuration(e.target.value)}
-                      placeholder="e.g., 6h 30m"
+                      placeholder={t("course.form.durationPlaceholder")}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price (ETB)</Label>
+                    <Label htmlFor="price">{t("course.form.price")}</Label>
                     <Input
                       id="price"
                       type="number"
                       value={price}
                       onChange={(e) => setPrice(Number(e.target.value))}
-                      placeholder="0 for free"
+                      placeholder={t("course.form.freePrice")}
                       min="0"
                     />
                   </div>
@@ -532,14 +554,15 @@ const AddCourse: React.FC = () => {
                 variant="outline"
                 className="w-full border-dashed h-12"
               >
-                <PlusCircle size={18} className="mr-2" /> Add New Lesson
+                <PlusCircle size={18} className="mr-2" />{" "}
+                {t("course.lesson.addNew")}
               </Button>
             ) : (
               <Card className="shadow-card border-accent/20">
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="font-display font-semibold text-foreground">
-                      Add New Lesson
+                      {t("course.lesson.addNew")}
                     </h3>
                     <Button
                       type="button"
@@ -553,30 +576,36 @@ const AddCourse: React.FC = () => {
 
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
-                      <Label>Lesson Title *</Label>
+                      <Label>{t("course.lesson.title")}</Label>
                       <Input
                         value={newLesson.title}
                         onChange={(e) =>
                           setNewLesson({ ...newLesson, title: e.target.value })
                         }
-                        placeholder="e.g., Introduction to React"
+                        placeholder={t("course.lesson.titlePlaceholder")}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Video URL *</Label>
+                      <Label>{t("course.lesson.videoUrl")}</Label>
+                      <VideoUpload
+                        value={newLesson.url}
+                        onChange={(url) => setNewLesson({ ...newLesson, url })}
+                        label={t("course.lesson.uploadVideo")}
+                        maxSizeLabel="Up to 200MB"
+                      />
                       <Input
                         value={newLesson.url}
                         onChange={(e) =>
                           setNewLesson({ ...newLesson, url: e.target.value })
                         }
-                        placeholder="https://youtube.com/watch?v=... or Vimeo URL"
+                        placeholder={t("course.lesson.videoPlaceholder")}
                       />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Duration</Label>
+                        <Label>{t("course.form.duration")}</Label>
                         <Input
                           value={newLesson.duration}
                           onChange={(e) =>
@@ -585,7 +614,7 @@ const AddCourse: React.FC = () => {
                               duration: e.target.value,
                             })
                           }
-                          placeholder="e.g., 15m"
+                          placeholder={t("course.lesson.durationPlaceholder")}
                         />
                       </div>
                       <div className="space-y-2 flex items-end">
@@ -596,13 +625,15 @@ const AddCourse: React.FC = () => {
                               setNewLesson({ ...newLesson, isFree: checked })
                             }
                           />
-                          <Label className="text-sm">Free preview</Label>
+                          <Label className="text-sm">
+                            {t("course.lesson.freePreview")}
+                          </Label>
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Lesson Description</Label>
+                      <Label>{t("course.lesson.description")}</Label>
                       <Textarea
                         value={newLesson.description}
                         onChange={(e) =>
@@ -611,7 +642,7 @@ const AddCourse: React.FC = () => {
                             description: e.target.value,
                           })
                         }
-                        placeholder="What will students learn in this lesson?"
+                        placeholder={t("course.lesson.descriptionPlaceholder")}
                         rows={2}
                       />
                     </div>
@@ -622,13 +653,13 @@ const AddCourse: React.FC = () => {
                       onClick={handleAddLesson}
                       className="gradient-accent text-accent-foreground"
                     >
-                      Add Lesson
+                      {t("course.lesson.add")}
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => setShowLessonForm(false)}
                     >
-                      Cancel
+                      {t("course.lesson.cancel")}
                     </Button>
                   </div>
                 </CardContent>
@@ -641,10 +672,10 @@ const AddCourse: React.FC = () => {
                 <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                   <Video size={48} className="text-muted-foreground mb-4" />
                   <h3 className="font-display text-lg font-semibold text-foreground mb-1">
-                    No lessons yet
+                    {t("course.lessons.emptyTitle")}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Add your first lesson to get started
+                    {t("course.lessons.emptyDescription")}
                   </p>
                 </CardContent>
               </Card>
@@ -687,7 +718,7 @@ const AddCourse: React.FC = () => {
                             <div className="flex-1 space-y-3">
                               <div className="space-y-1">
                                 <Label className="text-xs font-semibold">
-                                  Lesson Title
+                                  {t("course.lesson.titleShort")}
                                 </Label>
                                 <Input
                                   value={item.lesson.title}
@@ -698,13 +729,13 @@ const AddCourse: React.FC = () => {
                                       e.target.value,
                                     )
                                   }
-                                  placeholder="Lesson title"
+                                  placeholder={t("course.lesson.titleShort")}
                                   className="font-semibold"
                                 />
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-xs font-semibold">
-                                  Lesson Description
+                                  {t("course.lesson.descriptionShort")}
                                 </Label>
                                 <Textarea
                                   value={item.lesson.description || ""}
@@ -715,7 +746,9 @@ const AddCourse: React.FC = () => {
                                       e.target.value,
                                     )
                                   }
-                                  placeholder="What will students learn in this lesson?"
+                                  placeholder={t(
+                                    "course.lesson.descriptionPlaceholder",
+                                  )}
                                   rows={2}
                                   className="text-sm"
                                 />
@@ -723,7 +756,7 @@ const AddCourse: React.FC = () => {
                               <div className="grid grid-cols-3 gap-3">
                                 <div className="col-span-2 space-y-1">
                                   <Label className="text-xs font-semibold">
-                                    Video URL
+                                    {t("course.lesson.videoUrlShort")}
                                   </Label>
                                   <Input
                                     value={item.lesson.url}
@@ -739,7 +772,7 @@ const AddCourse: React.FC = () => {
                                 </div>
                                 <div className="space-y-1">
                                   <Label className="text-xs font-semibold">
-                                    Duration
+                                    {t("course.form.duration")}
                                   </Label>
                                   <Input
                                     value={item.lesson.duration || ""}
@@ -750,7 +783,9 @@ const AddCourse: React.FC = () => {
                                         e.target.value,
                                       )
                                     }
-                                    placeholder="e.g., 15m"
+                                    placeholder={t(
+                                      "course.lesson.durationPlaceholder",
+                                    )}
                                   />
                                 </div>
                               </div>
@@ -773,7 +808,7 @@ const AddCourse: React.FC = () => {
                                 className="text-accent"
                               />
                               <span className="text-sm font-semibold">
-                                Quiz for this lesson
+                                {t("course.quiz.forLesson")}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 flex-wrap">
@@ -781,7 +816,8 @@ const AddCourse: React.FC = () => {
                                 <>
                                   <Badge variant="default" className="gap-1">
                                     <ClipboardList size={12} />
-                                    {item.quiz.questions.length} questions
+                                    {item.quiz.questions.length}{" "}
+                                    {t("course.quiz.questionsCount")}
                                   </Badge>
                                   <Button
                                     variant="outline"
@@ -790,7 +826,7 @@ const AddCourse: React.FC = () => {
                                     className="h-7 text-xs"
                                   >
                                     <PlusCircle size={12} className="mr-1" />{" "}
-                                    Edit Quiz
+                                    {t("course.quiz.edit")}
                                   </Button>
                                   <Button
                                     variant="ghost"
@@ -798,7 +834,8 @@ const AddCourse: React.FC = () => {
                                     onClick={() => handleRemoveQuiz(index)}
                                     className="h-7 text-xs text-destructive"
                                   >
-                                    <Trash2 size={12} className="mr-1" /> Remove
+                                    <Trash2 size={12} className="mr-1" />{" "}
+                                    {t("course.quiz.remove")}
                                   </Button>
                                 </>
                               ) : (
@@ -808,8 +845,8 @@ const AddCourse: React.FC = () => {
                                   onClick={() => handleOpenQuizForm(index)}
                                   className="h-7 text-xs"
                                 >
-                                  <PlusCircle size={12} className="mr-1" /> Add
-                                  Quiz
+                                  <PlusCircle size={12} className="mr-1" />{" "}
+                                  {t("course.quiz.add")}
                                 </Button>
                               )}
                             </div>
@@ -833,10 +870,10 @@ const AddCourse: React.FC = () => {
                     className="text-muted-foreground mb-4"
                   />
                   <h3 className="font-display text-lg font-semibold text-foreground mb-1">
-                    No quizzes yet
+                    {t("course.quiz.emptyTitle")}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Add quizzes to lessons from the Lessons tab
+                    {t("course.quiz.emptyDescription")}
                   </p>
                 </CardContent>
               </Card>
@@ -853,14 +890,17 @@ const AddCourse: React.FC = () => {
                               {item.quiz?.title}
                             </h3>
                             <p className="text-sm text-muted-foreground">
-                              Lesson{" "}
+                              {t("course.form.lessons")}{" "}
                               {lessons.findIndex(
                                 (l) => l.quiz?.id === item.quiz?.id,
                               ) + 1}{" "}
-                              • {item.quiz?.questions.length} questions
+                              • {item.quiz?.questions.length}{" "}
+                              {t("course.quiz.questionsCount")}
                             </p>
                           </div>
-                          <Badge variant="outline">Quiz</Badge>
+                          <Badge variant="outline">
+                            {t("course.form.quizzes")}
+                          </Badge>
                         </div>
                         <div className="space-y-2">
                           {item.quiz?.questions.slice(0, 3).map((q, i) => (
@@ -891,8 +931,8 @@ const AddCourse: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <h3 className="font-display font-semibold text-foreground">
                       {quizLessonIndex !== null && lessons[quizLessonIndex]
-                        ? `Add Quiz: ${lessons[quizLessonIndex].lesson.title}`
-                        : "Add Quiz"}
+                        ? `${t("course.quiz.add")}: ${lessons[quizLessonIndex].lesson.title}`
+                        : t("course.quiz.add")}
                     </h3>
                     <Button
                       variant="ghost"
@@ -904,19 +944,20 @@ const AddCourse: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Quiz Title</Label>
+                    <Label>{t("course.quiz.title")}</Label>
                     <Input
                       value={quizTitle}
                       onChange={(e) => setQuizTitle(e.target.value)}
-                      placeholder="e.g., Introduction to React - Quiz"
+                      placeholder={t("course.quiz.titlePlaceholder")}
                     />
                   </div>
 
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <Label>Questions</Label>
+                      <Label>{t("course.quiz.questions")}</Label>
                       <Button variant="outline" size="sm" onClick={addQuestion}>
-                        <PlusCircle size={14} className="mr-1" /> Add Question
+                        <PlusCircle size={14} className="mr-1" />{" "}
+                        {t("course.quiz.addQuestion")}
                       </Button>
                     </div>
 
@@ -925,7 +966,7 @@ const AddCourse: React.FC = () => {
                         <CardContent className="p-4 space-y-3">
                           <div className="flex items-center justify-between">
                             <Label className="text-sm">
-                              Question {qIndex + 1}
+                              {t("course.quiz.question")} {qIndex + 1}
                             </Label>
                             <Button
                               variant="ghost"
@@ -942,7 +983,7 @@ const AddCourse: React.FC = () => {
                             onChange={(e) =>
                               updateQuestion(qIndex, "question", e.target.value)
                             }
-                            placeholder="Enter your question"
+                            placeholder={t("course.quiz.questionPlaceholder")}
                             rows={2}
                           />
 
@@ -967,14 +1008,14 @@ const AddCourse: React.FC = () => {
                                   onChange={(e) =>
                                     updateOption(qIndex, oIndex, e.target.value)
                                   }
-                                  placeholder={`Option ${oIndex + 1}`}
+                                  placeholder={`${t("course.quiz.option")} ${oIndex + 1}`}
                                   className="text-sm"
                                 />
                               </div>
                             ))}
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Toggle the switch for the correct answer
+                            {t("course.quiz.correctAnswer")}
                           </p>
                         </CardContent>
                       </Card>
@@ -986,13 +1027,13 @@ const AddCourse: React.FC = () => {
                       onClick={handleSaveQuiz}
                       className="gradient-accent text-accent-foreground"
                     >
-                      Save Quiz
+                      {t("course.quiz.save")}
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => setShowQuizForm(false)}
                     >
-                      Cancel
+                      {t("course.lesson.cancel")}
                     </Button>
                   </div>
                 </CardContent>
@@ -1012,16 +1053,18 @@ const AddCourse: React.FC = () => {
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle size={20} className="text-destructive" />
               {deleteConfirm.type === "lesson"
-                ? "Delete Lesson"
-                : "Remove Quiz"}
+                ? t("course.delete.lesson")
+                : t("course.delete.quiz")}
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to{" "}
-              {deleteConfirm.type === "lesson" ? "delete" : "remove"}{" "}
+              {t("course.delete.confirm")}{" "}
+              {deleteConfirm.type === "lesson"
+                ? t("course.delete.deleteAction")
+                : t("course.delete.removeAction")}{" "}
               <strong>{deleteConfirm.title}</strong>?
               {deleteConfirm.type === "lesson"
-                ? " This will permanently remove the lesson, its video, description, and any associated quiz."
-                : " This will permanently remove the quiz and all its questions from this lesson."}
+                ? ` ${t("course.delete.lessonDescription")}`
+                : ` ${t("course.delete.quizDescription")}`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1031,7 +1074,7 @@ const AddCourse: React.FC = () => {
                 setDeleteConfirm({ ...deleteConfirm, open: false })
               }
             >
-              Cancel
+              {t("course.lesson.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -1043,8 +1086,8 @@ const AddCourse: React.FC = () => {
             >
               <Trash2 size={16} className="mr-2" />{" "}
               {deleteConfirm.type === "lesson"
-                ? "Delete Lesson"
-                : "Remove Quiz"}
+                ? t("course.delete.lesson")
+                : t("course.delete.quiz")}
             </Button>
           </DialogFooter>
         </DialogContent>

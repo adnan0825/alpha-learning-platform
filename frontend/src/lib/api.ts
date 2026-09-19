@@ -46,6 +46,8 @@ export interface VideoLesson {
   title: string;
   url: string;
   duration?: string;
+  description?: string;
+  isFree?: boolean;
 }
 
 export interface Enrollment {
@@ -55,6 +57,15 @@ export interface Enrollment {
   progress: number;
   completedVideos: string[];
   enrolledAt: string;
+}
+
+export interface VideoWatchProgress {
+  videoIndex: number;
+  watchedSeconds: number;
+  durationSeconds: number;
+  lastPositionSeconds: number;
+  completed: boolean;
+  lastSeenAt?: string;
 }
 
 export interface Quiz {
@@ -206,40 +217,54 @@ async function apiCall<T>(
   endpoint: string,
   options?: ApiCallOptions,
 ): Promise<T> {
-  const skipAuth = options?.skipAuth === true;
   const { skipAuth: _omit, ...fetchOptions } = options || {};
-  const token = skipAuth ? null : localStorage.getItem("alpha_token");
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(fetchOptions.headers as Record<string, string> | undefined),
   };
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...fetchOptions,
+    credentials: "include",
     headers,
   });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: "Request failed" }));
-    throw new Error(error.error || `API Error: ${res.status}`);
+    const error = await res.json().catch(() => ({}));
+    const message =
+      typeof error?.error === "string"
+        ? error.error
+        : typeof error?.message === "string"
+          ? error.message
+          : Array.isArray(error?.errors) && error.errors.length > 0
+            ? error.errors
+                .map((item: unknown) =>
+                  typeof item === "string"
+                    ? item
+                    : (item as { message?: string })?.message,
+                )
+                .filter(Boolean)
+                .join("; ")
+            : `API Error: ${res.status}`;
+    throw new Error(message);
   }
   return res.json();
 }
 
 // ============ AUTH API ============
 export const authAPI = {
-  async login(
-    email: string,
-    password: string,
-  ): Promise<{ user: UserProfile; token: string }> {
+  async login(email: string, password: string): Promise<{ user: UserProfile }> {
     return apiCall("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+      skipAuth: true,
+    });
+  },
+
+  async logout(): Promise<void> {
+    await apiCall("/auth/logout", {
+      method: "POST",
       skipAuth: true,
     });
   },
@@ -249,7 +274,7 @@ export const authAPI = {
     password: string,
     name: string,
     role: UserProfile["role"],
-  ): Promise<{ user: UserProfile; token: string }> {
+  ): Promise<{ user: UserProfile }> {
     return apiCall("/auth/signup", {
       method: "POST",
       body: JSON.stringify({ email, password, name, role }),
@@ -258,9 +283,7 @@ export const authAPI = {
   },
 
   /** `credential` is the JWT from Google Identity Services (GoogleLogin onSuccess). */
-  async loginWithGoogle(
-    credential: string,
-  ): Promise<{ user: UserProfile; token: string }> {
+  async loginWithGoogle(credential: string): Promise<{ user: UserProfile }> {
     return apiCall("/auth/google", {
       method: "POST",
       body: JSON.stringify({ credential }),
@@ -386,6 +409,15 @@ export const enrollmentsAPI = {
   async checkEnrollment(courseId: string): Promise<{ enrolled: boolean }> {
     return apiCall(`/enrollments/course/${courseId}/check`);
   },
+  async updateProgress(
+    enrollmentId: string,
+    completedVideos: string[],
+  ): Promise<Enrollment> {
+    return apiCall(`/enrollments/${enrollmentId}/progress`, {
+      method: "PUT",
+      body: JSON.stringify({ completedVideos }),
+    });
+  },
   async getCourseEnrollments(courseId: string): Promise<any[]> {
     return apiCall(`/enrollments/course/${courseId}/enrollments`);
   },
@@ -420,10 +452,30 @@ export const progressAPI = {
     });
   },
   async getCourseProgress(courseId: string): Promise<any> {
-    return apiCall(`/progress/course/${courseId}`);
+    return apiCall(`/progress/course/${courseId}/stats`);
   },
   async getLessonStatus(lessonId: string): Promise<{ completed: boolean }> {
     return apiCall(`/progress/lesson/${lessonId}`);
+  },
+  async getCourseVideoProgress(
+    courseId: string,
+  ): Promise<VideoWatchProgress[]> {
+    return apiCall(`/progress/course/${courseId}/videos`);
+  },
+  async recordCourseVideoProgress(
+    courseId: string,
+    videoIndex: number,
+    data: {
+      positionSeconds: number;
+      durationSeconds: number;
+      playing: boolean;
+      ended?: boolean;
+    },
+  ): Promise<VideoWatchProgress & { enrollment?: Enrollment }> {
+    return apiCall(`/progress/course/${courseId}/videos/${videoIndex}`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
 };
 
@@ -506,16 +558,10 @@ export const uploadsAPI = {
     const formData = new FormData();
     formData.append("image", file);
 
-    const token = localStorage.getItem("alpha_token");
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
     const res = await fetch(`${API_BASE_URL}/uploads/image`, {
       method: "POST",
       body: formData,
-      headers,
+      credentials: "include",
     });
 
     if (!res.ok) {
@@ -523,6 +569,52 @@ export const uploadsAPI = {
       throw new Error(error.error || `Upload failed: ${res.status}`);
     }
     return res.json();
+  },
+
+  async uploadVideo(
+    file: File,
+    onProgress?: (percent: number) => void,
+    visibility: "public" | "protected" = "protected",
+  ): Promise<{
+    url: string;
+    filename: string;
+    size: number;
+    contentType: string;
+  }> {
+    const formData = new FormData();
+    formData.append("video", file);
+    formData.append("visibility", visibility);
+
+    return new Promise((resolve, reject) => {
+      const request = new XMLHttpRequest();
+      request.open("POST", `${API_BASE_URL}/uploads/video`);
+      request.withCredentials = true;
+      request.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          onProgress?.(Math.round((event.loaded / event.total) * 100));
+        }
+      };
+      request.onload = async () => {
+        const payload = await (async () => {
+          try {
+            return JSON.parse(request.responseText);
+          } catch {
+            return { error: "Upload failed" };
+          }
+        })();
+        if (request.status < 200 || request.status >= 300) {
+          reject(
+            new Error(payload.error || `Upload failed: ${request.status}`),
+          );
+          return;
+        }
+        onProgress?.(100);
+        resolve(payload);
+      };
+      request.onerror = () => reject(new Error("Upload interrupted"));
+      request.onabort = () => reject(new Error("Upload cancelled"));
+      request.send(formData);
+    });
   },
 };
 
@@ -543,147 +635,51 @@ export const analyticsAPI = {
   },
 };
 
-// ============ PAYMENTS API (Chapa) ============
-export const paymentsAPI = {
-  async initializePayment(
-    amount: number,
-    courseId: string,
-    courseTitle: string,
-    phoneNumber: string,
-  ): Promise<{ checkout_url: string; tx_ref: string }> {
-    return apiCall("/payments/initialize", {
-      method: "POST",
-      body: JSON.stringify({
-        amount,
-        courseId,
-        courseTitle,
-        phone_number: phoneNumber,
-      }),
-    });
-  },
+// ============ MANUAL PAYMENTS API =========
+export interface ManualReceipt {
+  id: number;
+  receipt_image_url: string;
+  amount_etb: number | null;
+  note: string | null;
+  status: string;
+  created_at: string;
+  reviewed_at: string | null;
+  course_title: string;
+  course_id: number;
+}
 
-  async verifyPayment(txRef: string): Promise<any> {
-    return apiCall(`/payments/verify/${txRef}`);
-  },
-
-  async getMyPayments(): Promise<
-    Array<{
-      id: string;
-      tx_ref: string;
-      amount: number;
-      currency: string;
-      status: string;
-      course_title: string;
-      created_at: string;
-      completed_at?: string;
-    }>
-  > {
-    return apiCall("/payments/my-payments");
-  },
-
-  async getBanks(): Promise<Array<{ bank_code: string; bank_name: string }>> {
-    return apiCall("/payments/banks");
-  },
-
-  async submitManualReceipt(data: {
+export const manualPaymentsAPI = {
+  async submitReceipt(data: {
     courseId: string;
     receiptUrl: string;
     amountEtb?: number;
     note?: string;
   }): Promise<{ success: boolean; id: number; created_at: string }> {
-    return apiCall("/payments/manual-receipt", {
+    return apiCall("/manual-payments/receipts", {
       method: "POST",
-      body: JSON.stringify({
-        courseId: data.courseId,
-        receiptUrl: data.receiptUrl,
-        amountEtb: data.amountEtb,
-        note: data.note,
-      }),
+      body: JSON.stringify(data),
     });
   },
 
-  async getMyReceipts(): Promise<
-    Array<{
-      id: number;
-      receipt_image_url: string;
-      amount_etb: number | null;
-      note: string | null;
-      status: string;
-      created_at: string;
-      reviewed_at: string | null;
-      course_title: string;
-      course_id: number;
-    }>
+  async getMyReceipts(): Promise<ManualReceipt[]> {
+    return apiCall("/manual-payments/receipts/mine");
+  },
+
+  async getAdminReceipts(): Promise<
+    Array<ManualReceipt & { user_name: string; user_email: string }>
   > {
-    return apiCall("/payments/my-receipts");
+    return apiCall("/manual-payments/receipts");
   },
 
-  /** Admin: all payments (joined user + course). */
-  async getAllPayments(): Promise<
-    Array<{
-      id: number;
-      tx_ref: string;
-      amount: number;
-      currency: string;
-      status: string;
-      user_name: string;
-      user_email: string;
-      course_title: string;
-      created_at: string;
-      completed_at?: string;
-    }>
-  > {
-    return apiCall("/admin/payments");
-  },
-
-  async getPaymentStats(): Promise<{
-    total_payments: string;
-    total_amount: string;
-    completed_count: string;
-    pending_count: string;
-    failed_count: string;
-    completed_amount: string;
-    average_amount: string;
-  }> {
-    return apiCall("/admin/payments/stats");
-  },
-
-  /** Admin: manual transfer receipts (screenshots). */
-  async getAdminManualReceipts(): Promise<
-    Array<{
-      id: number;
-      receipt_image_url: string;
-      amount_etb: string | null;
-      note: string | null;
-      status?: string | null;
-      created_at: string;
-      reviewed_at?: string | null;
-      reviewed_by_name?: string | null;
-      user_name: string;
-      user_email: string;
-      course_title: string;
-      course_id: number;
-    }>
-  > {
-    return apiCall("/admin/manual-receipts");
-  },
-
-  /** Admin: approve a manual receipt and enroll the student. */
-  async approveManualReceipt(
-    id: number,
-  ): Promise<{ success: boolean; enrolled: boolean }> {
-    return apiCall("/admin/manual-receipts/approve", {
+  async approveReceipt(id: number): Promise<{ success: boolean }> {
+    return apiCall(`/manual-payments/receipts/${id}/approve`, {
       method: "POST",
-      body: JSON.stringify({ receiptId: id }),
     });
   },
 
-  async deleteManualReceipt(
-    id: number,
-  ): Promise<{ success: boolean; removed?: boolean }> {
-    return apiCall("/admin/manual-receipts/remove", {
+  async rejectReceipt(id: number): Promise<{ success: boolean }> {
+    return apiCall(`/manual-payments/receipts/${id}/reject`, {
       method: "POST",
-      body: JSON.stringify({ receiptId: id }),
     });
   },
 };
@@ -1141,19 +1137,6 @@ export const adminAPI = {
   },
   async deleteReview(id: string): Promise<any> {
     return apiCall(`/admin/moderation/reviews/${id}`, { method: "DELETE" });
-  },
-  async getPayments(status?: string, limit?: number): Promise<any[]> {
-    let query = "?";
-    const params: string[] = [];
-    if (status) params.push(`status=${status}`);
-    if (limit) params.push(`limit=${limit}`);
-    return apiCall(`/admin/payments${query}${params.join("&")}`);
-  },
-  async getPaymentStats(): Promise<any> {
-    return apiCall("/admin/payments/stats");
-  },
-  async getAdminManualReceipts(): Promise<any[]> {
-    return apiCall("/admin/manual-receipts");
   },
   async listFeedback(): Promise<UserFeedbackItem[]> {
     return apiCall("/admin/feedback");

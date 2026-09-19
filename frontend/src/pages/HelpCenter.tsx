@@ -18,34 +18,7 @@ import {
   Send,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useLanguage } from "@/contexts/LanguageContext";
-
-const faqs = [
-  {
-    q: "How do I enroll in a course?",
-    a: "Browse courses from the sidebar, click on a course, and click the 'Enroll' button. You'll get instant access to all course materials.",
-  },
-  {
-    q: "How do I get my certificate?",
-    a: "Complete all video lessons and pass the course quiz with at least 70% score. Your certificate will be automatically generated and available in the Certificates page.",
-  },
-  {
-    q: "Can I learn at my own pace?",
-    a: "Yes! All courses are self-paced. You can pause, rewind, and revisit any lesson as many times as you want.",
-  },
-  {
-    q: "What languages are courses available in?",
-    a: "Most courses are taught in Somali with English subtitles. Some courses are available in both languages.",
-  },
-  {
-    q: "How do I sign in?",
-    a: "We use Google Sign-In. Use the same Google account each time; there is no separate platform password.",
-  },
-  {
-    q: "Is there a mobile app?",
-    a: "Not yet, but our website is fully mobile-responsive. You can access all courses from your phone's browser.",
-  },
-];
+import { useLanguage, type TranslationKey } from "@/contexts/LanguageContext";
 
 const HelpCenter: React.FC = () => {
   const [search, setSearch] = useState("");
@@ -53,6 +26,18 @@ const HelpCenter: React.FC = () => {
   const [message, setMessage] = useState("");
   const { toast } = useToast();
   const { t } = useLanguage();
+  const faqKeys: Array<[TranslationKey, TranslationKey]> = [
+    ["help.faq.enroll.q", "help.faq.enroll.a"],
+    ["help.faq.certificate.q", "help.faq.certificate.a"],
+    ["help.faq.pace.q", "help.faq.pace.a"],
+    ["help.faq.languages.q", "help.faq.languages.a"],
+    ["help.faq.signin.q", "help.faq.signin.a"],
+    ["help.faq.mobile.q", "help.faq.mobile.a"],
+  ];
+  const faqs = faqKeys.map(([questionKey, answerKey]) => ({
+    q: t(questionKey),
+    a: t(answerKey),
+  }));
 
   const filteredFaqs = faqs.filter(
     (f) =>

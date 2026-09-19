@@ -296,11 +296,10 @@ const navItems: NavItem[] = [
     roles: ["admin"],
   },
   {
-    labelKey: "sidebar.payments",
+    label: "Manual payments",
     path: "/admin/payments",
     icon: <CreditCard size={18} />,
     roles: ["admin"],
-    section: "sidebar.finance",
   },
   {
     labelKey: "nav.settings",
@@ -369,13 +368,20 @@ const Layout: React.FC = () => {
 
                 if (latestUnread) {
                   lastShownId = latestUnread.id;
+                  const safeLink =
+                    latestUnread.link &&
+                    latestUnread.link.startsWith("/") &&
+                    !latestUnread.link.startsWith("//")
+                      ? latestUnread.link
+                      : "/notifications";
+
                   toast({
                     title: latestUnread.title,
                     description: latestUnread.message,
                     action: latestUnread.link ? (
                       <ToastAction
                         altText="View"
-                        onClick={() => navigate(latestUnread.link!)}
+                        onClick={() => navigate(safeLink)}
                       >
                         View
                       </ToastAction>
@@ -521,7 +527,7 @@ const Layout: React.FC = () => {
           >
             <img
               src={brandingLogo || defaultLogo}
-              alt="SOTA"
+              alt="Alpha"
               className={cn(
                 "h-10 w-10 shrink-0 rounded-xl object-cover ring-1 ring-sidebar-border/80",
                 sidebarCollapsed && "lg:mx-auto",

@@ -19,6 +19,11 @@ export default defineConfig(({ mode }) => {
       changeOrigin: true,
       secure: proxyTarget.startsWith("https"),
     },
+    "/uploads": {
+      target: proxyTarget,
+      changeOrigin: true,
+      secure: proxyTarget.startsWith("https"),
+    },
   };
 
   return {

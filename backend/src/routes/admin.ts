@@ -24,9 +24,7 @@ router.get(
         (SELECT COUNT(*) FROM users WHERE role = 'instructor') as total_instructors,
         (SELECT COUNT(*) FROM courses) as total_courses,
         (SELECT COUNT(*) FROM courses WHERE is_published = true) as published_courses,
-        (SELECT COUNT(*) FROM enrollments) as total_enrollments,
-        (SELECT COUNT(*) FROM payments WHERE status = 'completed') as completed_payments,
-        (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'completed') as total_revenue
+        (SELECT COUNT(*) FROM enrollments) as total_enrollments
     `);
 
       const settingsResult = await query(
@@ -53,7 +51,6 @@ router.get(
           ...((settingsMap.appearance as object) || {}),
         },
         features: settingsMap.features || {
-          payments_enabled: true,
           certificates_enabled: true,
           quizzes_enabled: true,
           discussions_enabled: true,
@@ -81,6 +78,13 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     try {
       const { appearance, features, faq } = req.body;
+      let canonicalFaq:
+        | Array<{
+            id?: string;
+            question: string;
+            answer: string;
+          }>
+        | undefined;
 
       if (appearance) {
         await query(
@@ -111,25 +115,29 @@ router.put(
         const invalidFaq = faq.find((item: unknown) => {
           if (!item || typeof item !== "object") return true;
           const entry = item as Record<string, unknown>;
-          return ["question", "answer", "questionSm", "answerSm"].some(
-            (field) =>
-              typeof entry[field] !== "string" ||
-              entry[field].trim().length === 0,
+          return ["question", "answer"].some(
+            (field) => typeof entry[field] !== "string" || !entry[field].trim(),
           );
         });
         if (invalidFaq) {
           return res.status(400).json({
-            error:
-              "Each FAQ entry requires English and Somali questions and answers",
+            error: "Each FAQ entry requires one question and one answer",
           });
         }
+        canonicalFaq = faq.map(
+          (item: { id?: unknown; question: string; answer: string }) => ({
+            id: typeof item.id === "string" ? item.id : undefined,
+            question: item.question.trim(),
+            answer: item.answer.trim(),
+          }),
+        );
         await query(
           `
         INSERT INTO settings (key, value, updated_at) 
         VALUES ($1, $2, CURRENT_TIMESTAMP)
         ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP
       `,
-          ["faq", faq],
+          ["faq", canonicalFaq],
         );
       }
 
@@ -137,7 +145,7 @@ router.put(
         message: "Settings updated successfully",
         appearance,
         features,
-        faq,
+        faq: faq === undefined ? undefined : canonicalFaq,
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -540,244 +548,6 @@ router.delete(
         .json({ error: error.message });
     }
   },
-);
-
-// ============================================
-// PAYMENTS MANAGEMENT
-// ============================================
-
-// GET /api/admin/payments - Get all payments
-router.get(
-  "/payments",
-  authenticate,
-  requireAdmin,
-  async (req: AuthRequest, res: Response) => {
-    try {
-      const { status, limit = 100 } = req.query;
-      const statusFilter = status ? `AND p.status = '${status}'` : "";
-
-      const payments = await query(
-        `
-      SELECT 
-        p.*,
-        u.name as user_name,
-        u.email as user_email,
-        c.title as course_title
-      FROM payments p
-      JOIN users u ON p.user_id = u.id
-      JOIN courses c ON p.course_id = c.id
-      WHERE 1=1 ${statusFilter}
-      ORDER BY p.created_at DESC
-      LIMIT $1
-    `,
-        [parseInt(limit as string)],
-      );
-
-      res.json(payments.rows);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  },
-);
-
-// GET /api/admin/payments/stats - Payment statistics
-router.get(
-  "/payments/stats",
-  authenticate,
-  requireAdmin,
-  async (req: AuthRequest, res: Response) => {
-    try {
-      const stats = await query(`
-      SELECT 
-        COUNT(*) as total_payments,
-        COALESCE(SUM(amount), 0) as total_amount,
-        COUNT(*) FILTER (WHERE status = 'completed') as completed_count,
-        COUNT(*) FILTER (WHERE status = 'pending') as pending_count,
-        COUNT(*) FILTER (WHERE status = 'failed') as failed_count,
-        COALESCE(SUM(amount) FILTER (WHERE status = 'completed'), 0) as completed_amount,
-        COALESCE(AVG(amount) FILTER (WHERE status = 'completed'), 0) as average_amount
-      FROM payments
-    `);
-
-      res.json(stats.rows[0]);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  },
-);
-
-// GET /api/admin/manual-receipts — proof images from manual transfers
-router.get(
-  "/manual-receipts",
-  authenticate,
-  requireAdmin,
-  async (req: AuthRequest, res: Response) => {
-    try {
-      const limit = Math.min(
-        parseInt(String(req.query.limit || "200"), 10) || 200,
-        500,
-      );
-      const rows = await query(
-        `
-      SELECT
-        r.id,
-        r.receipt_image_url,
-        r.amount_etb,
-        r.note,
-        r.created_at,
-        r.status,
-        r.reviewed_at,
-        ru.name AS reviewed_by_name,
-        u.name AS user_name,
-        u.email AS user_email,
-        c.title AS course_title,
-        c.id AS course_id
-      FROM manual_payment_receipts r
-      JOIN users u ON r.user_id = u.id
-      JOIN courses c ON r.course_id = c.id
-      LEFT JOIN users ru ON r.reviewed_by = ru.id
-      ORDER BY r.created_at DESC
-      LIMIT $1
-    `,
-        [limit],
-      );
-      res.json(rows.rows);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  },
-);
-
-/** Approve: enroll student + mark receipt approved */
-async function approveManualReceiptById(
-  res: Response,
-  rid: number,
-  adminId: number,
-): Promise<void> {
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    const upd = await client.query(
-      `UPDATE manual_payment_receipts
-       SET status = 'approved', reviewed_at = CURRENT_TIMESTAMP, reviewed_by = $2
-       WHERE id = $1 AND COALESCE(status, 'pending') = 'pending'
-       RETURNING user_id, course_id`,
-      [rid, adminId],
-    );
-    if (upd.rows.length === 0) {
-      await client.query("ROLLBACK");
-      const chk = await pool.query(
-        "SELECT id, status FROM manual_payment_receipts WHERE id = $1",
-        [rid],
-      );
-      if (chk.rows.length === 0) {
-        res.status(400).json({ error: "Receipt not found" });
-        return;
-      }
-      res.status(400).json({
-        error: "Already processed",
-        status: chk.rows[0].status || "pending",
-      });
-      return;
-    }
-    const { user_id, course_id } = upd.rows[0];
-    await client.query(
-      `INSERT INTO enrollments (user_id, course_id) VALUES ($1, $2)
-       ON CONFLICT (user_id, course_id) DO NOTHING`,
-      [user_id, course_id],
-    );
-    await client.query("COMMIT");
-    res.json({ success: true, enrolled: true, user_id, course_id });
-  } catch (error: any) {
-    try {
-      await client.query("ROLLBACK");
-    } catch {
-      /* ignore */
-    }
-    console.error("Approve manual receipt:", error);
-    if (!res.headersSent) {
-      res.status(500).json({ error: error.message || "Failed to approve" });
-    }
-  } finally {
-    client.release();
-  }
-}
-
-/** Literal path first — avoids 404s when proxies mishandle `/manual-receipts/:id/approve` */
-router.post(
-  "/manual-receipts/approve",
-  authenticate,
-  requireAdmin,
-  async (req: AuthRequest, res: Response) => {
-    const rid = parseInt(String(req.body?.receiptId ?? ""), 10);
-    if (!Number.isFinite(rid)) {
-      return res.status(400).json({ error: "receiptId is required" });
-    }
-    await approveManualReceiptById(res, rid, req.user!.id);
-  },
-);
-
-router.post(
-  "/manual-receipts/:id/approve",
-  authenticate,
-  requireAdmin,
-  async (req: AuthRequest, res: Response) => {
-    const rid = parseInt(req.params.id, 10);
-    if (!Number.isFinite(rid)) {
-      return res.status(400).json({ error: "Invalid receipt id" });
-    }
-    await approveManualReceiptById(res, rid, req.user!.id);
-  },
-);
-
-async function removeManualReceiptById(
-  res: Response,
-  rid: number,
-): Promise<void> {
-  try {
-    const del = await query(
-      "DELETE FROM manual_payment_receipts WHERE id = $1 RETURNING id",
-      [rid],
-    );
-    const removed = Array.isArray(del.rows) && del.rows.length > 0;
-    res.json({ success: true, removed });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-}
-
-router.post(
-  "/manual-receipts/remove",
-  authenticate,
-  requireAdmin,
-  async (req: AuthRequest, res: Response) => {
-    const rid = parseInt(String(req.body?.receiptId ?? ""), 10);
-    if (!Number.isFinite(rid)) {
-      return res.status(400).json({ error: "receiptId is required" });
-    }
-    await removeManualReceiptById(res, rid);
-  },
-);
-
-async function removeManualReceiptHandler(req: AuthRequest, res: Response) {
-  const rid = parseInt(req.params.id, 10);
-  if (!Number.isFinite(rid)) {
-    return res.status(400).json({ error: "Invalid receipt id" });
-  }
-  await removeManualReceiptById(res, rid);
-}
-
-router.delete(
-  "/manual-receipts/:id",
-  authenticate,
-  requireAdmin,
-  removeManualReceiptHandler,
-);
-router.post(
-  "/manual-receipts/:id/remove",
-  authenticate,
-  requireAdmin,
-  removeManualReceiptHandler,
 );
 
 export default router;

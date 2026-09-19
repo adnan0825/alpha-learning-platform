@@ -12,18 +12,17 @@ interface LanguageSwitcherProps {
   variant?: "default" | "onDark";
 }
 
-const LABEL: Record<"en" | "sm", string> = {
-  en: "English",
-  sm: "Somali",
-};
-
 const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   className,
   variant = "default",
 }) => {
-  const { lang, setLang } = useLanguage();
+  const { lang, setLang, t } = useLanguage();
   const onDark = variant === "onDark";
   const other: "en" | "sm" = lang === "en" ? "sm" : "en";
+  const currentLabel = t(
+    lang === "en" ? "language.english" : "language.somali",
+  );
+  const otherLabel = t(other === "en" ? "language.english" : "language.somali");
 
   return (
     <button
@@ -37,8 +36,8 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         className,
       )}
       onClick={() => setLang(other)}
-      aria-label={`Language: ${LABEL[lang]}. Switch to ${LABEL[other]}.`}
-      title={`Switch to ${LABEL[other]}`}
+      aria-label={`${t("language.switchTo")}: ${otherLabel}`}
+      title={`${t("language.switchTo")}: ${otherLabel}`}
     >
       <Languages
         className={cn(
@@ -47,7 +46,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         )}
         aria-hidden
       />
-      <span className="whitespace-nowrap">{LABEL[lang]}</span>
+      <span className="whitespace-nowrap">{currentLabel}</span>
     </button>
   );
 };

@@ -107,12 +107,13 @@ type ShowcaseCourse = {
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
-  const { lang, t } = useLanguage();
+  const { t } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("All");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [courseSearch, setCourseSearch] = useState("");
+  const [showAllCourses, setShowAllCourses] = useState(false);
   const [apiCourses, setApiCourses] = useState<CourseData[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [landingAppearance, setLandingAppearance] = useState<{
@@ -168,35 +169,7 @@ const Index: React.FC = () => {
   }, []);
 
   const faqDisplayItems: FaqItem[] = useMemo(() => {
-    const fromApi = faqItems
-      .filter(
-        (f) =>
-          f.question?.trim() ||
-          f.questionSm?.trim() ||
-          f.questionSomali?.trim() ||
-          f.question_sm?.trim(),
-      )
-      .map((f) => ({
-        ...f,
-        question:
-          lang === "sm"
-            ? f.questionSm?.trim() ||
-              f.questionSomali?.trim() ||
-              f.question_sm?.trim() ||
-              f.question?.trim() ||
-              ""
-            : f.question?.trim() || f.questionSm?.trim() || "",
-        answer:
-          lang === "sm"
-            ? f.answerSm?.trim() ||
-              f.answerSomali?.trim() ||
-              f.answer_sm?.trim() ||
-              f.answer?.trim() ||
-              ""
-            : f.answer?.trim() || f.answerSm?.trim() || "",
-      }));
-    if (fromApi.length > 0) return fromApi;
-    return [
+    const defaultItems: FaqItem[] = [
       {
         id: "default-faq-1",
         question: t("landing.faqDefault1Q"),
@@ -213,7 +186,36 @@ const Index: React.FC = () => {
         answer: t("landing.faqDefault3A"),
       },
     ];
-  }, [faqItems, lang, t]);
+
+    const fromApi = faqItems
+      .filter(
+        (f) =>
+          f.question?.trim() ||
+          f.questionSm?.trim() ||
+          f.questionSomali?.trim() ||
+          f.question_sm?.trim(),
+      )
+      .map((f, index) => {
+        const fallback = defaultItems[index % defaultItems.length];
+        return {
+          ...f,
+          question:
+            f.question?.trim() ||
+            f.questionSm?.trim() ||
+            f.questionSomali?.trim() ||
+            f.question_sm?.trim() ||
+            fallback.question,
+          answer:
+            f.answer?.trim() ||
+            f.answerSm?.trim() ||
+            f.answerSomali?.trim() ||
+            f.answer_sm?.trim() ||
+            fallback.answer,
+        };
+      });
+    if (fromApi.length > 0) return fromApi;
+    return defaultItems;
+  }, [faqItems, t]);
 
   const showcaseCourses: ShowcaseCourse[] = useMemo(() => {
     return apiCourses.map((c) => {
@@ -254,6 +256,11 @@ const Index: React.FC = () => {
         c.category.toLowerCase().includes(q),
     );
   }, [showcaseCourses, activeCategory, courseSearch]);
+
+  const displayedCourses = useMemo(
+    () => (showAllCourses ? filteredCourses : filteredCourses.slice(0, 6)),
+    [filteredCourses, showAllCourses],
+  );
 
   const openCourse = (course: ShowcaseCourse) => {
     navigate(course.loginRedirect);
@@ -306,7 +313,7 @@ const Index: React.FC = () => {
       descKey: "features.offer.programming.desc",
     },
     {
-      icon: <Languages size={22 } />,
+      icon: <Languages size={22} />,
       labelKey: "features.offer.fluent90",
       taglineKey: "features.offer.fluent90.tagline",
       descKey: "features.offer.fluent90.desc",
@@ -348,7 +355,7 @@ const Index: React.FC = () => {
             <span className="relative">
               <img
                 src={logo}
-                alt="SOTA"
+                alt="Alpha"
                 className="h-10 w-10 rounded-xl object-cover shadow-sm ring-1 ring-border/40 dark:ring-border/30"
               />
             </span>
@@ -721,7 +728,7 @@ const Index: React.FC = () => {
             ))}
           </motion.div>
 
-          {/* Course grid — full catalog; sign in to open a course */}
+          {/* Course grid — featured courses; sign in to open a course */}
           {coursesLoading ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
               {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -755,7 +762,7 @@ const Index: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
               <AnimatePresence mode="popLayout">
-                {filteredCourses.map((course, i) => (
+                {displayedCourses.map((course, i) => (
                   <motion.div
                     key={course.key}
                     initial={{ opacity: 0, y: 22 }}
@@ -904,6 +911,21 @@ const Index: React.FC = () => {
               </AnimatePresence>
             </div>
           )}
+
+          {!coursesLoading &&
+            filteredCourses.length > displayedCourses.length && (
+              <div className="mt-10 flex justify-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 rounded-xl border-accent/25 px-6 font-semibold text-accent hover:bg-accent/[0.07]"
+                  onClick={() => setShowAllCourses(true)}
+                >
+                  {t("landing.seeMoreCourses")}
+                  <ArrowRight size={16} className="ml-2" aria-hidden />
+                </Button>
+              </div>
+            )}
 
           {!coursesLoading && filteredCourses.length === 0 && (
             <p className="text-center text-sm text-muted-foreground py-12">
@@ -1329,7 +1351,7 @@ const Index: React.FC = () => {
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <a
-                  href="https://t.me/"
+                  href="https://t.me/alpha_contact_825"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-card text-muted-foreground transition-colors hover:border-accent/40 hover:text-accent"
@@ -1413,12 +1435,33 @@ const Index: React.FC = () => {
                   {t("landing.location")}
                 </li>
                 <li className="flex items-center gap-3">
-                  <Phone size={15} className="text-accent shrink-0" /> +251 97
-                  826 1753
+                  <Phone size={15} className="text-accent shrink-0" />
+                  <a
+                    href="tel:+251978261753"
+                    className="transition-colors hover:text-foreground"
+                  >
+                    +251 97 826 1753
+                  </a>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Mail size={15} className="text-accent shrink-0" />{" "}
-                  alphatechacademy825@gmail.com
+                  <IconTelegram className="h-4 w-4 text-accent shrink-0" />
+                  <a
+                    href="https://t.me/alpha_contact_825"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="transition-colors hover:text-foreground"
+                  >
+                    @alpha_contact_825
+                  </a>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Mail size={15} className="text-accent shrink-0" />
+                  <a
+                    href="mailto:alphatechacademy825@gmail.com"
+                    className="transition-colors hover:text-foreground"
+                  >
+                    alphatechacademy825@gmail.com
+                  </a>
                 </li>
               </ul>
             </div>

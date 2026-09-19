@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pause, Play, Volume2, VolumeX, SkipBack, SkipForward } from "lucide-react";
+import {
+  Pause,
+  Play,
+  Volume2,
+  VolumeX,
+  SkipBack,
+  SkipForward,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getYouTubeVideoId } from "@/lib/youtube";
 import { Slider } from "@/components/ui/slider";
@@ -23,7 +30,12 @@ type YTPlayer = {
 
 declare global {
   interface Window {
-    YT?: { Player: new (el: string | HTMLElement, opts: Record<string, unknown>) => YTPlayer };
+    YT?: {
+      Player: new (
+        el: string | HTMLElement,
+        opts: Record<string, unknown>,
+      ) => YTPlayer;
+    };
     onYouTubeIframeAPIReady?: () => void;
   }
 }
@@ -78,7 +90,9 @@ function loadYouTubeAPI(): Promise<void> {
       prev?.();
       resolve();
     };
-    if (document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+    if (
+      document.querySelector('script[src="https://www.youtube.com/iframe_api"]')
+    ) {
       const t = setInterval(() => {
         if (window.YT?.Player) {
           clearInterval(t);
@@ -106,6 +120,16 @@ type Props = {
   videoUrl: string;
   className?: string;
   title?: string;
+  initialTime?: number;
+  autoPlay?: boolean;
+  loop?: boolean;
+  onProgress?: (
+    position: number,
+    duration: number,
+    playing: boolean,
+    force?: boolean,
+  ) => void;
+  onEnded?: () => void;
 };
 
 /**
@@ -113,7 +137,16 @@ type Props = {
  * Transparent overlay blocks clicks on the embed (reduces interaction with in-player promos).
  * Custom controls: seek ±10s, play/pause, mute, progress + time.
  */
-export function ChromelessYouTube({ videoUrl, className, title = "Video" }: Props) {
+export function ChromelessYouTube({
+  videoUrl,
+  className,
+  title = "Video",
+  initialTime = 0,
+  autoPlay = true,
+  loop = true,
+  onProgress,
+  onEnded,
+}: Props) {
   const vid = getYouTubeVideoId(videoUrl);
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
@@ -126,6 +159,15 @@ export function ChromelessYouTube({ videoUrl, className, title = "Video" }: Prop
   const scrubbingRef = useRef(false);
   const [scrubbing, setScrubbing] = useState(false);
   const [scrubTime, setScrubTime] = useState(0);
+  const progressRef = useRef(onProgress);
+  const endedRef = useRef(onEnded);
+  const initialTimeRef = useRef(initialTime);
+
+  useEffect(() => {
+    progressRef.current = onProgress;
+    endedRef.current = onEnded;
+    initialTimeRef.current = initialTime;
+  }, [initialTime, onEnded, onProgress]);
 
   const syncState = useCallback((p: YTPlayer) => {
     const st = p.getPlayerState?.();
@@ -142,6 +184,11 @@ export function ChromelessYouTube({ videoUrl, className, title = "Video" }: Prop
       }
       const d = p.getDuration?.();
       if (typeof d === "number" && Number.isFinite(d) && d > 0) setDuration(d);
+      const current = p.getCurrentTime?.();
+      const length = p.getDuration?.();
+      if (typeof current === "number" && typeof length === "number") {
+        progressRef.current?.(current, length, st === 1 || st === 3, st === 2);
+      }
     } catch {
       /* ignore */
     }
@@ -167,7 +214,7 @@ export function ChromelessYouTube({ videoUrl, className, title = "Video" }: Prop
 
       // Clear container to ensure no stale iframe exists
       if (containerRef.current) {
-        containerRef.current.innerHTML = '';
+        containerRef.current.innerHTML = "";
       }
 
       new window.YT.Player(containerRef.current, {
@@ -195,11 +242,15 @@ export function ChromelessYouTube({ videoUrl, className, title = "Video" }: Prop
             requestAnimationFrame(() => patchYouTubeIframeAllow(e.target));
             setReady(true);
             setMuted(true);
-            tryPlayYouTube(e.target);
+            if (initialTimeRef.current > 0) {
+              e.target.seekTo(initialTimeRef.current, true);
+            }
+            if (autoPlay) tryPlayYouTube(e.target);
             syncState(e.target);
             try {
               const d = e.target.getDuration?.();
-              if (typeof d === "number" && Number.isFinite(d) && d > 0) setDuration(d);
+              if (typeof d === "number" && Number.isFinite(d) && d > 0)
+                setDuration(d);
             } catch {
               /* ignore */
             }
@@ -208,11 +259,15 @@ export function ChromelessYouTube({ videoUrl, className, title = "Video" }: Prop
             if (cancelled) return;
             const st = e.target.getPlayerState?.();
             if (st === 0) {
-              try {
-                e.target.seekTo?.(0, true);
-                e.target.playVideo?.();
-              } catch {
-                /* ignore */
+              if (loop) {
+                try {
+                  e.target.seekTo?.(0, true);
+                  e.target.playVideo?.();
+                } catch {
+                  /* ignore */
+                }
+              } else {
+                endedRef.current?.();
               }
             }
             syncState(e.target);
@@ -230,7 +285,7 @@ export function ChromelessYouTube({ videoUrl, className, title = "Video" }: Prop
       }
       playerRef.current = null;
     };
-  }, [vid, syncState]);
+  }, [autoPlay, loop, vid, syncState]);
 
   useEffect(() => {
     if (!ready) return;
@@ -242,7 +297,11 @@ export function ChromelessYouTube({ videoUrl, className, title = "Video" }: Prop
         const t = p.getCurrentTime?.();
         const d = p.getDuration?.();
         if (typeof t === "number" && Number.isFinite(t)) setCurrentTime(t);
-        if (typeof d === "number" && Number.isFinite(d) && d > 0) setDuration(d);
+        if (typeof d === "number" && Number.isFinite(d) && d > 0)
+          setDuration(d);
+        if (typeof t === "number" && typeof d === "number") {
+          progressRef.current?.(t, d, playing);
+        }
       } catch {
         /* ignore */
       }
@@ -270,7 +329,8 @@ export function ChromelessYouTube({ videoUrl, className, title = "Video" }: Prop
   const poster = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
   const displayTime = scrubbing ? scrubTime : currentTime;
   const sliderMax = duration > 0 ? duration : 1;
-  const sliderValue = duration > 0 ? Math.min(scrubbing ? scrubTime : currentTime, duration) : 0;
+  const sliderValue =
+    duration > 0 ? Math.min(scrubbing ? scrubTime : currentTime, duration) : 0;
 
   const btnClass =
     "inline-flex h-9 min-w-[2.25rem] items-center justify-center rounded-md border border-border/60 bg-background/80 text-foreground transition-colors hover:bg-muted/60 disabled:opacity-40";
@@ -280,10 +340,18 @@ export function ChromelessYouTube({ videoUrl, className, title = "Video" }: Prop
   return (
     <div className={cn("flex flex-col", className)}>
       <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
-        <div ref={containerRef} className="absolute inset-0 z-0 h-full w-full" title={title} />
+        <div
+          ref={containerRef}
+          className="absolute inset-0 z-0 h-full w-full"
+          title={title}
+        />
         {/* Show thumbnail until video is actually playing */}
         {(!ready || !playing) && (
-          <div className="absolute inset-0 z-[15] bg-cover bg-center" style={{ backgroundImage: `url(${poster})` }} aria-hidden />
+          <div
+            className="absolute inset-0 z-[15] bg-cover bg-center"
+            style={{ backgroundImage: `url(${poster})` }}
+            aria-hidden
+          />
         )}
         {ready && (
           <div
@@ -334,7 +402,13 @@ export function ChromelessYouTube({ videoUrl, className, title = "Video" }: Prop
           <span>{formatTime(duration)}</span>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <button type="button" disabled={!ready} onClick={() => seekBy(-SEEK_SEC)} className={btnClass} aria-label={`Back ${SEEK_SEC} seconds`}>
+          <button
+            type="button"
+            disabled={!ready}
+            onClick={() => seekBy(-SEEK_SEC)}
+            className={btnClass}
+            aria-label={`Back ${SEEK_SEC} seconds`}
+          >
             <SkipBack size={16} />
           </button>
           <button
@@ -349,9 +423,19 @@ export function ChromelessYouTube({ videoUrl, className, title = "Video" }: Prop
             className={primaryBtn}
             aria-label={playing ? "Pause" : "Play"}
           >
-            {playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+            {playing ? (
+              <Pause size={16} />
+            ) : (
+              <Play size={16} className="ml-0.5" />
+            )}
           </button>
-          <button type="button" disabled={!ready} onClick={() => seekBy(SEEK_SEC)} className={btnClass} aria-label={`Forward ${SEEK_SEC} seconds`}>
+          <button
+            type="button"
+            disabled={!ready}
+            onClick={() => seekBy(SEEK_SEC)}
+            className={btnClass}
+            aria-label={`Forward ${SEEK_SEC} seconds`}
+          >
             <SkipForward size={16} />
           </button>
           <button

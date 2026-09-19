@@ -1,25 +1,29 @@
 /**
  * Course View - Video player, lesson list, discussion, and quiz access.
  */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   coursesAPI,
   enrollmentsAPI,
   discussionsAPI,
   quizzesAPI,
+  progressAPI,
   adminAPI,
   CourseData,
   Enrollment,
   Discussion,
   Quiz,
+  VideoWatchProgress,
 } from "@/lib/api";
 import { getOrderedLessons } from "@/lib/courseIntro";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 
 import VideoPlayer from "@/components/VideoPlayer";
-import PaymentCheckout from "@/components/PaymentCheckout";
+import { ManualPaymentMethods } from "@/components/ManualPaymentMethods";
+import { ManualPaymentReceiptUpload } from "@/components/ManualPaymentReceiptUpload";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -42,11 +46,15 @@ import logo from "@/assets/logo.png";
 const CourseView: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [course, setCourse] = useState<CourseData | null>(null);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [completedVideos, setCompletedVideos] = useState<string[]>([]);
+  const [watchProgress, setWatchProgress] = useState<
+    Record<number, VideoWatchProgress>
+  >({});
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -56,6 +64,10 @@ const CourseView: React.FC = () => {
   >(null);
   const [loading, setLoading] = useState(true);
   const [coursePrice, setCoursePrice] = useState(0);
+  const lastWatchReportRef = useRef<Record<number, number>>({});
+  const latestPlaybackRef = useRef<
+    Record<number, { position: number; duration: number }>
+  >({});
 
   // Check if current user is the instructor
   const isInstructor =
@@ -95,18 +107,33 @@ const CourseView: React.FC = () => {
             if (found) {
               setEnrollment(found);
               setCompletedVideos(found.completedVideos || []);
+              try {
+                const savedWatchProgress =
+                  await progressAPI.getCourseVideoProgress(courseId);
+                setWatchProgress(
+                  Object.fromEntries(
+                    savedWatchProgress.map((item) => [item.videoIndex, item]),
+                  ),
+                );
+              } catch (watchError) {
+                console.error("Video progress load failed:", watchError);
+                setWatchProgress({});
+              }
             } else {
               setEnrollment(null);
               setCompletedVideos([]);
+              setWatchProgress({});
             }
           } catch (e) {
             console.error("Enrollments load failed:", e);
             setEnrollment(null);
             setCompletedVideos([]);
+            setWatchProgress({});
           }
         } else {
           setEnrollment(null);
           setCompletedVideos([]);
+          setWatchProgress({});
         }
       } catch (err) {
         console.error("Error:", err);
@@ -138,13 +165,75 @@ const CourseView: React.FC = () => {
 
   const toggleComplete = async (videoIndex: number) => {
     if (!enrollment || !course || lessons.length === 0) return;
+    const lesson = lessons[videoIndex];
+    if (lesson?.url?.trim() && !watchProgress[videoIndex]?.completed) {
+      toast({
+        title: "Watch the lesson video first",
+        description:
+          "The completion action unlocks after the video reaches the end.",
+        variant: "destructive",
+      });
+      return;
+    }
     const videoKey = `video_${videoIndex}`;
     const updated = completedVideos.includes(videoKey)
       ? completedVideos.filter((v) => v !== videoKey)
       : [...completedVideos, videoKey];
     setCompletedVideos(updated);
-    const progressPct = Math.round((updated.length / lessons.length) * 100);
-    await enrollmentsAPI.updateProgress(enrollment.id, updated, progressPct);
+    try {
+      const saved = await enrollmentsAPI.updateProgress(enrollment.id, updated);
+      setEnrollment(saved);
+    } catch (error) {
+      setCompletedVideos(completedVideos);
+      toast({
+        title: t("course.progressSaveFailed"),
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const reportVideoProgress = async (
+    videoIndex: number,
+    positionSeconds: number,
+    durationSeconds: number,
+    playing: boolean,
+    ended = false,
+    force = false,
+  ) => {
+    if (
+      !enrollment ||
+      !course ||
+      !Number.isFinite(durationSeconds) ||
+      durationSeconds <= 0
+    )
+      return;
+    latestPlaybackRef.current[videoIndex] = {
+      position: positionSeconds,
+      duration: durationSeconds,
+    };
+    const now = Date.now();
+    const lastReport = lastWatchReportRef.current[videoIndex] || 0;
+    if (!ended && !force && now - lastReport < 4000) return;
+    lastWatchReportRef.current[videoIndex] = now;
+    try {
+      const saved = await progressAPI.recordCourseVideoProgress(
+        course.id,
+        videoIndex,
+        { positionSeconds, durationSeconds, playing, ended },
+      );
+      setWatchProgress((previous) => ({
+        ...previous,
+        [videoIndex]: saved,
+      }));
+      if (saved.enrollment) {
+        setEnrollment(saved.enrollment);
+        setCompletedVideos(saved.enrollment.completedVideos || []);
+      }
+    } catch (error) {
+      console.error("Video progress save failed:", error);
+    }
   };
 
   const postComment = async () => {
@@ -203,12 +292,15 @@ const CourseView: React.FC = () => {
             replies: (d.replies || []).filter((r) => r.id !== id),
           })),
       );
-      toast({ title: "Removed", description: "Discussion post was deleted." });
+      toast({
+        title: t("common.removed"),
+        description: t("common.discussionDeleted"),
+      });
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Could not delete this post.";
       toast({
-        title: "Delete failed",
+        title: t("course.deleteDiscussionFailed"),
         description: message,
         variant: "destructive",
       });
@@ -232,7 +324,7 @@ const CourseView: React.FC = () => {
       <div className="min-h-screen bg-background">
         <CoursePublicHeader courseId={courseId} />
         <div className="text-center py-20 px-4">
-          <p className="text-muted-foreground">Course not found</p>
+          <p className="text-muted-foreground">{t("course.notFound")}</p>
           <Button
             variant="outline"
             className="mt-4"
@@ -275,10 +367,34 @@ const CourseView: React.FC = () => {
               </p>
             ) : null}
             {lessons.length > 0 && activeLesson ? (
-              <VideoPlayer url={activeLesson.url} title={activeLesson.title} />
+              <VideoPlayer
+                url={activeLesson.url}
+                title={activeLesson.title}
+                initialTime={watchProgress[activeIdx]?.lastPositionSeconds || 0}
+                onProgress={(position, duration, playing, force) =>
+                  reportVideoProgress(
+                    activeIdx,
+                    position,
+                    duration,
+                    playing,
+                    false,
+                    force,
+                  )
+                }
+                onEnded={() => {
+                  const latest = latestPlaybackRef.current[activeIdx];
+                  void reportVideoProgress(
+                    activeIdx,
+                    latest?.position || 0,
+                    latest?.duration || 0,
+                    false,
+                    true,
+                  );
+                }}
+              />
             ) : (
               <div className="aspect-video rounded-xl bg-muted flex items-center justify-center">
-                <p className="text-muted-foreground">No videos available</p>
+                <p className="text-muted-foreground">{t("course.noVideos")}</p>
               </div>
             )}
 
@@ -378,7 +494,7 @@ const CourseView: React.FC = () => {
                     <Textarea
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Ask a question or leave a comment..."
+                      placeholder={t("course.askDiscussion")}
                       rows={2}
                       className="flex-1"
                     />
@@ -469,40 +585,21 @@ const CourseView: React.FC = () => {
           {/* Sidebar */}
           <div className="space-y-4">
             {!isInstructor && !enrollment && coursePrice && coursePrice > 0 ? (
-              user ? (
-                <PaymentCheckout
-                  courseId={courseId || ""}
-                  courseTitle={course?.title || ""}
-                  coursePrice={coursePrice}
-                  onSuccess={() => {
-                    window.location.reload();
-                  }}
+              <div className="space-y-4">
+                <ManualPaymentMethods
+                  courseTitle={course.title}
+                  amountEtb={coursePrice}
                 />
-              ) : (
-                <Card className="shadow-card">
-                  <CardContent className="p-4 text-center space-y-3">
-                    <h3 className="font-semibold">Paid course</h3>
-                    <p className="text-sm text-muted-foreground">
-                      You&apos;re watching the free preview. Sign in to purchase
-                      full access.
-                    </p>
-                    <Button
-                      className="w-full gradient-accent text-accent-foreground"
-                      asChild
-                    >
-                      <Link
-                        to={`/login?redirect=${encodeURIComponent(`/course/${courseId}`)}`}
-                      >
-                        Sign in to continue
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )
+                <ManualPaymentReceiptUpload
+                  courseId={course.id}
+                  courseTitle={course.title}
+                  amountEtb={coursePrice}
+                />
+              </div>
             ) : !isInstructor && !enrollment ? (
               <Card className="shadow-card">
                 <CardContent className="p-4 text-center space-y-3">
-                  <h3 className="font-semibold">Free Course</h3>
+                  <h3 className="font-semibold">{t("course.freeCourse")}</h3>
                   <p className="text-sm text-muted-foreground">
                     {user
                       ? "Enroll now to unlock all lessons and track progress."
@@ -574,6 +671,10 @@ const CourseView: React.FC = () => {
                       const isCompleted = completedVideos.includes(
                         `video_${index}`,
                       );
+                      const requiresVideo = Boolean(lesson.url?.trim());
+                      const videoWatched = Boolean(
+                        watchProgress[index]?.completed,
+                      );
                       const isCurrent = index === currentVideoIndex;
                       return (
                         <div
@@ -612,11 +713,17 @@ const CourseView: React.FC = () => {
                             )}
                           </div>
                           <button
+                            disabled={requiresVideo && !videoWatched}
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleComplete(index);
                             }}
-                            className="text-xs text-muted-foreground hover:text-foreground flex-shrink-0"
+                            title={
+                              requiresVideo && !videoWatched
+                                ? "Watch the video to the end to unlock completion"
+                                : undefined
+                            }
+                            className="text-xs text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 flex-shrink-0"
                           >
                             {isCompleted ? "Undo" : "Done"}
                           </button>
@@ -636,6 +743,7 @@ const CourseView: React.FC = () => {
 
 function CoursePublicHeader({ courseId }: { courseId?: string }) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const redirectPath = courseId ? `/course/${courseId}` : "/";
 
   return (
@@ -656,7 +764,7 @@ function CoursePublicHeader({ courseId }: { courseId?: string }) {
         </Link>
         {user ? (
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/dashboard">Dashboard</Link>
+            <Link to="/dashboard">{t("common.dashboard")}</Link>
           </Button>
         ) : (
           <Button
@@ -753,7 +861,7 @@ const DiscussionThread: React.FC<{
                 <Textarea
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="Write a reply..."
+                  placeholder={t("course.writeReply")}
                   rows={1}
                   className="flex-1 text-xs"
                 />

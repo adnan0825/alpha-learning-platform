@@ -30,7 +30,7 @@ function postAuthNavigate(navigate: ReturnType<typeof useNavigate>) {
 export default function GoogleOAuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { loginWithGoogleCode } = useAuth();
+  const { loginWithGoogleCode, refreshProfile } = useAuth();
   const { toast } = useToast();
   const didRun = useRef(false);
 
@@ -68,12 +68,7 @@ export default function GoogleOAuthCallback() {
     // sessionStorage lock: prevents double exchange after Strict Mode remount
     const alreadyExchanged = sessionStorage.getItem("alpha_oauth_exchanged");
     if (alreadyExchanged === code) {
-      // Code was already exchanged — if we have a token, just navigate
-      if (localStorage.getItem("alpha_token")) {
-        postAuthNavigate(navigate);
-      } else {
-        navigate("/login", { replace: true });
-      }
+      void refreshProfile().then(() => postAuthNavigate(navigate));
       return;
     }
 
@@ -92,18 +87,13 @@ export default function GoogleOAuthCallback() {
         postAuthNavigate(navigate);
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
-        // If token exists despite the error, the exchange actually succeeded on a prior attempt
-        if (localStorage.getItem("alpha_token")) {
-          postAuthNavigate(navigate);
-          return;
-        }
         sessionStorage.removeItem("alpha_oauth_exchanged");
         goLogin(msg);
       } finally {
         exchangingCode = false;
       }
     })();
-  }, [searchParams, navigate, loginWithGoogleCode, toast]);
+  }, [searchParams, navigate, loginWithGoogleCode, refreshProfile, toast]);
 
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-2 p-8 text-center text-muted-foreground">

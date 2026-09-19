@@ -53,6 +53,7 @@ function HeroNativeChromeless({
   label: string;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const [resolvedSrc, setResolvedSrc] = useState(src);
   const scrubbingRef = useRef(false);
   const [playing, setPlaying] = useState(false);
   /** Muted by default so autoplay works in browsers. */
@@ -61,6 +62,26 @@ function HeroNativeChromeless({
   const [duration, setDuration] = useState(0);
   const [scrubbing, setScrubbing] = useState(false);
   const [scrubTime, setScrubTime] = useState(0);
+
+  useEffect(() => {
+    if (!src.includes("/api/uploads/video/")) {
+      setResolvedSrc(src);
+      return;
+    }
+    const controller = new AbortController();
+    setResolvedSrc("");
+    fetch(`${src}/access`, {
+      credentials: "include",
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Video unavailable");
+        return response.json() as Promise<{ url: string }>;
+      })
+      .then((payload) => setResolvedSrc(payload.url))
+      .catch(() => setResolvedSrc(""));
+    return () => controller.abort();
+  }, [src]);
 
   useEffect(() => {
     const el = ref.current;
@@ -103,7 +124,7 @@ function HeroNativeChromeless({
       el.addEventListener("canplay", tryPlay, { once: true });
       return () => el.removeEventListener("canplay", tryPlay);
     }
-  }, [src]);
+  }, [resolvedSrc]);
 
   useEffect(() => {
     const el = ref.current;
@@ -140,12 +161,16 @@ function HeroNativeChromeless({
       <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
         <video
           ref={ref}
-          src={src}
+          src={resolvedSrc}
           poster={poster}
           className="h-full w-full object-contain"
           playsInline
           preload="auto"
           controls={false}
+          controlsList="nodownload noplaybackrate"
+          disablePictureInPicture
+          disableRemotePlayback
+          onContextMenu={(event) => event.preventDefault()}
           autoPlay
           loop
           muted={muted}

@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { usersAPI, UserProfile } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -196,21 +197,30 @@ const AdminUsers: React.FC = () => {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-5 py-8 text-center text-muted-foreground"
-                    >
-                      {t("admin.users.loading")}
-                    </td>
-                  </tr>
+                  [1, 2, 3, 4].map((row) => (
+                    <tr key={row} className="border-b">
+                      {[1, 2, 3, 4, 5].map((cell) => (
+                        <td key={cell} className="px-5 py-4">
+                          <Skeleton className="h-5 w-full max-w-40" />
+                        </td>
+                      ))}
+                    </tr>
+                  ))
                 ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={5}
-                      className="px-5 py-8 text-center text-muted-foreground"
-                    >
-                      {t("admin.users.empty")}
+                    <td colSpan={5} className="px-5 py-12 text-center">
+                      <Users
+                        className="mx-auto mb-3 text-muted-foreground"
+                        size={32}
+                      />
+                      <p className="font-medium text-foreground">
+                        {t("admin.users.empty")}
+                      </p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {search
+                          ? t("admin.users.adjustSearch")
+                          : t("admin.users.emptyDescription")}
+                      </p>
                     </td>
                   </tr>
                 ) : (
@@ -247,6 +257,7 @@ const AdminUsers: React.FC = () => {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
+                            aria-label={`Edit ${user.displayName || user.email}`}
                             onClick={() => handleEditUser(user)}
                           >
                             <Edit size={16} />
@@ -255,6 +266,7 @@ const AdminUsers: React.FC = () => {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            aria-label={`Delete ${user.displayName || user.email}`}
                             onClick={() =>
                               confirmDeleteUser(
                                 user.id,

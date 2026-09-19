@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from "react";
 import {
   useLanguage,
-  SOTA_LANG_PROMPT_SEEN_KEY,
+  ALPHA_LANG_PROMPT_SEEN_KEY,
 } from "@/contexts/LanguageContext";
 import {
   Dialog,
@@ -19,12 +19,12 @@ const FirstVisitLanguageDialog: React.FC = () => {
   const { lang, setLang, t } = useLanguage();
   const [open, setOpen] = useState(() =>
     typeof window !== "undefined"
-      ? !localStorage.getItem(SOTA_LANG_PROMPT_SEEN_KEY)
+      ? !localStorage.getItem(ALPHA_LANG_PROMPT_SEEN_KEY)
       : false,
   );
 
   useEffect(() => {
-    if (localStorage.getItem(SOTA_LANG_PROMPT_SEEN_KEY)) {
+    if (localStorage.getItem(ALPHA_LANG_PROMPT_SEEN_KEY)) {
       setOpen(false);
     }
   }, [lang]);

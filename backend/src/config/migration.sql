@@ -9,3 +9,7 @@ ALTER TABLE courses ADD COLUMN IF NOT EXISTS enrolled_count INTEGER DEFAULT 0;
 -- Add progress tracking columns to enrollments table
 ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS progress INTEGER DEFAULT 0;
 ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS completed_videos JSONB DEFAULT '[]';
+UPDATE enrollments SET progress = GREATEST(0, LEAST(100, COALESCE(progress, 0))) WHERE progress IS NULL OR progress < 0 OR progress > 100;
+UPDATE enrollments SET completed_videos = '[]'::jsonb WHERE completed_videos IS NULL;
+ALTER TABLE enrollments ALTER COLUMN progress SET DEFAULT 0;
+ALTER TABLE enrollments ALTER COLUMN completed_videos SET DEFAULT '[]'::jsonb;

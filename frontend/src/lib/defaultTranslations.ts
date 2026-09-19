@@ -94,53 +94,6 @@ export const defaultTranslations = {
     sm: "Dhammaan doodaha iyo qiimaymaha",
   },
   "admin.courses.cancel": { en: "Cancel", sm: "Jooji" },
-  "payments.finance": { en: "Finance", sm: "Maaliyad" },
-  "payments.title": { en: "Payments & Billing", sm: "Bixinta iyo Biilasha" },
-  "payments.subtitle": {
-    en: "Track transactions and platform revenue",
-    sm: "La soco macaamillada iyo dakhliga madasha",
-  },
-  "payments.refresh": { en: "Refresh", sm: "Cusboonaysii" },
-  "payments.totalRevenue": { en: "Total Revenue", sm: "Wadarta Dakhliga" },
-  "payments.completed": {
-    en: "Completed Payments",
-    sm: "Bixinnada La Dhammaystiray",
-  },
-  "payments.pending": { en: "Pending Payments", sm: "Bixinnada Sugaya" },
-  "payments.all": { en: "All", sm: "Dhammaan" },
-  "payments.failed": { en: "Failed", sm: "Fashilmay" },
-  "payments.transaction": { en: "Transaction ID", sm: "Aqoonsiga Macaamilka" },
-  "payments.student": { en: "Student", sm: "Arday" },
-  "payments.course": { en: "Course", sm: "Koorso" },
-  "payments.amount": { en: "Amount", sm: "Qaddar" },
-  "payments.date": { en: "Date", sm: "Taariikh" },
-  "payments.status": { en: "Status", sm: "Xaalad" },
-  "payments.empty": {
-    en: "No transactions found",
-    sm: "Macaamillo lama helin",
-  },
-  "payments.approved": { en: "Approved", sm: "La ansixiyay" },
-  "payments.approvedDescription": {
-    en: "Student enrolled in the course (if not already).",
-    sm: "Ardayga ayaa koorsada lagu daray haddii uusan hore ugu jirin.",
-  },
-  "payments.approveFailed": {
-    en: "Approve failed",
-    sm: "Ansixintu way fashilantay",
-  },
-  "payments.deleteConfirm": {
-    en: "Remove this receipt record? This does not unenroll the student.",
-    sm: "Ma tirtirtaa rikoorka rasiidkan? Tani kama saaraynayso ardayga koorsada.",
-  },
-  "payments.deleted": { en: "Deleted", sm: "La tirtiray" },
-  "payments.receiptRemoved": {
-    en: "Manual receipt removed.",
-    sm: "Rasiidka gacanta waa la saaray.",
-  },
-  "payments.deleteFailed": {
-    en: "Delete failed",
-    sm: "Tirtiristu way fashilantay",
-  },
   "grades.title": { en: "Student Grades", sm: "Darajooyinka Ardayda" },
   "grades.subtitle": {
     en: "View student enrollment, progress, and performance",
@@ -280,10 +233,10 @@ export const defaultTranslations = {
   // Landing - Hero
   "hero.badge": { en: "Alpha Tech Academy", sm: "Alpha Tech Academy" },
   "hero.title1": { en: "Master Technology,", sm: "Baro Teknoolajiyadda" },
-  "hero.title2": { en: "Build Your Future", sm: "Dhiso Mustaqbalkaaga" },
+  "hero.title2": { en: "Shape Your Future.", sm: "Dhiso Mustaqbalkaaga" },
   "hero.subtitle": {
-    en: "Learn tech skills in your language. Earn internationally recognized certificates. Build a better life.",
-    sm: "Baraarug Xirfad Teknoologo Luqaddaada. Hel Shahadado Lagu Aqoonsanayo Adduunka. Dhiso Nolosha Wanaagsan.",
+    en: "Alpha Tech Academy is a modern tech school offering in-person and online learning. We teach technology in Af-Somali and empower the next generation of creators, developers, and innovators.",
+    sm: "Alpha Tech Academy waa dugsi casri ah oo bixiya waxbarasho toos ah iyo online ah. Waxaan teknoolojiyadda ku barnaa Af-Soomaali, waxaanan awood siinaynaa jiilka cusub ee hal-abuurayaasha, horumariyeyaasha, iyo haldoorada.",
   },
   "hero.cta": { en: "Start Learning", sm: "Bilow Barashada" },
   "hero.exploreCourses": { en: "Our Courses", sm: "Koorsooyinkayaga" },
@@ -457,7 +410,7 @@ export const defaultTranslations = {
   },
   "landing.testimonial.ahmed.role": {
     en: "Web Developer",
-    sm: "Horumariye Web",
+    sm: "Web Developer",
   },
   "landing.testimonial.ahmed.text": {
     en: "Alpha has completely transformed my understanding of web development. The instruction makes complex topics easy to grasp.",
@@ -465,7 +418,7 @@ export const defaultTranslations = {
   },
   "landing.testimonial.fatima.role": {
     en: "Freelancer",
-    sm: "Shaqaale Madaxbannaan",
+    sm: "Freelancer",
   },
   "landing.testimonial.fatima.text": {
     en: "I landed my first freelancing job within two months of completing the Digital Marketing course. Best investment I've made!",
@@ -503,6 +456,10 @@ export const defaultTranslations = {
   },
   "landing.close": { en: "Close", sm: "Xir" },
   "landing.searchCourses": { en: "Search courses…", sm: "Raadi koorsooyin…" },
+  "landing.seeMoreCourses": {
+    en: "See More Courses",
+    sm: "Eeg Koorsooyin Dheeraad ah",
+  },
   "landing.menu": { en: "Menu", sm: "Liiska" },
   "landing.webDevelopment": { en: "Web Development", sm: "Horumarinta Webka" },
   "landing.mobileDevelopment": {
@@ -528,8 +485,8 @@ export const defaultTranslations = {
     sm: "Waxbarasho tayo leh oo teknolojiyadeed oo lagu bixiyo Af-Soomaali iyo Ingiriisi. Waxaan Itoobiya ka dhisaynaa jiilka hoggaamiyeyaasha teknolojiyadda ee xiga.",
   },
   "landing.location": {
-    en: "Ethiopia, Jigjiga",
-    sm: "Itoobiya, Jigjiga",
+    en: "Ethiopia, Somali Region, Jigjiga, ",
+    sm: "Itoobiya, Deegaanka Soomaalida, Jigjiga",
   },
   "dashboard.admin": { en: "Admin", sm: "Maamule" },
   "dashboard.instructor": { en: "Instructor", sm: "Macallin" },
@@ -673,8 +630,18 @@ export const defaultTranslations = {
     sm: "Dhammaystir labada luqadood",
   },
   "faq.incompleteDescription": {
-    en: "Every FAQ entry needs an English question and answer plus a Somali question and answer.",
-    sm: "Qodob kasta oo FAQ ah wuxuu u baahan yahay su'aal iyo jawaab Ingiriisi ah iyo su'aal iyo jawaab Af-Soomaali ah.",
+    en: "Every FAQ entry needs one question and one answer. It can be written in either language.",
+    sm: "Qodob kasta oo FAQ ah wuxuu u baahan yahay hal su'aal iyo hal jawaab. Waxaa lagu qori karaa mid kasta oo ka mid ah labada luqadood.",
+  },
+  "faq.question": { en: "Question", sm: "Su'aal" },
+  "faq.answer": { en: "Answer", sm: "Jawaab" },
+  "faq.questionPlaceholder": {
+    en: "Write the question in English or Somali",
+    sm: "Ku qor su'aasha Ingiriisi ama Soomaali",
+  },
+  "faq.answerPlaceholder": {
+    en: "Write the answer in English or Somali",
+    sm: "Ku qor jawaabta Ingiriisi ama Soomaali",
   },
   "faq.questionEnglish": {
     en: "Question (English)",
@@ -727,7 +694,6 @@ export const defaultTranslations = {
   "sidebar.announcements": { en: "Announcements", sm: "Ogeysiisyada Guud" },
   "sidebar.revenue": { en: "Revenue", sm: "Dakhliga" },
   "sidebar.withdrawals": { en: "Withdrawals", sm: "Lacag-bixinnada" },
-  "sidebar.payments": { en: "Payments", sm: "Bixinnada" },
   "sidebar.addCourse": { en: "Add Course", sm: "Ku Dar Koorso" },
   "sidebar.contentModeration": {
     en: "Content Moderation",
@@ -854,11 +820,6 @@ export const defaultTranslations = {
     en: "Platform Features",
     sm: "Astaamaha Madasha",
   },
-  "admin.settings.payments": { en: "Payments System", sm: "Nidaamka Bixinta" },
-  "admin.settings.paymentsHelp": {
-    en: "Enable Chapa payment integration",
-    sm: "Daar isku-xirka bixinta Chapa",
-  },
   "admin.settings.certificates": { en: "Certificates", sm: "Shahaadooyinka" },
   "admin.settings.certificatesHelp": {
     en: "Auto-generate certificates on completion",
@@ -954,6 +915,14 @@ export const defaultTranslations = {
   "admin.users.empty": {
     en: "No users found",
     sm: "Isticmaalayaal lama helin",
+  },
+  "admin.users.adjustSearch": {
+    en: "Try adjusting your search",
+    sm: "Isku day inaad hagaajiso raadintaada",
+  },
+  "admin.users.emptyDescription": {
+    en: "Users will appear here after they create an account",
+    sm: "Isticmaalayaashu halkan ayay ka soo muuqan doonaan marka ay akoon sameystaan",
   },
   "admin.users.removed": {
     en: "User removed successfully",
@@ -1190,29 +1159,6 @@ export const defaultTranslations = {
     sm: "Waxaan kuugu soo jawaabi doonaa 24 saacadood gudahood.",
   },
   "help.send": { en: "Send Message", sm: "Dir Farriin" },
-  "receipt.title": { en: "Payment Receipt", sm: "Rasiidka Bixinta" },
-  "receipt.success": {
-    en: "Payment Successful!",
-    sm: "Bixintu way guulaysatay!",
-  },
-  "receipt.processed": {
-    en: "Your payment has been processed successfully",
-    sm: "Bixintaada si guul leh ayaa loo farsameeyay",
-  },
-  "receipt.details": { en: "Payment Details", sm: "Faahfaahinta Bixinta" },
-  "receipt.transaction": { en: "Transaction ID", sm: "Aqoonsiga Macaamilka" },
-  "receipt.status": { en: "Status", sm: "Xaalad" },
-  "receipt.amount": { en: "Amount Paid", sm: "Qaddarka La Bixiyay" },
-  "receipt.date": { en: "Payment Date", sm: "Taariikhda Bixinta" },
-  "receipt.course": { en: "Course", sm: "Koorso" },
-  "receipt.email": { en: "Email", sm: "Iimayl" },
-  "receipt.payer": { en: "Payer Name", sm: "Magaca Bixiyaha" },
-  "receipt.thankYou": {
-    en: "Thank you for your enrollment!",
-    sm: "Waad ku mahadsan tahay ku biiristaada!",
-  },
-  "receipt.print": { en: "Print Receipt", sm: "Daabac Rasiidka" },
-  "receipt.pdf": { en: "Save as PDF", sm: "U Kaydi PDF ahaan" },
   "announcements.title": { en: "Announcements", sm: "Ogeysiisyada Guud" },
   "announcements.subtitle": {
     en: "Post updates and reminders to your students",
@@ -1393,8 +1339,8 @@ export const defaultTranslations = {
     sm: "Sidee baan ku galin karaa baraamij?",
   },
   "landing.faqDefault1A": {
-    en: "Create an account, sign in, browse courses, then open a course and follow the enrollment steps. Payments use our secure checkout when a course is paid.",
-    sm: "Samee akoon, gal, iska duubo baraamijyada, ka dib fur baraamij iyo raac taxadaq galinta. Bayaanad waxay isticmaalaan checkout nabad leh markay baraamij lagu bixiyay.",
+    en: "Create an account, sign in, browse courses, then open a course and follow the enrollment steps.",
+    sm: "Samee akoon, gal, iska duubo baraamijyada, ka dib fur baraamij iyo raac taxadaq galinta.",
   },
   "landing.faqDefault2Q": {
     en: "Are lessons in Somali and English?",
@@ -1437,8 +1383,8 @@ export const defaultTranslations = {
   },
   "landing.feedback.message": { en: "Your message", sm: "Alaabkaaga" },
   "landing.feedback.placeholder": {
-    en: "Ask anything about courses, payments, or the platform…",
-    sm: "Weydii wax kasta ku saabsan baraamijyada, bayaanad, ama platfoorma…",
+    en: "Ask anything about courses or the platform…",
+    sm: "Weydii wax kasta ku saabsan baraamijyada ama platfoorma…",
   },
   "landing.feedback.send": { en: "Send", sm: "Ergi" },
   "landing.feedback.sent": { en: "Message sent", sm: "Alaabka oo ergay" },
@@ -1557,6 +1503,139 @@ export const defaultTranslations = {
   "course.form.details": { en: "Course Details", sm: "Faahfaahinta Koorso" },
   "course.form.lessons": { en: "Lessons", sm: "Casharrada" },
   "course.form.quizzes": { en: "Quizzes", sm: "Baaritaannada" },
+  "course.form.courseDetailsTab": {
+    en: "Course Details",
+    sm: "Faahfaahinta Koorso",
+  },
+  "course.categoryProgramming": { en: "Programming", sm: "Barnaamijyo" },
+  "course.categoryDesign": { en: "Design", sm: "Naqshadayn" },
+  "course.categoryBusiness": { en: "Business", sm: "Ganacsi" },
+  "course.categoryMarketing": { en: "Marketing", sm: "Suuq-geyn" },
+  "course.categoryDataScience": { en: "Data Science", sm: "Cilmiga Xogta" },
+  "course.categoryDevops": { en: "DevOps", sm: "DevOps" },
+  "course.categoryMobile": { en: "Mobile", sm: "Moobil" },
+  "course.categoryOther": { en: "Other", sm: "Kale" },
+  "course.beginnerLevel": { en: "Beginner", sm: "Bilowga" },
+  "course.intermediateLevel": { en: "Intermediate", sm: "Dhexdhexaad" },
+  "course.advancedLevel": { en: "Advanced", sm: "Horumarsan" },
+  "course.form.lessonsTab": { en: "Lessons", sm: "Casharrada" },
+  "course.form.quizzesTab": { en: "Quizzes", sm: "Baaritaannada" },
+  "course.form.thumbnail": { en: "Course Thumbnail", sm: "Sawirka Koorso" },
+  "course.form.uploadThumbnail": { en: "Upload thumbnail", sm: "Geli sawirka" },
+  "course.form.title": { en: "Course Title *", sm: "Cinwaanka Koorso *" },
+  "course.form.titlePlaceholder": {
+    en: "e.g., Complete Web Development Bootcamp",
+    sm: "tusaale, Koorso Dhammaystiran oo Horumarinta Webka ah",
+  },
+  "course.form.description": { en: "Description *", sm: "Sharaxaad *" },
+  "course.form.descriptionPlaceholder": {
+    en: "What will students learn from this course?",
+    sm: "Maxay ardaydu ka baran doonaan koorsadan?",
+  },
+  "course.form.category": { en: "Category *", sm: "Qaybta *" },
+  "course.form.selectCategory": { en: "Select category", sm: "Dooro qayb" },
+  "course.form.difficulty": { en: "Difficulty *", sm: "Heerka *" },
+  "course.form.duration": { en: "Duration", sm: "Muddada" },
+  "course.form.durationPlaceholder": {
+    en: "e.g., 6h 30m",
+    sm: "tusaale, 6 saac 30 daqiiqo",
+  },
+  "course.form.price": { en: "Price (ETB)", sm: "Qiimaha (ETB)" },
+  "course.form.freePrice": { en: "0 for free", sm: "0 waa bilaash" },
+  "course.lesson.addNew": { en: "Add New Lesson", sm: "Ku dar Cashar Cusub" },
+  "course.lesson.title": { en: "Lesson Title *", sm: "Cinwaanka Casharka *" },
+  "course.lesson.titlePlaceholder": {
+    en: "e.g., Introduction to React",
+    sm: "tusaale, Hordhaca React",
+  },
+  "course.lesson.videoUrl": { en: "Video URL *", sm: "URL-ka Muuqaalka *" },
+  "course.lesson.uploadVideo": {
+    en: "Upload lesson video",
+    sm: "Geli muuqaalka casharka",
+  },
+  "course.lesson.videoPlaceholder": {
+    en: "https://youtube.com/watch?v=... or Vimeo URL",
+    sm: "https://youtube.com/watch?v=... ama URL Vimeo",
+  },
+  "course.lesson.durationPlaceholder": {
+    en: "e.g., 15m",
+    sm: "tusaale, 15 daqiiqo",
+  },
+  "course.lesson.freePreview": { en: "Free preview", sm: "Hordhac bilaash ah" },
+  "course.lesson.description": {
+    en: "Lesson Description",
+    sm: "Sharaxaadda Casharka",
+  },
+  "course.lesson.descriptionPlaceholder": {
+    en: "What will students learn in this lesson?",
+    sm: "Maxay ardaydu ka baran doonaan casharkan?",
+  },
+  "course.lesson.add": { en: "Add Lesson", sm: "Ku dar Cashar" },
+  "course.lesson.cancel": { en: "Cancel", sm: "Jooji" },
+  "course.lessons.emptyTitle": {
+    en: "No lessons yet",
+    sm: "Weli casharro ma jiraan",
+  },
+  "course.lessons.emptyDescription": {
+    en: "Add your first lesson to get started",
+    sm: "Ku dar casharkaaga koowaad si aad u bilowdo",
+  },
+  "course.lesson.titleShort": { en: "Lesson Title", sm: "Cinwaanka Casharka" },
+  "course.lesson.descriptionShort": {
+    en: "Lesson Description",
+    sm: "Sharaxaadda Casharka",
+  },
+  "course.lesson.videoUrlShort": { en: "Video URL", sm: "URL-ka Muuqaalka" },
+  "course.quiz.forLesson": {
+    en: "Quiz for this lesson",
+    sm: "Imtixaanka casharkan",
+  },
+  "course.quiz.questionsCount": { en: "questions", sm: "su'aalood" },
+  "course.quiz.edit": { en: "Edit Quiz", sm: "Wax ka beddel Imtixaanka" },
+  "course.quiz.remove": { en: "Remove", sm: "Ka saar" },
+  "course.quiz.add": { en: "Add Quiz", sm: "Ku dar Imtixaan" },
+  "course.quiz.emptyTitle": {
+    en: "No quizzes yet",
+    sm: "Weli imtixaano ma jiraan",
+  },
+  "course.quiz.emptyDescription": {
+    en: "Add quizzes to lessons from the Lessons tab",
+    sm: "Kusoo dar imtixaan casharrada adigoo adeegsanaya qaybta Casharrada",
+  },
+  "course.quiz.title": { en: "Quiz Title", sm: "Cinwaanka Imtixaanka" },
+  "course.quiz.titlePlaceholder": {
+    en: "e.g., Introduction to React - Quiz",
+    sm: "tusaale, Imtixaanka Hordhaca React",
+  },
+  "course.quiz.questions": { en: "Questions", sm: "Su'aalaha" },
+  "course.quiz.addQuestion": { en: "Add Question", sm: "Ku dar Su'aal" },
+  "course.quiz.question": { en: "Question", sm: "Su'aal" },
+  "course.quiz.questionPlaceholder": {
+    en: "Enter your question",
+    sm: "Geli su'aashaada",
+  },
+  "course.quiz.option": { en: "Option", sm: "Ikhtiyaar" },
+  "course.quiz.correctAnswer": {
+    en: "Toggle the switch for the correct answer",
+    sm: "Daar furaha jawaabta saxda ah",
+  },
+  "course.quiz.save": { en: "Save Quiz", sm: "Kaydi Imtixaanka" },
+  "course.delete.lesson": { en: "Delete Lesson", sm: "Tirtir Casharka" },
+  "course.delete.quiz": { en: "Remove Quiz", sm: "Ka saar Imtixaanka" },
+  "course.delete.confirm": {
+    en: "Are you sure you want to",
+    sm: "Ma hubtaa inaad rabto inaad",
+  },
+  "course.delete.deleteAction": { en: "delete", sm: "tirtirto" },
+  "course.delete.removeAction": { en: "remove", sm: "ka saarto" },
+  "course.delete.lessonDescription": {
+    en: "This will permanently remove the lesson, its video, description, and any associated quiz.",
+    sm: "Tani waxay si joogto ah u tirtiraysaa casharka, muuqaalkiisa, sharaxaaddiisa, iyo imtixaan kasta oo la xiriira.",
+  },
+  "course.delete.quizDescription": {
+    en: "This will permanently remove the quiz and all its questions from this lesson.",
+    sm: "Tani waxay si joogto ah uga saaraysaa casharkan imtixaanka iyo dhammaan su'aalihiisa.",
+  },
   "course.lesson.removed": {
     en: "Lesson removed",
     sm: "Casharka waa laga saaray",
@@ -1611,126 +1690,6 @@ export const defaultTranslations = {
     sm: "Koorso lama keydin karin",
   },
 
-  // Payment checkout and receipt
-  "payment.checkout.authRequired": {
-    en: "Authentication required",
-    sm: "Xaqiijin ayaa loo baahan yahay",
-  },
-  "payment.checkout.loginPrompt": {
-    en: "Please sign in before continuing with payment.",
-    sm: "Fadlan gal ka hor intaadan sii wadayn bixinta.",
-  },
-  "payment.checkout.invalidAmount": {
-    en: "Invalid amount",
-    sm: "Qaddarka saxda ah ma jiro",
-  },
-  "payment.checkout.invalidAmountDescription": {
-    en: "Enter a valid amount greater than zero.",
-    sm: "Gali qaddar sax ah oo ka weyn eber.",
-  },
-  "payment.checkout.enterMobileNumber": {
-    en: "Enter mobile number",
-    sm: "Gali lambarka mobilada",
-  },
-  "payment.checkout.mobileNumberHelp": {
-    en: "Please provide a valid Ethiopian mobile number.",
-    sm: "Fadlan bixi lambarka mobilada Itoobiya ee saxda ah.",
-  },
-  "payment.checkout.mobileLabel": {
-    en: "Mobile number",
-    sm: "Lambarka mobilada",
-  },
-  "payment.checkout.mobilePlaceholder": { en: "09xxxxxxxx", sm: "09xxxxxxxx" },
-  "payment.checkout.mobileHelpIntro": {
-    en: "Use your own phone number",
-    sm: "Isticmaal lambarkaaga mobilada",
-  },
-  "payment.checkout.mobileHelpOwn": {
-    en: "if it is your own number",
-    sm: "haddii uu yahay lambarkaaga",
-  },
-  "payment.checkout.mobileHelpBody": {
-    en: "or the payer's number",
-    sm: "ama lambarka bixiyaha",
-  },
-  "payment.checkout.mobileHelpOr": { en: "or", sm: "ama" },
-  "payment.checkout.mobileHelpTail": {
-    en: "If someone else is paying for you, they should use their number instead when they complete checkout.",
-    sm: "Haddii qof kale uu kuu bixinayo, waa inuu isticmaalaa lambarkiisa isaga marka uu dhamaystiro bixinta.",
-  },
-  "payment.checkout.paymentFailed": {
-    en: "Payment failed",
-    sm: "Bixinta way guuldareysatay",
-  },
-  "payment.checkout.paymentInitFailed": {
-    en: "Payment initialization failed",
-    sm: "Bixinta lama bilaabin",
-  },
-  "payment.checkout.onlineIntro": {
-    en: "Or pay online with Chapa",
-    sm: "Ama bixinta online-ka Chapa",
-  },
-  "payment.checkout.amountLabel": {
-    en: "Payment Amount (ETB)",
-    sm: "Qaddarka Bixinta (ETB)",
-  },
-  "payment.checkout.secureNotice": {
-    en: "Your payment is secured with 256-bit SSL encryption. You'll be redirected to Chapa's secure payment gateway.",
-    sm: "Bixintaada waxaa badbaadiyey 256-bit SSL encryption. Waxaa lagu wareejin doonaa gaadhka amniga ah ee Chapa.",
-  },
-  "payment.checkout.acceptedMethods": {
-    en: "Accepted Payment Methods",
-    sm: "Hababka Bixinta ee la aqbalay",
-  },
-  "payment.checkout.completeGuide": {
-    en: "Make sure to complete the payment on Chapa's website. You'll be redirected back after successful payment.",
-    sm: "Hubi in bixinta lagu dhamaystiro websaydka Chapa. Waxaa dib loogu celin doonaa ka dib bixinta guusha leh.",
-  },
-  "payment.checkout.processing": {
-    en: "Processing...",
-    sm: "La farsameynayaa...",
-  },
-  "payment.checkout.payNow": { en: "Pay", sm: "Bixi" },
-  "payment.failed.title": {
-    en: "Payment could not be completed",
-    sm: "Bixinta lama dhamaystiri karin",
-  },
-  "payment.failed.message": {
-    en: "Your payment was not processed successfully.",
-    sm: "Bixintaada lama farsameyn si guul leh.",
-  },
-  "payment.failed.reasons": { en: "Common reasons", sm: "Sababaha caadiga ah" },
-  "payment.failed.insufficientFunds": {
-    en: "Insufficient funds",
-    sm: "Lacag ku filnayn",
-  },
-  "payment.failed.networkIssue": {
-    en: "Network or connection issue",
-    sm: "Dhibaato shabakad ama isku xirka",
-  },
-  "payment.failed.declined": {
-    en: "Card or wallet was declined",
-    sm: "Kaarka ama boorsada waa la diiday",
-  },
-  "payment.failed.timeout": {
-    en: "Transaction timed out",
-    sm: "Shatiyadu way gabagtay",
-  },
-  "payment.failed.support": {
-    en: "Need help? Contact support at",
-    sm: "Caawimo ma u baahan tahay? La xiriir taageerada at",
-  },
-  "payment.failed.tryAgain": { en: "Try Again", sm: "Mar kale isku day" },
-  "payment.failed.backHome": { en: "Back Home", sm: "Guriga" },
-  "payment.receipt.notFound": {
-    en: "Payment receipt not found",
-    sm: "Rasiidka bixinta lama helin",
-  },
-  "payment.receipt.goToDashboard": {
-    en: "Go to Dashboard",
-    sm: "Tag Dashboardka",
-  },
-
   // Shared controls and dashboards
   "common.close": { en: "Close", sm: "Xir" },
   "common.delete": { en: "Delete", sm: "Tirtir" },
@@ -1771,6 +1730,199 @@ export const defaultTranslations = {
   "common.uploadError": {
     en: "An error occurred while uploading the image",
     sm: "Khalad ayaa dhacay markii sawirka la gelinayay",
+  },
+  "common.videoInvalid": {
+    en: "Invalid video file",
+    sm: "Fayl muuqaal ah oo aan sax ahayn",
+  },
+  "common.videoFormats": {
+    en: "Please upload a supported video format (MP4, WebM, MOV, M4V, OGV, MKV, AVI).",
+    sm: "Fadlan geli muuqaal la taageero (MP4, WebM, MOV, M4V, OGV, MKV, AVI).",
+  },
+  "common.videoTooLarge": {
+    en: "The video exceeds the maximum file size.",
+    sm: "Muuqaalku wuxuu ka weyn yahay cabbirka faylka ee la oggol yahay.",
+  },
+  "common.videoUploaded": {
+    en: "Video is now available in the app.",
+    sm: "Muuqaalku hadda wuxuu ka shaqaynayaa app-ka.",
+  },
+  "common.videoUploadFailed": {
+    en: "Could not upload the video.",
+    sm: "Muuqaalka lama gelin karin.",
+  },
+  "common.videoUnavailable": {
+    en: "Video unavailable",
+    sm: "Muuqaalku ma jiro",
+  },
+  "common.videoUploading": {
+    en: "Uploading… {{percent}}%",
+    sm: "Waa la gelinayaa… {{percent}}%",
+  },
+  "common.uploadVideo": { en: "Upload a video", sm: "Geli muuqaal" },
+  "common.videoHelp": {
+    en: "Use a hosted URL or upload a local MP4/WebM file.",
+    sm: "Isticmaal URL la martigeliyay ama geli fayl MP4/WebM ah.",
+  },
+  "common.downloadFailed": {
+    en: "Download failed",
+    sm: "Soo dejintu way fashilantay",
+  },
+  "common.certificateDownloadError": {
+    en: "The certificate PDF could not be generated.",
+    sm: "PDF-ka shahaadada lama samayn karin.",
+  },
+  "certificate.issued": { en: "Issued", sm: "La bixiyay" },
+  "certificate.alphaLogo": { en: "Alpha Logo", sm: "Astaanta Alpha" },
+  "certificate.excellence": {
+    en: "Excellence in Technology Education",
+    sm: "Wanaagga Waxbarashada Teknolojiyadda",
+  },
+  "certificate.title": {
+    en: "Certificate of Completion",
+    sm: "Shahaadada Dhammaystirka",
+  },
+  "certificate.certifies": {
+    en: "This is to certify that",
+    sm: "Waxaa la caddeynayaa in",
+  },
+  "certificate.completedCourse": {
+    en: "has successfully completed the course",
+    sm: "si guul leh u dhammaystay koorsada",
+  },
+  "certificate.instructor": { en: "Instructor", sm: "Macallin" },
+  "certificate.dateIssued": { en: "Date Issued", sm: "Taariikhda La Bixiyay" },
+  "certificate.academyDirector": {
+    en: "Academy Director",
+    sm: "Agaasimaha Akadeemiyada",
+  },
+  "certificate.number": { en: "Certificate No.", sm: "Lambarka Shahaadada" },
+  "certificate.scanToVerify": {
+    en: "Scan to verify",
+    sm: "Sawir si loo xaqiijiyo",
+  },
+  "course.progressSaveFailed": {
+    en: "Progress could not be saved",
+    sm: "Horumarka lama kaydin karin",
+  },
+  "course.deleteDiscussionFailed": {
+    en: "Delete failed",
+    sm: "Tirtiristu way fashilantay",
+  },
+  "course.notFound": { en: "Course not found", sm: "Koorso lama helin" },
+  "course.noVideos": {
+    en: "No videos available",
+    sm: "Muuqaallo lama heli karo",
+  },
+  "course.askDiscussion": {
+    en: "Ask a question or leave a comment...",
+    sm: "Weydii su'aal ama ka tag faallo...",
+  },
+  "course.freeCourse": { en: "Free Course", sm: "Koorso Bilaash ah" },
+  "common.dashboard": { en: "Dashboard", sm: "Dashboardka" },
+  "course.writeReply": { en: "Write a reply...", sm: "Qor jawaab..." },
+  "help.faq.enroll.q": {
+    en: "How do I enroll in a course?",
+    sm: "Sideen iskaga diiwaangeliyaa koorso?",
+  },
+  "help.faq.enroll.a": {
+    en: "Browse courses from the sidebar, click on a course, and click the 'Enroll' button. You'll get instant access to all course materials.",
+    sm: "Ka baadh koorsooyinka dhinaca, guji koorso, ka dibna guji badhanka 'Isdiiwaangeli'. Waxaad isla markiiba heli doontaa dhammaan agabka koorsada.",
+  },
+  "help.faq.certificate.q": {
+    en: "How do I get my certificate?",
+    sm: "Sideen ku helaa shahaadadayda?",
+  },
+  "help.faq.certificate.a": {
+    en: "Complete all video lessons and pass the course quiz with at least 70% score. Your certificate will be automatically generated and available in the Certificates page.",
+    sm: "Dhammaystir dhammaan casharrada muuqaalka ah oo ku baas imtixaanka koorsada ugu yaraan 70%. Shahaadadaada si toos ah ayaa loo samayn doonaa oo laga heli doonaa bogga Shahaadooyinka.",
+  },
+  "help.faq.pace.q": {
+    en: "Can I learn at my own pace?",
+    sm: "Ma ku baran karaa xawaarahayga?",
+  },
+  "help.faq.pace.a": {
+    en: "Yes! All courses are self-paced. You can pause, rewind, and revisit any lesson as many times as you want.",
+    sm: "Haa! Dhammaan koorsooyinku waa kuwo aad xawaarahaaga ku baranayso. Waad joojin kartaa, dib u celin kartaa, oo cashar kasta marar badan dib u eegi kartaa.",
+  },
+  "help.faq.languages.q": {
+    en: "What languages are courses available in?",
+    sm: "Luqado noocee ah ayaa koorsooyinku ku baxaan?",
+  },
+  "help.faq.languages.a": {
+    en: "Most courses are taught in Somali with English subtitles. Some courses are available in both languages.",
+    sm: "Koorsooyinka badankood waxaa lagu dhigaa Soomaali oo leh qoraal-hoosaad Ingiriisi. Koorsooyinka qaarkood waxay ku baxaan labada luqadood.",
+  },
+  "help.faq.signin.q": { en: "How do I sign in?", sm: "Sideen u galaa?" },
+  "help.faq.signin.a": {
+    en: "We use Google Sign-In. Use the same Google account each time; there is no separate platform password.",
+    sm: "Waxaan isticmaalnaa Google Sign-In. Mar kasta isticmaal isla akoonka Google; ma jiro eray sir ah oo madal gaar ah.",
+  },
+  "help.faq.mobile.q": {
+    en: "Is there a mobile app?",
+    sm: "Ma jiraa app moobil?",
+  },
+  "help.faq.mobile.a": {
+    en: "Not yet, but our website is fully mobile-responsive. You can access all courses from your phone's browser.",
+    sm: "Weli ma jiro, laakiin boggayagu si buuxda ayuu ula qabsanayaa moobilka. Dhammaan koorsooyinka waxaad ka geli kartaa browser-ka taleefankaaga.",
+  },
+  "receipt.imageRequired": {
+    en: "Image required",
+    sm: "Sawir ayaa loo baahan yahay",
+  },
+  "receipt.chooseImage": {
+    en: "Choose a JPG, PNG, or similar receipt image.",
+    sm: "Dooro sawir rasiid ah oo JPG, PNG ama la mid ah.",
+  },
+  "receipt.fileTooLarge": {
+    en: "File too large",
+    sm: "Faylku aad buu u weyn yahay",
+  },
+  "receipt.maxSize": {
+    en: "Maximum size is {{size}} MB.",
+    sm: "Cabbirka ugu badan waa {{size}} MB.",
+  },
+  "receipt.signInRequired": {
+    en: "Sign in required",
+    sm: "Gelitaan ayaa loo baahan yahay",
+  },
+  "receipt.logInToUpload": {
+    en: "Log in to upload your receipt.",
+    sm: "Gal si aad u geliso rasiidkaaga.",
+  },
+  "receipt.chooseScreenshot": {
+    en: "Choose a screenshot",
+    sm: "Dooro sawir-qaad",
+  },
+  "receipt.chooseFirst": {
+    en: "Select an image of your receipt first.",
+    sm: "Marka hore dooro sawirka rasiidkaaga.",
+  },
+  "receipt.submitted": { en: "Receipt submitted", sm: "Rasiidka waa la diray" },
+  "receipt.reviewDescription": {
+    en: "An admin will review it and confirm access.",
+    sm: "Maamule ayaa dib u eegi doona oo xaqiijin doona gelitaanka.",
+  },
+  "receipt.submitFailed": { en: "Could not submit", sm: "Lama diri karin" },
+  "receipt.paymentConfirmed": {
+    en: "Payment confirmed",
+    sm: "Lacag-bixinta waa la xaqiijiyay",
+  },
+  "receipt.preview": { en: "Receipt preview", sm: "Hordhaca rasiidka" },
+  "receipt.notePlaceholder": {
+    en: "Transaction reference, date, or payer name",
+    sm: "Tixraaca macaamilka, taariikhda, ama magaca bixiyaha",
+  },
+  "common.removed": { en: "Removed", sm: "Waa la saaray" },
+  "common.discussionDeleted": {
+    en: "Discussion post was deleted.",
+    sm: "Qoraalka doodda waa la tirtiray.",
+  },
+  "language.english": { en: "English", sm: "Ingiriisi" },
+  "language.somali": { en: "Somali", sm: "Af-Somali" },
+  "language.switchTo": {
+    en: "Switch language",
+    sm: "Beddel luqadda",
   },
   "contact.title": { en: "Contact Us", sm: "Nala Soo Xiriir" },
   "contact.telegram": { en: "Telegram", sm: "Telegram" },
@@ -1963,28 +2115,6 @@ export const defaultTranslations = {
   "assignments.pending": { en: "Pending", sm: "Sugaysa" },
   "assignments.submitted": { en: "Submitted", sm: "La gudbiyay" },
   "assignments.graded": { en: "Graded", sm: "La qiimeeyay" },
-  "payment.verifying": {
-    en: "Verifying Payment...",
-    sm: "Bixinta waa la xaqiijinayaa...",
-  },
-  "payment.waitConfirm": {
-    en: "Please wait while we confirm your payment",
-    sm: "Fadlan sug inta aan xaqiijinayno bixintaada",
-  },
-  "payment.success": {
-    en: "Payment Successful!",
-    sm: "Bixintu way guulaysatay!",
-  },
-  "payment.enrolledSuccess": {
-    en: "You've successfully enrolled in the course",
-    sm: "Si guul leh ayaad ugu biirtay koorsada",
-  },
-  "payment.amountPaid": { en: "Amount Paid", sm: "Qaddarka la bixiyay" },
-  "payment.transactionId": { en: "Transaction ID", sm: "Aqoonsiga Macaamilka" },
-  "payment.date": { en: "Date", sm: "Taariikh" },
-  "payment.myCourses": { en: "Go to My Courses", sm: "Tag Koorsooyinkayga" },
-  "payment.backHome": { en: "Back to Home", sm: "Dib ugu laabo Bogga Hore" },
-  "payment.startLearning": { en: "Start Learning", sm: "Bilow Barashada" },
   "profile.title": { en: "My Profile", sm: "Xogtayda" },
   "profile.subtitle": {
     en: "Manage your account settings",

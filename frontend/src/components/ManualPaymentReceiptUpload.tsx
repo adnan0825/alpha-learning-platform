@@ -1,14 +1,11 @@
-/**
- * Upload a payment receipt screenshot after a manual bank/wallet transfer.
- */
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Upload,
-  Loader2,
-  ImageIcon,
   CheckCircle2,
   Clock,
+  ImageIcon,
+  Loader2,
+  Upload,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,14 +13,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { paymentsAPI, uploadsAPI } from "@/lib/api";
+import { manualPaymentsAPI, uploadsAPI } from "@/lib/api";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const MAX_FILE_MB = 5;
 
-function isScreenshotImage(f: File): boolean {
-  if (f.type.startsWith("image/") && f.type !== "image/svg+xml") return true;
-  const n = f.name.toLowerCase();
-  return /\.(jpe?g|png|gif|webp|bmp|heic|heif)$/.test(n);
+function isScreenshotImage(file: File): boolean {
+  if (file.type.startsWith("image/") && file.type !== "image/svg+xml")
+    return true;
+  return /\.(jpe?g|png|gif|webp|bmp|heic|heif)$/i.test(file.name);
 }
 
 export function ManualPaymentReceiptUpload({
@@ -37,126 +35,108 @@ export function ManualPaymentReceiptUpload({
 }) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [existingReceipt, setExistingReceipt] = useState<{
     status: string;
-    created_at: string;
   } | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
+    },
+    [previewUrl],
+  );
 
   useEffect(() => {
     if (!user) {
       setLoading(false);
       return;
     }
-    paymentsAPI
+    manualPaymentsAPI
       .getMyReceipts()
       .then((receipts) => {
-        const courseReceipts = receipts.filter(
-          (r) => String(r.course_id) === courseId,
-        );
-        const active = courseReceipts.find((r) => r.status !== "rejected");
-        const rejected = courseReceipts.find((r) => r.status === "rejected");
-
-        if (active) {
-          setExistingReceipt({
-            status: active.status,
-            created_at: active.created_at,
-          });
-        } else if (rejected) {
-          setExistingReceipt({
-            status: "rejected",
-            created_at: rejected.created_at,
-          });
-        }
+        const receipt =
+          receipts
+            .filter((item) => String(item.course_id) === courseId)
+            .find((item) => item.status !== "rejected") ??
+          receipts.find((item) => String(item.course_id) === courseId);
+        setExistingReceipt(receipt ? { status: receipt.status } : null);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user, courseId]);
+  }, [courseId, user]);
 
-  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    if (!isScreenshotImage(f)) {
+  const onPickFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = event.target.files?.[0];
+    if (!picked) return;
+    if (!isScreenshotImage(picked)) {
       toast({
-        title: "Image required",
-        description:
-          "Please choose a screenshot or photo (JPG, PNG, or similar). PDFs are not supported.",
+        title: t("receipt.imageRequired"),
+        description: t("receipt.chooseImage"),
         variant: "destructive",
       });
       return;
     }
-    if (f.size > MAX_FILE_MB * 1024 * 1024) {
+    if (picked.size > MAX_FILE_MB * 1024 * 1024) {
       toast({
-        title: "File too large",
-        description: `Maximum size is ${MAX_FILE_MB} MB.`,
+        title: t("receipt.fileTooLarge"),
+        description: t("receipt.maxSize", { size: MAX_FILE_MB }),
         variant: "destructive",
       });
       return;
     }
-    setFile(f);
-    setPreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(f);
+    setFile(picked);
+    setPreviewUrl((previous) => {
+      if (previous) URL.revokeObjectURL(previous);
+      return URL.createObjectURL(picked);
     });
   };
 
   const submit = async () => {
     if (!user) {
       toast({
-        title: "Sign in required",
-        description: "Log in to upload your receipt screenshot.",
+        title: t("receipt.signInRequired"),
+        description: t("receipt.logInToUpload"),
         variant: "destructive",
       });
       return;
     }
     if (!file) {
       toast({
-        title: "Choose a screenshot",
-        description: "Select an image of your payment receipt first.",
+        title: t("receipt.chooseScreenshot"),
+        description: t("receipt.chooseFirst"),
         variant: "destructive",
       });
       return;
     }
-
     setSubmitting(true);
     try {
       const { url } = await uploadsAPI.uploadImage(file);
-      await paymentsAPI.submitManualReceipt({
+      await manualPaymentsAPI.submitReceipt({
         courseId,
         receiptUrl: url,
         amountEtb,
         note: note.trim() || undefined,
       });
-      toast({
-        title: "Screenshot submitted",
-        description:
-          "We'll review your payment and confirm access when it's verified.",
-      });
-      setExistingReceipt({
-        status: "pending",
-        created_at: new Date().toISOString(),
-      });
+      setExistingReceipt({ status: "pending" });
       setFile(null);
       setPreviewUrl(null);
       setNote("");
       if (fileRef.current) fileRef.current.value = "";
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Upload failed. Try again.";
       toast({
-        title: "Could not submit",
-        description: message,
+        title: t("receipt.submitted"),
+        description: t("receipt.reviewDescription"),
+      });
+    } catch (error) {
+      toast({
+        title: t("receipt.submitFailed"),
+        description: error instanceof Error ? error.message : "Upload failed.",
         variant: "destructive",
       });
     } finally {
@@ -164,96 +144,75 @@ export function ManualPaymentReceiptUpload({
     }
   };
 
-  // --- Loading state ---
-  if (loading) {
+  if (loading)
     return (
-      <div className="flex items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/20 p-4">
+      <div className="flex items-center justify-center rounded-xl border border-dashed p-4">
         <Loader2 className="animate-spin text-muted-foreground" size={20} />
       </div>
     );
-  }
 
-  // --- Existing receipt: pending ---
   if (existingReceipt?.status === "pending") {
     return (
-      <div className="space-y-3 rounded-xl border border-dashed border-border/80 bg-muted/20 p-4">
-        <div className="flex flex-col gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
-          <div className="flex items-center gap-2">
-            <Clock size={18} className="text-warning" />
-            <span className="text-sm font-semibold text-warning">
-              Payment pending approval
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Your receipt has been submitted and is awaiting admin verification.
-            This typically takes a few minutes to a single day. You will be
-            enrolled in the course once your payment is confirmed.
-          </p>
+      <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 p-4">
+        <div className="flex items-center gap-2 text-warning">
+          <Clock size={18} />
+          <span className="text-sm font-semibold">
+            Receipt pending approval
+          </span>
         </div>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          Your receipt is waiting for admin verification. You will be enrolled
+          after it is approved.
+        </p>
       </div>
     );
   }
 
-  // --- Existing receipt: approved ---
   if (existingReceipt?.status === "approved") {
     return (
-      <div className="space-y-3 rounded-xl border border-dashed border-border/80 bg-muted/20 p-4">
-        <div className="flex flex-col gap-3 rounded-lg border border-green-400/40 bg-green-500/10 p-4">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 size={18} className="text-green-500" />
-            <span className="text-sm font-semibold text-green-500">
-              Payment confirmed
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Your payment has been verified. You should now have access to this
-            course.
-          </p>
+      <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 p-4">
+        <div className="flex items-center gap-2 text-green-500">
+          <CheckCircle2 size={18} />
+          <span className="text-sm font-semibold">
+            {t("receipt.paymentConfirmed")}
+          </span>
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Your receipt was verified. Course access should now be available.
+        </p>
       </div>
     );
   }
 
-  // --- Upload form (no receipt, or rejected) ---
   return (
     <div className="space-y-3 rounded-xl border border-dashed border-border/80 bg-muted/20 p-4">
       {existingReceipt?.status === "rejected" && (
-        <div className="flex flex-col gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4">
-          <div className="flex items-center gap-2">
-            <XCircle size={18} className="text-destructive" />
-            <span className="text-sm font-semibold text-destructive">
-              Payment rejected
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Your previous payment receipt was not accepted. Please upload a new
-            receipt below. If you believe this is an error, contact support.
-          </p>
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-destructive">
+          <XCircle size={18} />
+          <span className="text-sm font-semibold">
+            Receipt rejected. Please submit a new one.
+          </span>
         </div>
       )}
-
       <div>
         <h3 className="text-sm font-semibold text-foreground">
-          Upload your payment receipt screenshot
+          Upload payment receipt
         </h3>
-        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-          After you pay manually, take a screenshot or photo of the confirmation
-          (Telebirr, bank app, SMS, etc.) and upload it here — JPG or PNG, up to{" "}
-          {MAX_FILE_MB} MB. Mention the course ({courseTitle}) and{" "}
-          {amountEtb.toLocaleString()} ETB in the transfer note when you pay, if
-          the app allows it.
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          After paying {amountEtb.toLocaleString()} ETB manually, upload a
+          screenshot or photo for {courseTitle}. JPG or PNG up to {MAX_FILE_MB}{" "}
+          MB.
         </p>
       </div>
-
       {!user ? (
         <p className="text-sm text-muted-foreground">
           <Link
-            to="/login"
+            to={`/login?redirect=${encodeURIComponent(`/course/${courseId}`)}`}
             className="font-medium text-accent underline-offset-4 hover:underline"
           >
             Sign in
           </Link>{" "}
-          to submit your screenshot.
+          to submit your receipt.
         </p>
       ) : (
         <>
@@ -264,7 +223,6 @@ export function ManualPaymentReceiptUpload({
             className="sr-only"
             onChange={onPickFile}
           />
-
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
             <Button
               type="button"
@@ -275,19 +233,18 @@ export function ManualPaymentReceiptUpload({
               disabled={submitting}
             >
               <ImageIcon size={16} />
-              {file ? "Change Payment Receipt" : "Upload Payment Receipt"}
+              {file ? "Change receipt" : "Upload receipt"}
             </Button>
-            {previewUrl ? (
-              <div className="relative max-h-40 overflow-hidden rounded-lg border border-border/60 bg-background">
+            {previewUrl && (
+              <div className="max-h-40 overflow-hidden rounded-lg border border-border/60">
                 <img
                   src={previewUrl}
-                  alt="Receipt preview"
+                  alt={t("receipt.preview")}
                   className="max-h-40 w-auto object-contain"
                 />
               </div>
-            ) : null}
+            )}
           </div>
-
           <div className="space-y-2">
             <Label
               htmlFor="manual-pay-note"
@@ -297,16 +254,15 @@ export function ManualPaymentReceiptUpload({
             </Label>
             <Textarea
               id="manual-pay-note"
-              placeholder="e.g. transaction reference, date, or payer name"
+              placeholder={t("receipt.notePlaceholder")}
               value={note}
-              onChange={(e) => setNote(e.target.value)}
+              onChange={(event) => setNote(event.target.value)}
               rows={2}
               className="resize-none text-sm"
               disabled={submitting}
               maxLength={2000}
             />
           </div>
-
           <Button
             type="button"
             className="w-full gap-2 sm:w-auto"
@@ -316,12 +272,12 @@ export function ManualPaymentReceiptUpload({
             {submitting ? (
               <>
                 <Loader2 className="animate-spin" size={18} />
-                Uploading…
+                Uploading...
               </>
             ) : (
               <>
                 <Upload size={18} />
-                Submit screenshot
+                Submit receipt
               </>
             )}
           </Button>

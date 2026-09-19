@@ -37,7 +37,6 @@ services:
       args:
         VITE_API_URL: /api
         VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-        VITE_ENABLE_CHAPA: ${VITE_ENABLE_CHAPA:-false}
     expose:
       - "80"
     depends_on:
