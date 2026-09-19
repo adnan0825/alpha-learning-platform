@@ -1,6 +1,7 @@
 /**
  * App - Root component with routing. Alpha.
  */
+import React, { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,56 +12,63 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import FirstVisitLanguageDialog from "@/components/FirstVisitLanguageDialog";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import GoogleOAuthCallback from "./pages/GoogleOAuthCallback";
-import DashboardRouter from "./pages/DashboardRouter";
-import StudentDashboard from "./pages/StudentDashboard";
-import InstructorDashboard from "./pages/InstructorDashboard";
-import InstructorCourses from "./pages/InstructorCourses";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminUsers from "./pages/AdminUsers";
-import AdminCourses from "./pages/AdminCourses";
-import AdminAnalytics from "./pages/AdminAnalytics";
-import BrowseCourses from "./pages/BrowseCourses";
-import MyCourses from "./pages/MyCourses";
-import CourseView from "./pages/CourseView";
-import AddCourse from "./pages/AddCourse";
-import EditCourse from "./pages/EditCourse";
-import CourseManager from "./pages/CourseManager";
-import QuizPage from "./pages/QuizPage";
-import CertificatesPage from "./pages/CertificatesPage";
-import ProfilePage from "./pages/ProfilePage";
-import InstructorProgress from "./pages/InstructorProgress";
-import AdminSettings from "./pages/AdminSettings";
-import LearningPath from "./pages/LearningPath";
-import BookmarksPage from "./pages/BookmarksPage";
-import NotificationsPage from "./pages/NotificationsPage";
-import LeaderboardPage from "./pages/LeaderboardPage";
-import CourseNotes from "./pages/CourseNotes";
-import HelpCenter from "./pages/HelpCenter";
-import QuizManager from "./pages/QuizManager";
-import StudentGrades from "./pages/StudentGrades";
-import AnnouncementsPage from "./pages/AnnouncementsPage";
-import RevenuePage from "./pages/RevenuePage";
-import SystemLogs from "./pages/SystemLogs";
-import ReportsPage from "./pages/ReportsPage";
-import ContentModeration from "./pages/ContentModeration";
-import PaymentsPage from "./pages/PaymentsPage";
-import StudentAssignments from "./pages/StudentAssignments";
-import StudentCalendar from "./pages/StudentCalendar";
-import InstructorAssignments from "./pages/InstructorAssignments";
 import FloatingContact from "./components/FloatingContact";
-import InstructorWithdrawals from "./pages/InstructorWithdrawals";
-import AdminCoupons from "./pages/AdminCoupons";
-import AdminAppearance from "./pages/AdminAppearance";
-import AdminFAQ from "./pages/AdminFAQ";
-import AdminTranslations from "./pages/AdminTranslations";
-import NotFound from "./pages/NotFound";
-import VerifyPage from "./pages/VerifyPage";
-import PaymentSuccess from "./pages/PaymentSuccess";
-import PaymentFailed from "./pages/PaymentFailed";
-import PaymentReceipt from "./pages/PaymentReceipt";
+
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));
+const GoogleOAuthCallback = lazy(() => import("./pages/GoogleOAuthCallback"));
+const DashboardRouter = lazy(() => import("./pages/DashboardRouter"));
+const StudentDashboard = lazy(() => import("./pages/StudentDashboard"));
+const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"));
+const InstructorCourses = lazy(() => import("./pages/InstructorCourses"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminUsers = lazy(() => import("./pages/AdminUsers"));
+const AdminCourses = lazy(() => import("./pages/AdminCourses"));
+const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
+const BrowseCourses = lazy(() => import("./pages/BrowseCourses"));
+const MyCourses = lazy(() => import("./pages/MyCourses"));
+const CourseView = lazy(() => import("./pages/CourseView"));
+const AddCourse = lazy(() => import("./pages/AddCourse"));
+const EditCourse = lazy(() => import("./pages/EditCourse"));
+const CourseManager = lazy(() => import("./pages/CourseManager"));
+const QuizPage = lazy(() => import("./pages/QuizPage"));
+const CertificatesPage = lazy(() => import("./pages/CertificatesPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const InstructorProgress = lazy(() => import("./pages/InstructorProgress"));
+const AdminSettings = lazy(() => import("./pages/AdminSettings"));
+const LearningPath = lazy(() => import("./pages/LearningPath"));
+const BookmarksPage = lazy(() => import("./pages/BookmarksPage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
+const CourseNotes = lazy(() => import("./pages/CourseNotes"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter"));
+const QuizManager = lazy(() => import("./pages/QuizManager"));
+const StudentGrades = lazy(() => import("./pages/StudentGrades"));
+const AnnouncementsPage = lazy(() => import("./pages/AnnouncementsPage"));
+const SystemLogs = lazy(() => import("./pages/SystemLogs"));
+const ReportsPage = lazy(() => import("./pages/ReportsPage"));
+const ContentModeration = lazy(() => import("./pages/ContentModeration"));
+const StudentAssignments = lazy(() => import("./pages/StudentAssignments"));
+const StudentCalendar = lazy(() => import("./pages/StudentCalendar"));
+const InstructorAssignments = lazy(
+  () => import("./pages/InstructorAssignments"),
+);
+const InstructorWithdrawals = lazy(
+  () => import("./pages/InstructorWithdrawals"),
+);
+const AdminCoupons = lazy(() => import("./pages/AdminCoupons"));
+const AdminAppearance = lazy(() => import("./pages/AdminAppearance"));
+const AdminFAQ = lazy(() => import("./pages/AdminFAQ"));
+const AdminTranslations = lazy(() => import("./pages/AdminTranslations"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const VerifyPage = lazy(() => import("./pages/VerifyPage"));
+const AdminManualPayments = lazy(() => import("./pages/AdminManualPayments"));
+
+const loadingFallback = (
+  <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-accent" />
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -75,146 +83,160 @@ const App = () => (
           <BrowserRouter
             future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
           >
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route
-                path="/oauth/google/callback"
-                element={<GoogleOAuthCallback />}
-              />
-              {/* Public course preview — intro / first lesson without login */}
-              <Route path="/course/:courseId" element={<CourseView />} />
-              {/* Public certificate verification */}
-              <Route
-                path="/verify/:certificateNumber"
-                element={<VerifyPage />}
-              />
-
-              {/* All authenticated routes share a single Layout instance */}
-              <Route
-                element={
-                  <ProtectedRoute>
-                    <Layout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route path="/dashboard" element={<DashboardRouter />} />
-
-                {/* Student routes */}
+            <Suspense fallback={loadingFallback}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
                 <Route
-                  path="/student/dashboard"
-                  element={<StudentDashboard />}
+                  path="/oauth/google/callback"
+                  element={<GoogleOAuthCallback />}
                 />
+                {/* Public course preview — intro / first lesson without login */}
+                <Route path="/course/:courseId" element={<CourseView />} />
+                {/* Public certificate verification */}
                 <Route
-                  path="/student/assignments"
-                  element={<StudentAssignments />}
-                />
-                <Route path="/student/calendar" element={<StudentCalendar />} />
-                <Route path="/courses" element={<MyCourses />} />
-                <Route path="/my-courses" element={<MyCourses />} />
-                <Route path="/browse" element={<BrowseCourses />} />
-                <Route
-                  path="/course/:courseId/quiz/:quizId"
-                  element={<QuizPage />}
-                />
-                <Route path="/certificates" element={<CertificatesPage />} />
-                <Route path="/learning-path" element={<LearningPath />} />
-                <Route path="/bookmarks" element={<BookmarksPage />} />
-                <Route path="/notifications" element={<NotificationsPage />} />
-                <Route path="/leaderboard" element={<LeaderboardPage />} />
-                <Route path="/notes" element={<CourseNotes />} />
-                <Route path="/help" element={<HelpCenter />} />
-
-                {/* Shared routes */}
-                <Route path="/profile" element={<ProfilePage />} />
-
-                {/* Instructor routes */}
-                <Route path="/instructor" element={<InstructorDashboard />} />
-                <Route
-                  path="/instructor/dashboard"
-                  element={<InstructorDashboard />}
-                />
-                <Route
-                  path="/instructor/courses"
-                  element={<InstructorCourses />}
-                />
-                <Route
-                  path="/instructor/courses/:courseId"
-                  element={<CourseManager />}
-                />
-                <Route
-                  path="/instructor/courses/:courseId/edit"
-                  element={<EditCourse />}
-                />
-                <Route
-                  path="/instructor/courses/:courseId/manager"
-                  element={<CourseManager />}
-                />
-                <Route path="/instructor/add-course" element={<AddCourse />} />
-                <Route
-                  path="/instructor/progress"
-                  element={<InstructorProgress />}
-                />
-                <Route path="/instructor/quizzes" element={<QuizManager />} />
-                <Route path="/instructor/grades" element={<StudentGrades />} />
-                <Route
-                  path="/instructor/assignments"
-                  element={<InstructorAssignments />}
-                />
-                <Route
-                  path="/instructor/withdrawals"
-                  element={<InstructorWithdrawals />}
-                />
-                <Route
-                  path="/instructor/announcements"
-                  element={<AnnouncementsPage />}
-                />
-                <Route path="/instructor/revenue" element={<RevenuePage />} />
-
-                {/* Admin routes */}
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/admin/users" element={<AdminUsers />} />
-                <Route path="/admin/courses" element={<AdminCourses />} />
-                <Route
-                  path="/admin/courses/:courseId"
-                  element={<CourseManager />}
-                />
-                <Route
-                  path="/admin/courses/:courseId/edit"
-                  element={<EditCourse />}
-                />
-                <Route
-                  path="/admin/courses/:courseId/manager"
-                  element={<CourseManager />}
-                />
-                <Route path="/admin/add-course" element={<AddCourse />} />
-                <Route path="/admin/analytics" element={<AdminAnalytics />} />
-                <Route path="/admin/settings" element={<AdminSettings />} />
-                <Route path="/admin/logs" element={<SystemLogs />} />
-                <Route path="/admin/reports" element={<ReportsPage />} />
-                <Route path="/admin/quizzes" element={<QuizManager />} />
-                <Route
-                  path="/admin/moderation"
-                  element={<ContentModeration />}
-                />
-                <Route path="/admin/payments" element={<PaymentsPage />} />
-                <Route path="/admin/coupons" element={<AdminCoupons />} />
-                <Route path="/admin/appearance" element={<AdminAppearance />} />
-                <Route path="/admin/faq" element={<AdminFAQ />} />
-                <Route
-                  path="/admin/translations"
-                  element={<AdminTranslations />}
+                  path="/verify/:certificateNumber"
+                  element={<VerifyPage />}
                 />
 
-                {/* Payment routes */}
-                <Route path="/payment/success" element={<PaymentSuccess />} />
-                <Route path="/payment/failed" element={<PaymentFailed />} />
-                <Route path="/payment/receipt" element={<PaymentReceipt />} />
-              </Route>
+                {/* All authenticated routes share a single Layout instance */}
+                <Route
+                  element={
+                    <ProtectedRoute>
+                      <Layout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route path="/dashboard" element={<DashboardRouter />} />
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                  {/* Student routes */}
+                  <Route
+                    path="/student/dashboard"
+                    element={<StudentDashboard />}
+                  />
+                  <Route
+                    path="/student/assignments"
+                    element={<StudentAssignments />}
+                  />
+                  <Route
+                    path="/student/calendar"
+                    element={<StudentCalendar />}
+                  />
+                  <Route path="/courses" element={<MyCourses />} />
+                  <Route path="/my-courses" element={<MyCourses />} />
+                  <Route path="/browse" element={<BrowseCourses />} />
+                  <Route
+                    path="/course/:courseId/quiz/:quizId"
+                    element={<QuizPage />}
+                  />
+                  <Route path="/certificates" element={<CertificatesPage />} />
+                  <Route path="/learning-path" element={<LearningPath />} />
+                  <Route path="/bookmarks" element={<BookmarksPage />} />
+                  <Route
+                    path="/notifications"
+                    element={<NotificationsPage />}
+                  />
+                  <Route path="/leaderboard" element={<LeaderboardPage />} />
+                  <Route path="/notes" element={<CourseNotes />} />
+                  <Route path="/help" element={<HelpCenter />} />
+
+                  {/* Shared routes */}
+                  <Route path="/profile" element={<ProfilePage />} />
+
+                  {/* Instructor routes */}
+                  <Route path="/instructor" element={<InstructorDashboard />} />
+                  <Route
+                    path="/instructor/dashboard"
+                    element={<InstructorDashboard />}
+                  />
+                  <Route
+                    path="/instructor/courses"
+                    element={<InstructorCourses />}
+                  />
+                  <Route
+                    path="/instructor/courses/:courseId"
+                    element={<CourseManager />}
+                  />
+                  <Route
+                    path="/instructor/courses/:courseId/edit"
+                    element={<EditCourse />}
+                  />
+                  <Route
+                    path="/instructor/courses/:courseId/manager"
+                    element={<CourseManager />}
+                  />
+                  <Route
+                    path="/instructor/add-course"
+                    element={<AddCourse />}
+                  />
+                  <Route
+                    path="/instructor/progress"
+                    element={<InstructorProgress />}
+                  />
+                  <Route path="/instructor/quizzes" element={<QuizManager />} />
+                  <Route
+                    path="/instructor/grades"
+                    element={<StudentGrades />}
+                  />
+                  <Route
+                    path="/instructor/assignments"
+                    element={<InstructorAssignments />}
+                  />
+                  <Route
+                    path="/instructor/withdrawals"
+                    element={<InstructorWithdrawals />}
+                  />
+                  <Route
+                    path="/instructor/announcements"
+                    element={<AnnouncementsPage />}
+                  />
+
+                  {/* Admin routes */}
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/users" element={<AdminUsers />} />
+                  <Route path="/admin/courses" element={<AdminCourses />} />
+                  <Route
+                    path="/admin/courses/:courseId"
+                    element={<CourseManager />}
+                  />
+                  <Route
+                    path="/admin/courses/:courseId/edit"
+                    element={<EditCourse />}
+                  />
+                  <Route
+                    path="/admin/courses/:courseId/manager"
+                    element={<CourseManager />}
+                  />
+                  <Route path="/admin/add-course" element={<AddCourse />} />
+                  <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                  <Route path="/admin/settings" element={<AdminSettings />} />
+                  <Route path="/admin/logs" element={<SystemLogs />} />
+                  <Route path="/admin/reports" element={<ReportsPage />} />
+                  <Route
+                    path="/admin/payments"
+                    element={<AdminManualPayments />}
+                  />
+                  <Route path="/admin/quizzes" element={<QuizManager />} />
+                  <Route
+                    path="/admin/moderation"
+                    element={<ContentModeration />}
+                  />
+                  <Route path="/admin/coupons" element={<AdminCoupons />} />
+                  <Route
+                    path="/admin/appearance"
+                    element={<AdminAppearance />}
+                  />
+                  <Route path="/admin/faq" element={<AdminFAQ />} />
+                  <Route
+                    path="/admin/translations"
+                    element={<AdminTranslations />}
+                  />
+                </Route>
+
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </BrowserRouter>
           <FloatingContact />
         </TooltipProvider>

@@ -13,6 +13,7 @@ E-learning platform: **Express + PostgreSQL** backend, **Vite + React** frontend
 PostgreSQL must be **installed and running** on your system before starting the application.
 
 #### Ubuntu/Linux
+
 ```bash
 # Debian/Ubuntu
 sudo apt-get update
@@ -24,6 +25,7 @@ sudo systemctl enable postgresql  # Auto-start on boot
 ```
 
 #### macOS
+
 ```bash
 # Using Homebrew
 brew install postgresql
@@ -33,6 +35,7 @@ brew services start postgresql
 ```
 
 #### Windows
+
 - Download the official PostgreSQL installer from [postgresql.org](https://www.postgresql.org/download/windows/)
 - Run the installer and follow the setup wizard
 - Remember the password you set for the `postgres` superuser
@@ -132,9 +135,20 @@ npm run dev
 ### 6. Access the Application
 
 Open your browser to:
+
 - **Frontend:** http://localhost:5173
 - **Backend API:** http://localhost:5000/api
 - **Health check:** http://localhost:5000/health
+
+### Video uploads
+
+- Only authenticated administrators and instructors can upload videos.
+- Supported containers are MP4, WebM, MOV, OGV, MKV, and AVI. The server checks both the declared type and container signature.
+- The default maximum upload size is 200 MB. Set `MAX_VIDEO_SIZE_MB` in the backend environment to change it.
+- New videos are staged under `backend/private-media/video-temp`, then moved to `backend/private-media/videos` after validation. They are never served through the public `/uploads` directory.
+- Video metadata is stored in PostgreSQL in the `media` table; existing course and lesson URL fields remain compatible.
+- Application-managed videos are streamed through `/api/uploads/video/:filename` with HTTP range support. Existing external URLs and legacy files remain unchanged.
+- Run `npm run db:schema` for a fresh database, or `npm run db:extensions` for an existing database, to apply the media metadata table. `npm run db:migrate` also applies the dedicated video migration.
 
 ---
 
@@ -154,9 +168,17 @@ npm run db:schema
 # Seed showcase courses and initial data
 npm run db:seed
 
+# Apply pending numbered/ordered migrations to an existing database
+npm run db:migrate
+
 # Run schema + seed together
 npm run db:init
 ```
+
+`db:schema` bootstraps a new database from the base and extension schemas. For
+an existing database, `db:migrate` applies the ordered SQL files
+(`migration.sql`, `migration-add-tables.sql`, `migration-certificates.sql`, and
+`migration-videos.sql`) once each and records them in `schema_migrations`.
 
 ### Check Database Status
 
@@ -194,14 +216,17 @@ npm run db:seed
 3. Set Authorized origins and redirect URIs:
 
 **For local development:**
+
 - **Authorized JavaScript origins:** `http://localhost:5173`, `http://127.0.0.1:5173`
 - **Authorized redirect URIs:** `http://localhost:5173/oauth/google/callback`, `http://127.0.0.1:5173/oauth/google/callback`
 
 **For production:**
+
 - **Authorized JavaScript origins:** `https://your-domain.com`
 - **Authorized redirect URIs:** `https://your-domain.com/oauth/google/callback`
 
 4. Copy your **Client ID** and **Client Secret** to backend `.env`:
+
 ```env
 GOOGLE_CLIENT_ID=your-client-id
 GOOGLE_CLIENT_SECRET=your-client-secret
@@ -248,12 +273,14 @@ npm run build
 **Error:** `Unable to connect to PostgreSQL`
 
 **Solution:**
+
 1. Verify PostgreSQL is running:
    - **Linux:** `sudo systemctl status postgresql`
    - **macOS:** `brew services list | grep postgresql`
    - **Windows:** Check Services (postgresql should be running)
 
 2. Verify credentials in `.env`:
+
    ```bash
    psql -U postgres -h 127.0.0.1
    ```
@@ -268,12 +295,14 @@ npm run build
 **Error:** `EADDRINUSE: address already in use :::5000`
 
 **Solution:** Either:
+
 1. Stop the process using port 5000: `lsof -i :5000` (macOS/Linux) or Task Manager (Windows)
 2. Change the port in `.env`: `PORT=3000`
 
 ### Database Setup Hangs
 
 If `npm run db:setup` appears to hang:
+
 1. Press Ctrl+C to cancel
 2. Check PostgreSQL status (see above)
 3. Verify no firewall is blocking localhost:5432
@@ -281,6 +310,7 @@ If `npm run db:setup` appears to hang:
 ### API Returns 500 Errors
 
 **Solution:** The database tables may not exist. Run:
+
 ```bash
 npm run db:schema
 npm run db:seed

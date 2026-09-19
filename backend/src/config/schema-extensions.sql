@@ -59,6 +59,27 @@ CREATE INDEX IF NOT EXISTS idx_manual_receipts_user ON manual_payment_receipts(u
 CREATE INDEX IF NOT EXISTS idx_manual_receipts_course ON manual_payment_receipts(course_id);
 CREATE INDEX IF NOT EXISTS idx_manual_receipts_created ON manual_payment_receipts(created_at DESC);
 
+-- Enrollment progress fields used by the student course UI. Safe for existing databases.
+ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS progress INTEGER DEFAULT 0;
+ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS completed_videos JSONB DEFAULT '[]'::jsonb;
+UPDATE enrollments SET progress = GREATEST(0, LEAST(100, COALESCE(progress, 0))) WHERE progress IS NULL OR progress < 0 OR progress > 100;
+UPDATE enrollments SET completed_videos = '[]'::jsonb WHERE completed_videos IS NULL;
+
+CREATE TABLE IF NOT EXISTS video_watch_progress (
+    id SERIAL PRIMARY KEY,
+    enrollment_id INTEGER NOT NULL REFERENCES enrollments(id) ON DELETE CASCADE,
+    video_index INTEGER NOT NULL CHECK (video_index >= 0),
+    watched_seconds NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (watched_seconds >= 0),
+    duration_seconds NUMERIC(10, 2) NOT NULL CHECK (duration_seconds > 0),
+    last_position_seconds NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (last_position_seconds >= 0),
+    completed BOOLEAN NOT NULL DEFAULT false,
+    last_seen_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (enrollment_id, video_index)
+);
+
+CREATE INDEX IF NOT EXISTS idx_video_watch_progress_enrollment
+    ON video_watch_progress(enrollment_id);
+
 CREATE TABLE IF NOT EXISTS certificates (
     id SERIAL PRIMARY KEY,
     student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -69,6 +90,27 @@ CREATE TABLE IF NOT EXISTS certificates (
 );
 
 CREATE INDEX IF NOT EXISTS idx_certificates_student ON certificates(student_id);
+
+-- Application-managed video metadata. Binary content stays on disk; this table
+-- tracks ownership and lifecycle without changing legacy course/lesson URLs.
+CREATE TABLE IF NOT EXISTS media (
+    id SERIAL PRIMARY KEY,
+    original_name VARCHAR(255) NOT NULL,
+    storage_key VARCHAR(255) UNIQUE NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    file_size BIGINT NOT NULL CHECK (file_size > 0),
+    media_type VARCHAR(32) NOT NULL CHECK (media_type IN ('video')),
+    visibility VARCHAR(16) NOT NULL DEFAULT 'protected' CHECK (visibility IN ('public', 'protected')),
+    status VARCHAR(32) NOT NULL DEFAULT 'ready' CHECK (status IN ('uploading', 'ready', 'failed', 'deleted')),
+    created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE media ADD COLUMN IF NOT EXISTS visibility VARCHAR(16) NOT NULL DEFAULT 'protected';
+
+CREATE INDEX IF NOT EXISTS idx_media_created_by ON media(created_by);
+CREATE INDEX IF NOT EXISTS idx_media_status ON media(status);
 
 -- Notifications (user inbox; required by /api/analytics/notifications)
 CREATE TABLE IF NOT EXISTS notifications (

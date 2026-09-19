@@ -4,6 +4,7 @@
  */
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { authAPI, UserProfile } from "@/lib/api";
+import { clearStoredToken } from "@/lib/authStorage";
 
 export type UserRole = "student" | "instructor" | "admin";
 
@@ -42,21 +43,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Fetch user profile from database on mount
   useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem("alpha_token");
-      if (!token) {
-        setLoading(false);
-        return;
-      }
       try {
         const userProfile = await authAPI.getProfile();
         setUser(userProfile);
         setProfile(userProfile);
-        // Still store minimal user info in localStorage for quick access
-        localStorage.setItem("alpha_user", JSON.stringify(userProfile));
+        sessionStorage.setItem("alpha_user", JSON.stringify(userProfile));
       } catch (error) {
         console.error("Failed to fetch profile:", error);
-        localStorage.removeItem("alpha_token");
-        localStorage.removeItem("alpha_user");
+        clearStoredToken();
+        sessionStorage.removeItem("alpha_user");
+        setUser(null);
+        setProfile(null);
       } finally {
         setLoading(false);
       }
@@ -68,15 +65,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setUser(u);
     setProfile(u);
     if (u) {
-      localStorage.setItem("alpha_user", JSON.stringify(u));
+      sessionStorage.setItem("alpha_user", JSON.stringify(u));
     } else {
-      localStorage.removeItem("alpha_user");
+      sessionStorage.removeItem("alpha_user");
     }
   };
 
   const login = async (email: string, password: string) => {
-    const { user: u, token } = await authAPI.login(email, password);
-    localStorage.setItem("alpha_token", token);
+    const { user: u } = await authAPI.login(email, password);
     persistUser(u);
   };
 
@@ -86,47 +82,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     name: string,
     role: UserRole,
   ) => {
-    const { user: u, token } = await authAPI.signup(
-      email,
-      password,
-      name,
-      role,
-    );
-    localStorage.setItem("alpha_token", token);
+    const { user: u } = await authAPI.signup(email, password, name, role);
     persistUser(u);
   };
 
   const loginWithGoogle = async (credential: string) => {
-    const { user: u, token } = await authAPI.loginWithGoogle(credential);
-    localStorage.setItem("alpha_token", token);
+    const { user: u } = await authAPI.loginWithGoogle(credential);
     persistUser(u);
   };
 
   const loginWithGoogleCode = async (code: string, redirectUri: string) => {
-    const { user: u, token } = await authAPI.loginWithGoogleCode(
-      code,
-      redirectUri,
-    );
-    localStorage.setItem("alpha_token", token);
+    const { user: u } = await authAPI.loginWithGoogleCode(code, redirectUri);
     persistUser(u);
   };
 
   const logout = async () => {
-    localStorage.removeItem("alpha_token");
-    persistUser(null);
+    try {
+      await authAPI.logout();
+    } finally {
+      clearStoredToken();
+      persistUser(null);
+    }
   };
 
   const refreshProfile = async () => {
-    const token = localStorage.getItem("alpha_token");
-    if (!token) return;
     try {
       const userProfile = await authAPI.getProfile();
       setUser(userProfile);
       setProfile(userProfile);
-      localStorage.setItem("alpha_user", JSON.stringify(userProfile));
+      sessionStorage.setItem("alpha_user", JSON.stringify(userProfile));
     } catch {
-      localStorage.removeItem("alpha_token");
-      localStorage.removeItem("alpha_user");
+      clearStoredToken();
+      sessionStorage.removeItem("alpha_user");
       setUser(null);
       setProfile(null);
     }

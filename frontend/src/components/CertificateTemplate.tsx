@@ -1,15 +1,16 @@
 import { QRCodeSVG } from "qrcode.react";
 import { Certificate } from "@/lib/api";
 import logoUrl from "@/assets/logo.svg";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CertificateTemplateProps {
   certificate: Certificate;
   size?: "preview" | "full";
 }
 
-function formatDate(isoString: string): string {
+function formatDate(isoString: string, lang: "en" | "sm"): string {
   const date = new Date(isoString);
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString(lang === "sm" ? "so-SO" : "en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -32,6 +33,7 @@ export default function CertificateTemplate({
   certificate,
   size = "full",
 }: CertificateTemplateProps) {
+  const { lang, t } = useLanguage();
   const isPreview = size === "preview";
   const scale = isPreview ? PREVIEW_SCALE : 1;
 
@@ -100,7 +102,7 @@ export default function CertificateTemplate({
           {/* Logo */}
           <img
             src={logoUrl}
-            alt="Alpha Logo"
+            alt={t("certificate.alphaLogo")}
             style={{ width: 72, height: 72, flexShrink: 0 }}
           />
 
@@ -126,7 +128,7 @@ export default function CertificateTemplate({
                 opacity: 0.85,
               }}
             >
-              Excellence in Technology Education
+              {t("certificate.excellence")}
             </div>
           </div>
 
@@ -200,7 +202,7 @@ export default function CertificateTemplate({
               marginBottom: 6,
             }}
           >
-            Certificate of Completion
+            {t("certificate.title")}
           </div>
 
           {/* Gold ornamental divider */}
@@ -233,7 +235,7 @@ export default function CertificateTemplate({
               marginBottom: 10,
             }}
           >
-            This is to certify that
+            {t("certificate.certifies")}
           </div>
 
           {/* Student name */}
@@ -260,7 +262,7 @@ export default function CertificateTemplate({
               marginBottom: 8,
             }}
           >
-            has successfully completed the course
+            {t("certificate.completedCourse")}
           </div>
 
           {/* Course title */}
@@ -298,7 +300,7 @@ export default function CertificateTemplate({
                     textTransform: "uppercase",
                   }}
                 >
-                  Instructor
+                  {t("certificate.instructor")}
                 </div>
                 <div style={{ color: NAVY, fontSize: 16, fontWeight: "bold" }}>
                   {certificate.instructorName}
@@ -313,10 +315,10 @@ export default function CertificateTemplate({
                     textTransform: "uppercase",
                   }}
                 >
-                  Date Issued
+                  {t("certificate.dateIssued")}
                 </div>
                 <div style={{ color: NAVY, fontSize: 16 }}>
-                  {formatDate(certificate.issuedAt)}
+                  {formatDate(certificate.issuedAt, lang)}
                 </div>
               </div>
             </div>
@@ -338,7 +340,7 @@ export default function CertificateTemplate({
                   lineHeight: 1,
                 }}
               >
-                Academy Director
+                {t("certificate.academyDirector")}
               </div>
               <div
                 style={{
@@ -355,7 +357,7 @@ export default function CertificateTemplate({
                   textTransform: "uppercase",
                 }}
               >
-                Academy Director
+                {t("certificate.academyDirector")}
               </div>
             </div>
 
@@ -377,7 +379,7 @@ export default function CertificateTemplate({
                     textTransform: "uppercase",
                   }}
                 >
-                  Certificate No.
+                  {t("certificate.number")}
                 </div>
                 <div
                   style={{
@@ -414,7 +416,7 @@ export default function CertificateTemplate({
                   textAlign: "right",
                 }}
               >
-                Scan to verify
+                {t("certificate.scanToVerify")}
               </div>
             </div>
           </div>

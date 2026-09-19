@@ -10,6 +10,7 @@
     "db:setup": "tsx scripts/db-setup.ts",
     "db:schema": "tsx src/config/applySchema.ts",
     "db:extensions": "tsx src/config/applyExtensions.ts",
+    "db:migrate": "tsx src/config/run-migration.ts",
     "db:seed": "tsx src/config/seed.ts",
     "db:init": "npm run db:schema && npm run db:seed"
   },
@@ -19,7 +20,9 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "express-rate-limit": "^8.7.0",
     "google-auth-library": "^9.15.1",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.1.1",
     "pg": "^8.11.3"

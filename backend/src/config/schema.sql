@@ -13,6 +13,24 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE OR REPLACE FUNCTION enforce_first_user_admin_role()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (SELECT COUNT(*) FROM users) = 0 THEN
+        NEW.role := 'admin';
+    ELSE
+        NEW.role := 'student';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS enforce_first_user_admin_role_on_insert ON users;
+CREATE TRIGGER enforce_first_user_admin_role_on_insert
+BEFORE INSERT ON users
+FOR EACH ROW
+EXECUTE FUNCTION enforce_first_user_admin_role();
+
 -- Courses table
 CREATE TABLE IF NOT EXISTS courses (
     id SERIAL PRIMARY KEY,
@@ -63,6 +81,8 @@ CREATE TABLE IF NOT EXISTS enrollments (
     course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
     enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP,
+    progress INTEGER NOT NULL DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
+    completed_videos JSONB NOT NULL DEFAULT '[]'::jsonb,
     UNIQUE(user_id, course_id)
 );
 
@@ -75,6 +95,22 @@ CREATE TABLE IF NOT EXISTS progress (
     completed_at TIMESTAMP,
     UNIQUE(user_id, lesson_id)
 );
+
+-- Server-validated, resumable watch state for course video links.
+CREATE TABLE IF NOT EXISTS video_watch_progress (
+    id SERIAL PRIMARY KEY,
+    enrollment_id INTEGER NOT NULL REFERENCES enrollments(id) ON DELETE CASCADE,
+    video_index INTEGER NOT NULL CHECK (video_index >= 0),
+    watched_seconds NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (watched_seconds >= 0),
+    duration_seconds NUMERIC(10, 2) NOT NULL CHECK (duration_seconds > 0),
+    last_position_seconds NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (last_position_seconds >= 0),
+    completed BOOLEAN NOT NULL DEFAULT false,
+    last_seen_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (enrollment_id, video_index)
+);
+
+CREATE INDEX IF NOT EXISTS idx_video_watch_progress_enrollment
+    ON video_watch_progress(enrollment_id);
 
 -- Reviews table
 CREATE TABLE IF NOT EXISTS reviews (

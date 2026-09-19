@@ -1,4 +1,4 @@
-import { query } from '../config/db';
+import { query } from "../config/db";
 
 // ============================================
 // BOOKMARKS
@@ -13,31 +13,31 @@ export const getBookmarks = async (userId: number) => {
      JOIN users u ON c.instructor_id = u.id
      WHERE b.user_id = $1 
      ORDER BY b.created_at DESC`,
-    [userId]
+    [userId],
   );
   return result.rows;
 };
 
 export const addBookmark = async (userId: number, courseId: number) => {
   const result = await query(
-    'INSERT INTO bookmarks (user_id, course_id) VALUES ($1, $2) ON CONFLICT (user_id, course_id) DO NOTHING RETURNING *',
-    [userId, courseId]
+    "INSERT INTO bookmarks (user_id, course_id) VALUES ($1, $2) ON CONFLICT (user_id, course_id) DO NOTHING RETURNING *",
+    [userId, courseId],
   );
   return result.rows[0];
 };
 
 export const removeBookmark = async (userId: number, courseId: number) => {
-  await query(
-    'DELETE FROM bookmarks WHERE user_id = $1 AND course_id = $2',
-    [userId, courseId]
-  );
+  await query("DELETE FROM bookmarks WHERE user_id = $1 AND course_id = $2", [
+    userId,
+    courseId,
+  ]);
   return { success: true };
 };
 
 export const isBookmarked = async (userId: number, courseId: number) => {
   const result = await query(
-    'SELECT * FROM bookmarks WHERE user_id = $1 AND course_id = $2',
-    [userId, courseId]
+    "SELECT * FROM bookmarks WHERE user_id = $1 AND course_id = $2",
+    [userId, courseId],
   );
   return result.rows.length > 0;
 };
@@ -47,30 +47,32 @@ export const isBookmarked = async (userId: number, courseId: number) => {
 // ============================================
 
 export const getNotifications = async (userId: number, unreadOnly = false) => {
-  const unreadCondition = unreadOnly ? 'AND read = false' : '';
+  const unreadCondition = unreadOnly ? "AND read = false" : "";
   const result = await query(
     `SELECT * FROM notifications 
      WHERE user_id = $1 ${unreadCondition}
      ORDER BY created_at DESC 
      LIMIT 50`,
-    [userId]
+    [userId],
   );
   return result.rows;
 };
 
-export const markNotificationAsRead = async (userId: number, notificationId: number) => {
+export const markNotificationAsRead = async (
+  userId: number,
+  notificationId: number,
+) => {
   const result = await query(
-    'UPDATE notifications SET read = true WHERE id = $1 AND user_id = $2 RETURNING *',
-    [notificationId, userId]
+    "UPDATE notifications SET read = true WHERE id = $1 AND user_id = $2 RETURNING *",
+    [notificationId, userId],
   );
   return result.rows[0];
 };
 
 export const markAllNotificationsAsRead = async (userId: number) => {
-  await query(
-    'UPDATE notifications SET read = true WHERE user_id = $1',
-    [userId]
-  );
+  await query("UPDATE notifications SET read = true WHERE user_id = $1", [
+    userId,
+  ]);
   return { success: true };
 };
 
@@ -78,45 +80,48 @@ export const createNotification = async (
   userId: number,
   title: string,
   message: string,
-  type: string = 'info',
-  link?: string
+  type: string = "info",
+  link?: string,
 ) => {
   const result = await query(
-    'INSERT INTO notifications (user_id, title, message, type, link) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-    [userId, title, message, type, link]
+    "INSERT INTO notifications (user_id, title, message, type, link) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+    [userId, title, message, type, link],
   );
   return result.rows[0];
 };
 
-export const deleteNotification = async (userId: number, notificationId: number) => {
-  await query(
-    'DELETE FROM notifications WHERE id = $1 AND user_id = $2',
-    [notificationId, userId]
-  );
+export const deleteNotification = async (
+  userId: number,
+  notificationId: number,
+) => {
+  await query("DELETE FROM notifications WHERE id = $1 AND user_id = $2", [
+    notificationId,
+    userId,
+  ]);
   return { success: true };
 };
 
 export const createAdminNotification = async (
   title: string,
   message: string,
-  type: string = 'info',
-  link?: string
+  type: string = "info",
+  link?: string,
 ) => {
   // Get all admin users
   const admins = await query("SELECT id FROM users WHERE role = 'admin'");
-  
+
   // Create a notification for each admin
-  const promises = admins.rows.map((admin: { id: number }) => 
-    createNotification(admin.id, title, message, type, link)
+  const promises = admins.rows.map((admin: { id: number }) =>
+    createNotification(admin.id, title, message, type, link),
   );
-  
+
   return Promise.all(promises);
 };
 
 export const getUnreadNotificationCount = async (userId: number) => {
   const result = await query(
-    'SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND read = false',
-    [userId]
+    "SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND read = false",
+    [userId],
   );
   return parseInt(result.rows[0].count);
 };
@@ -126,16 +131,16 @@ export const getUnreadNotificationCount = async (userId: number) => {
 // ============================================
 
 export const getCourseNotes = async (userId: number, courseId?: number) => {
-  const courseCondition = courseId ? 'AND course_id = $2' : '';
+  const courseCondition = courseId ? "AND course_id = $2" : "";
   const params = courseId ? [userId, courseId] : [userId];
-  
+
   const result = await query(
     `SELECT cn.*, c.title as course_title 
      FROM course_notes cn 
      JOIN courses c ON cn.course_id = c.id
      WHERE cn.user_id = $1 ${courseCondition}
      ORDER BY cn.created_at DESC`,
-    params
+    params,
   );
   return result.rows;
 };
@@ -145,28 +150,32 @@ export const createNote = async (
   courseId: number,
   content: string,
   lessonIndex?: number,
-  lessonTitle?: string
+  lessonTitle?: string,
 ) => {
   const result = await query(
-    'INSERT INTO course_notes (user_id, course_id, lesson_index, lesson_title, content) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-    [userId, courseId, lessonIndex || null, lessonTitle || null, content]
+    "INSERT INTO course_notes (user_id, course_id, lesson_index, lesson_title, content) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+    [userId, courseId, lessonIndex || null, lessonTitle || null, content],
   );
   return result.rows[0];
 };
 
-export const updateNote = async (userId: number, noteId: number, content: string) => {
+export const updateNote = async (
+  userId: number,
+  noteId: number,
+  content: string,
+) => {
   const result = await query(
-    'UPDATE course_notes SET content = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3 RETURNING *',
-    [content, noteId, userId]
+    "UPDATE course_notes SET content = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3 RETURNING *",
+    [content, noteId, userId],
   );
   return result.rows[0];
 };
 
 export const deleteNote = async (userId: number, noteId: number) => {
-  await query(
-    'DELETE FROM course_notes WHERE id = $1 AND user_id = $2',
-    [noteId, userId]
-  );
+  await query("DELETE FROM course_notes WHERE id = $1 AND user_id = $2", [
+    noteId,
+    userId,
+  ]);
   return { success: true };
 };
 
@@ -181,7 +190,7 @@ export const getAnnouncements = async (courseId: number) => {
      JOIN users u ON a.instructor_id = u.id
      WHERE a.course_id = $1 
      ORDER BY a.is_pinned DESC, a.created_at DESC`,
-    [courseId]
+    [courseId],
   );
   return result.rows;
 };
@@ -191,11 +200,11 @@ export const createAnnouncement = async (
   courseId: number,
   title: string,
   content: string,
-  isPinned = false
+  isPinned = false,
 ) => {
   const result = await query(
-    'INSERT INTO announcements (instructor_id, course_id, title, content, is_pinned) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-    [instructorId, courseId, title, content, isPinned]
+    "INSERT INTO announcements (instructor_id, course_id, title, content, is_pinned) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+    [instructorId, courseId, title, content, isPinned],
   );
   return result.rows[0];
 };
@@ -205,7 +214,7 @@ export const updateAnnouncement = async (
   announcementId: number,
   title?: string,
   content?: string,
-  isPinned?: boolean
+  isPinned?: boolean,
 ) => {
   const updates: string[] = [];
   const values: any[] = [];
@@ -225,23 +234,26 @@ export const updateAnnouncement = async (
   }
 
   if (updates.length === 0) {
-    throw new Error('No updates provided');
+    throw new Error("No updates provided");
   }
 
   updates.push(`updated_at = CURRENT_TIMESTAMP`);
   values.push(instructorId, announcementId);
 
   const result = await query(
-    `UPDATE announcements SET ${updates.join(', ')} WHERE id = $${paramIndex + 1} AND instructor_id = $${paramIndex} RETURNING *`,
-    values
+    `UPDATE announcements SET ${updates.join(", ")} WHERE id = $${paramIndex + 1} AND instructor_id = $${paramIndex} RETURNING *`,
+    values,
   );
   return result.rows[0];
 };
 
-export const deleteAnnouncement = async (instructorId: number, announcementId: number) => {
+export const deleteAnnouncement = async (
+  instructorId: number,
+  announcementId: number,
+) => {
   await query(
-    'DELETE FROM announcements WHERE id = $1 AND instructor_id = $2',
-    [announcementId, instructorId]
+    "DELETE FROM announcements WHERE id = $1 AND instructor_id = $2",
+    [announcementId, instructorId],
   );
   return { success: true };
 };
@@ -260,7 +272,7 @@ export const getLearningPaths = async (isActive = true) => {
      WHERE lp.is_active = $1
      GROUP BY lp.id, u.name
      ORDER BY lp.created_at DESC`,
-    [isActive]
+    [isActive],
   );
   return result.rows;
 };
@@ -271,7 +283,7 @@ export const getLearningPathById = async (pathId: number) => {
      FROM learning_paths lp
      LEFT JOIN users u ON lp.created_by = u.id
      WHERE lp.id = $1`,
-    [pathId]
+    [pathId],
   );
   return result.rows[0];
 };
@@ -285,7 +297,7 @@ export const getLearningPathCourses = async (pathId: number) => {
      JOIN users u ON c.instructor_id = u.id
      WHERE lpc.learning_path_id = $1
      ORDER BY lpc.position ASC`,
-    [pathId]
+    [pathId],
   );
   return result.rows;
 };
@@ -294,19 +306,19 @@ export const createLearningPath = async (
   title: string,
   description: string,
   createdBy: number,
-  courseIds: number[] = []
+  courseIds: number[] = [],
 ) => {
   const pathResult = await query(
-    'INSERT INTO learning_paths (title, description, created_by, is_active) VALUES ($1, $2, $3, true) RETURNING *',
-    [title, description, createdBy]
+    "INSERT INTO learning_paths (title, description, created_by, is_active) VALUES ($1, $2, $3, true) RETURNING *",
+    [title, description, createdBy],
   );
   const path = pathResult.rows[0];
 
   // Add courses to the path
   for (let i = 0; i < courseIds.length; i++) {
     await query(
-      'INSERT INTO learning_path_courses (learning_path_id, course_id, position) VALUES ($1, $2, $3)',
-      [path.id, courseIds[i], i]
+      "INSERT INTO learning_path_courses (learning_path_id, course_id, position) VALUES ($1, $2, $3)",
+      [path.id, courseIds[i], i],
     );
   }
 
@@ -317,7 +329,7 @@ export const updateLearningPath = async (
   pathId: number,
   title?: string,
   description?: string,
-  isActive?: boolean
+  isActive?: boolean,
 ) => {
   const updates: string[] = [];
   const values: any[] = [];
@@ -337,37 +349,46 @@ export const updateLearningPath = async (
   }
 
   if (updates.length === 0) {
-    throw new Error('No updates provided');
+    throw new Error("No updates provided");
   }
 
   updates.push(`updated_at = CURRENT_TIMESTAMP`);
   values.push(pathId);
 
   const result = await query(
-    `UPDATE learning_paths SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
-    values
+    `UPDATE learning_paths SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`,
+    values,
   );
   return result.rows[0];
 };
 
 export const deleteLearningPath = async (pathId: number) => {
-  await query('DELETE FROM learning_path_courses WHERE learning_path_id = $1', [pathId]);
-  await query('DELETE FROM learning_paths WHERE id = $1', [pathId]);
+  await query("DELETE FROM learning_path_courses WHERE learning_path_id = $1", [
+    pathId,
+  ]);
+  await query("DELETE FROM learning_paths WHERE id = $1", [pathId]);
   return { success: true };
 };
 
-export const addCourseToPath = async (pathId: number, courseId: number, position: number) => {
+export const addCourseToPath = async (
+  pathId: number,
+  courseId: number,
+  position: number,
+) => {
   const result = await query(
-    'INSERT INTO learning_path_courses (learning_path_id, course_id, position) VALUES ($1, $2, $3) ON CONFLICT (learning_path_id, course_id) DO UPDATE SET position = $3 RETURNING *',
-    [pathId, courseId, position]
+    "INSERT INTO learning_path_courses (learning_path_id, course_id, position) VALUES ($1, $2, $3) ON CONFLICT (learning_path_id, course_id) DO UPDATE SET position = $3 RETURNING *",
+    [pathId, courseId, position],
   );
   return result.rows[0];
 };
 
-export const removeCourseFromPath = async (pathId: number, courseId: number) => {
+export const removeCourseFromPath = async (
+  pathId: number,
+  courseId: number,
+) => {
   await query(
-    'DELETE FROM learning_path_courses WHERE learning_path_id = $1 AND course_id = $2',
-    [pathId, courseId]
+    "DELETE FROM learning_path_courses WHERE learning_path_id = $1 AND course_id = $2",
+    [pathId, courseId],
   );
   return { success: true };
 };
@@ -388,23 +409,27 @@ export const getUserLearningPaths = async (userId: number) => {
      WHERE ulp.user_id = $1
      GROUP BY ulp.id, lp.title, lp.description, lp.course_count
      ORDER BY ulp.started_at DESC`,
-    [userId]
+    [userId],
   );
   return result.rows;
 };
 
 export const enrollInLearningPath = async (userId: number, pathId: number) => {
   const result = await query(
-    'INSERT INTO user_learning_paths (user_id, learning_path_id) VALUES ($1, $2) ON CONFLICT (user_id, learning_path_id) DO NOTHING RETURNING *',
-    [userId, pathId]
+    "INSERT INTO user_learning_paths (user_id, learning_path_id) VALUES ($1, $2) ON CONFLICT (user_id, learning_path_id) DO NOTHING RETURNING *",
+    [userId, pathId],
   );
   return result.rows[0];
 };
 
-export const updateLearningPathProgress = async (userId: number, pathId: number, progress: number) => {
+export const updateLearningPathProgress = async (
+  userId: number,
+  pathId: number,
+  progress: number,
+) => {
   const result = await query(
-    'UPDATE user_learning_paths SET progress = $1, completed_at = CASE WHEN $1 >= 100 THEN CURRENT_TIMESTAMP ELSE completed_at END WHERE user_id = $2 AND learning_path_id = $3 RETURNING *',
-    [progress, userId, pathId]
+    "UPDATE user_learning_paths SET progress = $1, completed_at = CASE WHEN $1 >= 100 THEN CURRENT_TIMESTAMP ELSE completed_at END WHERE user_id = $2 AND learning_path_id = $3 RETURNING *",
+    [progress, userId, pathId],
   );
   return result.rows[0];
 };
@@ -418,7 +443,7 @@ export const getLeaderboard = async (limit = 50) => {
     `SELECT * FROM leaderboard 
      ORDER BY courses_completed DESC, lessons_completed DESC, certificates_earned DESC
      LIMIT $1`,
-    [limit]
+    [limit],
   );
   return result.rows;
 };
@@ -427,15 +452,18 @@ export const getLeaderboard = async (limit = 50) => {
 // INSTRUCTOR ANALYTICS
 // ============================================
 
-export const getInstructorRevenue = async (instructorId: number, courseId?: number) => {
-  const courseCondition = courseId ? 'AND course_id = $2' : '';
+export const getInstructorRevenue = async (
+  instructorId: number,
+  courseId?: number,
+) => {
+  const courseCondition = courseId ? "AND course_id = $2" : "";
   const params = courseId ? [instructorId, courseId] : [instructorId];
 
   const result = await query(
     `SELECT * FROM instructor_revenue 
      WHERE instructor_id = $1 ${courseCondition}
      ORDER BY total_revenue DESC`,
-    params
+    params,
   );
   return result.rows;
 };
@@ -447,15 +475,13 @@ export const getInstructorStats = async (instructorId: number) => {
         COUNT(DISTINCT e.id) as total_enrollments,
         COUNT(DISTINCT r.id) as total_reviews,
         AVG(r.rating) as average_rating,
-        COALESCE(SUM(pmt.amount), 0) as total_revenue,
         COUNT(DISTINCT CASE WHEN c.is_published = true THEN c.id END) as published_courses,
         COUNT(DISTINCT CASE WHEN c.is_published = false THEN c.id END) as draft_courses
      FROM courses c
      LEFT JOIN enrollments e ON c.id = e.course_id
      LEFT JOIN reviews r ON c.id = r.course_id
-     LEFT JOIN payments pmt ON e.id = pmt.course_id AND pmt.status = 'completed'
      WHERE c.instructor_id = $1`,
-    [instructorId]
+    [instructorId],
   );
   return result.rows[0];
 };
@@ -463,12 +489,15 @@ export const getInstructorStats = async (instructorId: number) => {
 export const getQuizStatistics = async (courseId: number) => {
   const result = await query(
     `SELECT * FROM quiz_statistics WHERE course_id = $1`,
-    [courseId]
+    [courseId],
   );
   return result.rows;
 };
 
-export const getStudentGrades = async (instructorId: number, courseId: number) => {
+export const getStudentGrades = async (
+  instructorId: number,
+  courseId: number,
+) => {
   const result = await query(
     `SELECT 
         u.id as student_id,
@@ -489,7 +518,7 @@ export const getStudentGrades = async (instructorId: number, courseId: number) =
      WHERE c.id = $1 AND c.instructor_id = $2
      GROUP BY u.id, u.name, u.email, u.avatar, q.id, q.title
      ORDER BY u.name, q.title`,
-    [courseId, instructorId]
+    [courseId, instructorId],
   );
   return result.rows;
 };

@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { Palette, Layout, Save, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "@/components/ImageUpload";
+import VideoUpload from "@/components/VideoUpload";
 import { settingsAPI } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -145,6 +146,16 @@ const AdminAppearance: React.FC = () => {
             <p className="text-xs text-muted-foreground">
               {t("admin.appearance.videoHelp")}
             </p>
+            <div className="space-y-2">
+              <Label>{t("admin.appearance.videoUrl")}</Label>
+              <VideoUpload
+                value={heroIntroVideoUrl}
+                onChange={setHeroIntroVideoUrl}
+                label="Upload landing-page video"
+                maxSizeLabel="Up to 200MB"
+                visibility="public"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="hero-video-url">
                 {t("admin.appearance.videoUrl")}

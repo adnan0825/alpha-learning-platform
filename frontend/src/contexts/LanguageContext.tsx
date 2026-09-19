@@ -22,14 +22,19 @@ export type Lang = "en" | "sm";
 export const ALPHA_TRANSLATIONS_UPDATED = "alpha-translations-updated";
 
 /** Persisted UI language */
-export const SOTA_LANG_KEY = "sota-lang";
+export const ALPHA_LANG_KEY = "alpha-lang";
+const LEGACY_LANG_KEY = "sota-lang";
 /** Set after first language choice (modal or header switcher) — hides first-visit modal */
-export const SOTA_LANG_PROMPT_SEEN_KEY = "sota-lang-prompt-seen";
+export const ALPHA_LANG_PROMPT_SEEN_KEY = "alpha-lang-prompt-seen";
+const LEGACY_LANG_PROMPT_SEEN_KEY = "sota-lang-prompt-seen";
 
 interface LanguageContextType {
   lang: Lang;
   setLang: (lang: Lang) => void;
-  t: (key: TranslationKey) => string;
+  t: (
+    key: TranslationKey,
+    variables?: Record<string, string | number>,
+  ) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType>({
@@ -46,7 +51,7 @@ const normalizeStoredLanguage = (value: string | null): Lang => {
   if (value === "en" || value === "sm") return value;
   if (value === "om") {
     if (typeof window !== "undefined") {
-      localStorage.setItem(SOTA_LANG_KEY, "sm");
+      localStorage.setItem(ALPHA_LANG_KEY, "sm");
     }
     return "sm";
   }
@@ -59,18 +64,24 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
   const didMigratePrompt = useRef(false);
   if (typeof window !== "undefined" && !didMigratePrompt.current) {
     didMigratePrompt.current = true;
-    const s = localStorage.getItem(SOTA_LANG_KEY);
+    const s =
+      localStorage.getItem(ALPHA_LANG_KEY) ||
+      localStorage.getItem(LEGACY_LANG_KEY);
     if (
       (s === "en" || s === "sm" || s === "om") &&
-      !localStorage.getItem(SOTA_LANG_PROMPT_SEEN_KEY)
+      !localStorage.getItem(ALPHA_LANG_PROMPT_SEEN_KEY) &&
+      !localStorage.getItem(LEGACY_LANG_PROMPT_SEEN_KEY)
     ) {
-      localStorage.setItem(SOTA_LANG_PROMPT_SEEN_KEY, "1");
+      localStorage.setItem(ALPHA_LANG_PROMPT_SEEN_KEY, "1");
     }
   }
 
   const [lang, setLangState] = useState<Lang>(() => {
     if (typeof window === "undefined") return "en";
-    return normalizeStoredLanguage(localStorage.getItem(SOTA_LANG_KEY));
+    return normalizeStoredLanguage(
+      localStorage.getItem(ALPHA_LANG_KEY) ||
+        localStorage.getItem(LEGACY_LANG_KEY),
+    );
   });
 
   const [translationMap, setTranslationMap] = useState<TranslationMap>(() =>
@@ -101,15 +112,23 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const setLang = useCallback((newLang: Lang) => {
     setLangState(newLang);
-    localStorage.setItem(SOTA_LANG_KEY, newLang);
-    localStorage.setItem(SOTA_LANG_PROMPT_SEEN_KEY, "1");
+    localStorage.setItem(ALPHA_LANG_KEY, newLang);
+    localStorage.setItem(ALPHA_LANG_PROMPT_SEEN_KEY, "1");
   }, []);
 
   const t = useCallback(
-    (key: TranslationKey): string => {
+    (
+      key: TranslationKey,
+      variables?: Record<string, string | number>,
+    ): string => {
       const entry = translationMap[key];
-      if (!entry) return key;
-      return entry[lang] || entry.en || key;
+      let value = entry?.[lang] || entry?.en || key;
+      if (variables) {
+        value = value.replace(/\{\{(\w+)\}\}/g, (_, name: string) =>
+          String(variables[name] ?? `{{${name}}}`),
+        );
+      }
+      return value;
     },
     [lang, translationMap],
   );

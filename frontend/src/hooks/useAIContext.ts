@@ -44,9 +44,13 @@ export function useAIContext(): AIContext {
             // For students, only show course details if they're enrolled
             if (profile?.role === "student") {
               // Check if student is enrolled
-              const enrollments = await enrollmentsAPI.getByStudent(user?.id || "");
-              const isEnrolled = enrollments?.some((e: Enrollment) => e.courseId === courseId);
-              
+              const enrollments = await enrollmentsAPI.getByStudent(
+                user?.id || "",
+              );
+              const isEnrolled = enrollments?.some(
+                (e: Enrollment) => e.courseId === courseId,
+              );
+
               if (isEnrolled) {
                 // Student is enrolled - show full details
                 newContext.currentCourse = {
@@ -101,7 +105,7 @@ export function useAIContext(): AIContext {
                     progress: enrollment.progress,
                   };
                 }
-              })
+              }),
             );
             newContext.enrolledCourses = enrolledCourses;
           }
@@ -115,7 +119,7 @@ export function useAIContext(): AIContext {
         try {
           const instructorCourses = await coursesAPI.getByInstructor(user.id);
           if (instructorCourses && instructorCourses.length > 0) {
-            newContext.enrolledCourses = instructorCourses.map(course => ({
+            newContext.enrolledCourses = instructorCourses.map((course) => ({
               id: course.id,
               title: course.title,
               progress: 100, // Instructors have "completed" their own courses
@@ -129,8 +133,8 @@ export function useAIContext(): AIContext {
       // Get learning path (courses in progress)
       if (newContext.enrolledCourses) {
         const inProgress = newContext.enrolledCourses
-          .filter(c => c.progress > 0 && c.progress < 100)
-          .map(c => c.title);
+          .filter((c) => c.progress > 0 && c.progress < 100)
+          .map((c) => c.title);
         if (inProgress.length > 0) {
           newContext.learningPath = inProgress;
         }
@@ -140,7 +144,13 @@ export function useAIContext(): AIContext {
     };
 
     gatherContext();
-  }, [location.pathname, user?.id, profile?.role, profile?.displayName, profile?.email]);
+  }, [
+    location.pathname,
+    user?.id,
+    profile?.role,
+    profile?.displayName,
+    profile?.email,
+  ]);
 
   return context;
 }
@@ -177,7 +187,6 @@ function getPageName(pathname: string): string {
     "/admin/logs": "System Logs",
     "/admin/reports": "Reports",
     "/admin/moderation": "Content Moderation",
-    "/admin/payments": "Payments",
   };
 
   // Check exact match first

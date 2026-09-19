@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 import ImageUpload from "@/components/ImageUpload";
+import VideoUpload from "@/components/VideoUpload";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -525,6 +526,13 @@ const CourseManager: React.FC = () => {
                     Public preview before enrollment. If empty, the first lesson
                     in the Lessons tab is the free preview.
                   </p>
+                  <VideoUpload
+                    value={introVideoUrl}
+                    onChange={setIntroVideoUrl}
+                    label="Upload intro video"
+                    maxSizeLabel="Up to 200MB"
+                    visibility="public"
+                  />
                   <Input
                     id="cm-intro-url"
                     value={introVideoUrl}

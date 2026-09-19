@@ -12,5 +12,5 @@
   <rect x="46" y="66" width="28" height="3" rx="1.5" fill="#c9a84c" opacity="0.6"/>
   <rect x="50" y="73" width="20" height="3" rx="1.5" fill="#c9a84c" opacity="0.4"/>
   <!-- Academy initials -->
-  <text x="60" y="100" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-weight="bold" fill="#c9a84c" letter-spacing="2">SOTA</text>
+  <text x="60" y="100" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-weight="bold" fill="#c9a84c" letter-spacing="2">ALPHA</text>
 </svg>

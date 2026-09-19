@@ -35,19 +35,20 @@ const AdminFAQ: React.FC = () => {
           list.length
             ? list.map((x: FaqItem) => ({
                 id: x.id || newId(),
-                question: x.question || "",
-                answer: x.answer || "",
-                questionSm:
-                  x.questionSm || x.questionSomali || x.question_sm || "",
-                answerSm: x.answerSm || x.answerSomali || x.answer_sm || "",
+                question:
+                  x.question ||
+                  x.questionSm ||
+                  x.questionSomali ||
+                  x.question_sm ||
+                  "",
+                answer:
+                  x.answer || x.answerSm || x.answerSomali || x.answer_sm || "",
               }))
             : [
                 {
                   id: newId(),
                   question: "",
                   answer: "",
-                  questionSm: "",
-                  answerSm: "",
                 },
               ],
         );
@@ -57,8 +58,6 @@ const AdminFAQ: React.FC = () => {
             id: newId(),
             question: "",
             answer: "",
-            questionSm: "",
-            answerSm: "",
           },
         ]);
       } finally {
@@ -68,10 +67,7 @@ const AdminFAQ: React.FC = () => {
   }, []);
 
   const addRow = () => {
-    setItems((prev) => [
-      ...prev,
-      { id: newId(), question: "", answer: "", questionSm: "", answerSm: "" },
-    ]);
+    setItems((prev) => [...prev, { id: newId(), question: "", answer: "" }]);
   };
 
   const removeRow = (id: string) => {
@@ -87,19 +83,9 @@ const AdminFAQ: React.FC = () => {
   };
 
   const handleSave = async () => {
-    const cleaned = items.filter(
-      (x) =>
-        x.question.trim() ||
-        x.answer.trim() ||
-        x.questionSm?.trim() ||
-        x.answerSm?.trim(),
-    );
+    const cleaned = items.filter((x) => x.question.trim() || x.answer.trim());
     const incomplete = cleaned.find(
-      (x) =>
-        !x.question.trim() ||
-        !x.answer.trim() ||
-        !x.questionSm?.trim() ||
-        !x.answerSm?.trim(),
+      (x) => !x.question.trim() || !x.answer.trim(),
     );
     if (incomplete) {
       toast({
@@ -120,8 +106,6 @@ const AdminFAQ: React.FC = () => {
                 id: newId(),
                 question: "",
                 answer: "",
-                questionSm: "",
-                answerSm: "",
               },
             ],
       );
@@ -210,57 +194,25 @@ const AdminFAQ: React.FC = () => {
                   </Button>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`q-${row.id}`}>
-                    {t("faq.questionEnglish")}
-                  </Label>
+                  <Label htmlFor={`q-${row.id}`}>{t("faq.question")}</Label>
                   <Input
                     id={`q-${row.id}`}
                     value={row.question}
                     onChange={(e) =>
                       updateRow(row.id, "question", e.target.value)
                     }
-                    placeholder={t("faq.questionEnglishPlaceholder")}
+                    placeholder={t("faq.questionPlaceholder")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`a-${row.id}`}>
-                    {t("faq.answerEnglish")}
-                  </Label>
+                  <Label htmlFor={`a-${row.id}`}>{t("faq.answer")}</Label>
                   <Textarea
                     id={`a-${row.id}`}
                     value={row.answer}
                     onChange={(e) =>
                       updateRow(row.id, "answer", e.target.value)
                     }
-                    placeholder={t("faq.answerEnglishPlaceholder")}
-                    rows={4}
-                    className="resize-y min-h-[88px]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`q-sm-${row.id}`}>
-                    {t("faq.questionSomali")}
-                  </Label>
-                  <Input
-                    id={`q-sm-${row.id}`}
-                    value={row.questionSm || ""}
-                    onChange={(e) =>
-                      updateRow(row.id, "questionSm", e.target.value)
-                    }
-                    placeholder={t("faq.questionSomaliPlaceholder")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`a-sm-${row.id}`}>
-                    {t("faq.answerSomali")}
-                  </Label>
-                  <Textarea
-                    id={`a-sm-${row.id}`}
-                    value={row.answerSm || ""}
-                    onChange={(e) =>
-                      updateRow(row.id, "answerSm", e.target.value)
-                    }
-                    placeholder={t("faq.answerSomaliPlaceholder")}
+                    placeholder={t("faq.answerPlaceholder")}
                     rows={4}
                     className="resize-y min-h-[88px]"
                   />

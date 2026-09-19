@@ -160,14 +160,6 @@ const AdminSettings: React.FC = () => {
                 {settings?.platform?.total_enrollments || 0}
               </p>
             </div>
-            <div className="p-3 rounded-xl bg-muted/30">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                {t("admin.settings.totalRevenue")}
-              </p>
-              <p className="text-xl font-bold text-success">
-                {(settings?.platform?.total_revenue || 0).toLocaleString()} ETB
-              </p>
-            </div>
           </div>
         </SettingsSection>
 
@@ -177,22 +169,6 @@ const AdminSettings: React.FC = () => {
           delay={0.2}
         >
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  {t("admin.settings.payments")}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {t("admin.settings.paymentsHelp")}
-                </p>
-              </div>
-              <Switch
-                checked={settings?.features?.payments_enabled}
-                onCheckedChange={(v) =>
-                  handleUpdateFeature("payments_enabled", v)
-                }
-              />
-            </div>
             <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
               <div>
                 <p className="text-sm font-medium text-foreground">

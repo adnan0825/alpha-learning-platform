@@ -30,7 +30,6 @@ import {
   UserX,
   GraduationCap,
   MessageSquare,
-  CreditCard,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -78,7 +77,6 @@ const AdminDashboard: React.FC = () => {
   const [feedbackToDelete, setFeedbackToDelete] =
     useState<UserFeedbackItem | null>(null);
   const [deletingFeedback, setDeletingFeedback] = useState(false);
-  const [pendingReceiptsCount, setPendingReceiptsCount] = useState(0);
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -105,18 +103,6 @@ const AdminDashboard: React.FC = () => {
     }
   }, []);
 
-  const loadManualReceipts = useCallback(async () => {
-    try {
-      const r = await adminAPI.getAdminManualReceipts();
-      const pending = r.filter(
-        (x: any) => x.status === "pending" || !x.status,
-      ).length;
-      setPendingReceiptsCount(pending);
-    } catch (err) {
-      console.error("Failed to load manual receipts count:", err);
-    }
-  }, []);
-
   const fetchData = useCallback(async () => {
     try {
       const [u, c, s] = await Promise.all([
@@ -127,13 +113,12 @@ const AdminDashboard: React.FC = () => {
       setUsers(u);
       setCourses(c);
       setStats(s);
-      await loadManualReceipts();
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [loadManualReceipts]);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -144,11 +129,6 @@ const AdminDashboard: React.FC = () => {
     const id = setInterval(loadFeedback, 20000);
     return () => clearInterval(id);
   }, [loadFeedback]);
-
-  useEffect(() => {
-    const id = setInterval(loadManualReceipts, 15000);
-    return () => clearInterval(id);
-  }, [loadManualReceipts]);
 
   const toggleCourseStatus = async (
     courseId: string,
@@ -382,14 +362,6 @@ const AdminDashboard: React.FC = () => {
             icon={<TrendingUp size={18} />}
             gradient="primary"
             delay={0.4}
-          />
-          <StatCard
-            label="Pending Receipts"
-            value={pendingReceiptsCount}
-            icon={<CreditCard size={18} />}
-            gradient={pendingReceiptsCount > 0 ? "warning" : "info"}
-            delay={0.5}
-            onClick={() => (window.location.href = "/admin/payments")}
           />
         </div>
 

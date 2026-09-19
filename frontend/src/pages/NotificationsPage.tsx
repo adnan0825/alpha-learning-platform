@@ -202,6 +202,15 @@ const NotificationsPage: React.FC = () => {
                 <Card
                   className={`shadow-card cursor-pointer transition-all hover:shadow-elevated ${n.read !== true ? "border-accent/30 bg-accent/5" : ""}`}
                   onClick={() => handleMarkAsRead(n.id)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${n.read !== true ? "Mark as read: " : "Open notification: "}${n.title}`}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleMarkAsRead(n.id);
+                    }
+                  }}
                 >
                   <CardContent className="p-4 flex items-start gap-4">
                     <div
