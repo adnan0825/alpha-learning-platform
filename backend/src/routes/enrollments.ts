@@ -148,7 +148,14 @@ router.post(
       );
       res.status(201).json(review);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      const message = error?.message || "Could not create review";
+      if (message.includes("enroll in the course")) {
+        return res.status(403).json({ error: message });
+      }
+      if (message.includes("already reviewed")) {
+        return res.status(409).json({ error: message });
+      }
+      res.status(400).json({ error: message });
     }
   },
 );
