@@ -40,6 +40,24 @@ CREATE TABLE IF NOT EXISTS payments (
 CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id);
 CREATE INDEX IF NOT EXISTS idx_payments_course ON payments(course_id);
 CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
+
+-- Screenshots / receipts after manual bank or wallet transfer (not Chapa)
+CREATE TABLE IF NOT EXISTS manual_payment_receipts (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    receipt_image_url TEXT NOT NULL,
+    amount_etb DECIMAL(12, 2),
+    note TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(32) DEFAULT 'pending',
+    reviewed_at TIMESTAMP,
+    reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_manual_receipts_user ON manual_payment_receipts(user_id);
+CREATE INDEX IF NOT EXISTS idx_manual_receipts_course ON manual_payment_receipts(course_id);
+CREATE INDEX IF NOT EXISTS idx_manual_receipts_created ON manual_payment_receipts(created_at DESC);
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS admin_share DECIMAL(12, 2);
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS instructor_share DECIMAL(12, 2);
 INSERT INTO payments (
@@ -82,24 +100,6 @@ SET amount = c.price,
     instructor_share = c.price - ROUND(c.price * 0.20, 2)
 FROM courses c
 WHERE p.course_id = c.id AND p.status = 'completed';
-
--- Screenshots / receipts after manual bank or wallet transfer (not Chapa)
-CREATE TABLE IF NOT EXISTS manual_payment_receipts (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-    receipt_image_url TEXT NOT NULL,
-    amount_etb DECIMAL(12, 2),
-    note TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(32) DEFAULT 'pending',
-    reviewed_at TIMESTAMP,
-    reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_manual_receipts_user ON manual_payment_receipts(user_id);
-CREATE INDEX IF NOT EXISTS idx_manual_receipts_course ON manual_payment_receipts(course_id);
-CREATE INDEX IF NOT EXISTS idx_manual_receipts_created ON manual_payment_receipts(created_at DESC);
 
 -- Enrollment progress fields used by the student course UI. Safe for existing databases.
 ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS progress INTEGER DEFAULT 0;
@@ -254,7 +254,7 @@ ALTER TABLE courses ADD COLUMN IF NOT EXISTS intro_video_title VARCHAR(255);
 ALTER TABLE courses ALTER COLUMN intro_video_url TYPE VARCHAR(2000);
 
 INSERT INTO settings (key, value) VALUES
-('appearance', '{"primaryColor": "#fbbf24", "logo": "", "fontFamily": "Inter", "heroIntroVideoUrl": "https://youtu.be/WinAdWf4uH8"}'::jsonb),
+('appearance', '{"primaryColor": "#fbbf24", "logo": "", "fontFamily": "Inter", "heroIntroVideoUrl": "/api/uploads/video/1789914018184-7flk6bkl96.mp4"}'::jsonb),
 ('features', '{"payments_enabled": true, "certificates_enabled": true, "quizzes_enabled": true, "discussions_enabled": true, "max_file_size": 5242880, "allowed_file_types": ["image/jpeg", "image/png", "image/gif", "image/webp"]}'::jsonb),
 ('faq', '[
   {"id":"seed-1","question":"How do I enroll in a course?","answer":"Create an account, sign in, browse courses, then open a course and follow the enrollment steps."},

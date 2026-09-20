@@ -41,7 +41,7 @@ router.get(
         primaryColor: "#fbbf24",
         logo: "",
         fontFamily: "Inter",
-        heroIntroVideoUrl: "",
+        heroIntroVideoUrl: "/api/uploads/video/1789914018184-7flk6bkl96.mp4",
       };
 
       res.json({

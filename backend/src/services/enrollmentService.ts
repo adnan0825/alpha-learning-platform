@@ -1,5 +1,29 @@
 import { query } from "../config/db";
 
+export const validateReviewInput = (rating: unknown, comment?: unknown) => {
+  const normalizedRating = Number(rating);
+
+  if (
+    !Number.isFinite(normalizedRating) ||
+    !Number.isInteger(normalizedRating) ||
+    normalizedRating < 1 ||
+    normalizedRating > 5
+  ) {
+    throw new Error("Rating must be between 1 and 5");
+  }
+
+  const normalizedComment = typeof comment === "string" ? comment.trim() : "";
+
+  if (normalizedComment.length > 2000) {
+    throw new Error("Review comment is too long");
+  }
+
+  return {
+    rating: normalizedRating,
+    comment: normalizedComment,
+  };
+};
+
 export const enrollUser = async (userId: number, courseId: number) => {
   const courseResult = await query(
     `SELECT c.price,
@@ -162,9 +186,38 @@ export const createReview = async (
   rating: number,
   comment?: string,
 ) => {
+  const { rating: validRating, comment: validComment } = validateReviewInput(
+    rating,
+    comment,
+  );
+
+  const courseExists = await query(
+    "SELECT 1 FROM courses WHERE id = $1 LIMIT 1",
+    [courseId],
+  );
+  if (courseExists.rows.length === 0) {
+    throw new Error("Course not found");
+  }
+
+  const isEnrolled = await query(
+    "SELECT 1 FROM enrollments WHERE user_id = $1 AND course_id = $2 LIMIT 1",
+    [userId, courseId],
+  );
+  if (isEnrolled.rows.length === 0) {
+    throw new Error("You must enroll in the course before leaving a review");
+  }
+
+  const existingReview = await query(
+    "SELECT 1 FROM reviews WHERE user_id = $1 AND course_id = $2 LIMIT 1",
+    [userId, courseId],
+  );
+  if (existingReview.rows.length > 0) {
+    throw new Error("You have already reviewed this course");
+  }
+
   const result = await query(
     "INSERT INTO reviews (user_id, course_id, rating, comment) VALUES ($1, $2, $3, $4) RETURNING *",
-    [userId, courseId, rating, comment],
+    [userId, courseId, validRating, validComment || null],
   );
   return result.rows[0];
 };

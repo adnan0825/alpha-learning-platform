@@ -53,7 +53,12 @@ async function cleanupStaleSeedLearningPaths() {
             AND title = ANY($1::text[])
             AND description = ANY($2::text[])
         );
+      `,
+      [staleLearningPathTitles, staleLearningPathDescriptions],
+    );
 
+    await pool.query(
+      `
         DELETE FROM learning_paths
         WHERE created_by = 1
           AND title = ANY($1::text[])

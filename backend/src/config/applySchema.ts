@@ -10,12 +10,129 @@ import { resolveSqlFile } from "./resolveSqlPath";
 
 dotenv.config();
 
-function splitStatements(sql: string): string[] {
-  const noLineComments = sql.replace(/--[^\n]*/g, "");
-  return noLineComments
-    .split(";")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+export function splitStatements(sql: string): string[] {
+  const statements: string[] = [];
+  let current = "";
+  let i = 0;
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let inDollarQuote: string | null = null;
+
+  while (i < sql.length) {
+    const ch = sql[i];
+    const next = sql[i + 1];
+
+    if (inSingleQuote) {
+      current += ch;
+      if (ch === "'" && next === "'") {
+        current += next;
+        i += 2;
+        continue;
+      }
+      if (ch === "'") {
+        inSingleQuote = false;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (inDoubleQuote) {
+      current += ch;
+      if (ch === '"' && next === '"') {
+        current += next;
+        i += 2;
+        continue;
+      }
+      if (ch === '"') {
+        inDoubleQuote = false;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (inDollarQuote) {
+      if (sql.startsWith(inDollarQuote, i)) {
+        current += inDollarQuote;
+        i += inDollarQuote.length;
+        inDollarQuote = null;
+        continue;
+      }
+      current += ch;
+      i += 1;
+      continue;
+    }
+
+    if (ch === "-" && next === "-") {
+      i += 2;
+      while (i < sql.length && sql[i] !== "\n" && sql[i] !== "\r") {
+        i += 1;
+      }
+      continue;
+    }
+
+    if (ch === "/" && next === "*") {
+      i += 2;
+      while (i < sql.length && !(sql[i] === "*" && sql[i + 1] === "/")) {
+        i += 1;
+      }
+      if (i < sql.length) {
+        i += 2;
+      }
+      continue;
+    }
+
+    if (ch === "'") {
+      inSingleQuote = true;
+      current += ch;
+      i += 1;
+      continue;
+    }
+
+    if (ch === '"') {
+      inDoubleQuote = true;
+      current += ch;
+      i += 1;
+      continue;
+    }
+
+    if (ch === "$") {
+      if (sql.startsWith("$$", i)) {
+        current += "$$";
+        inDollarQuote = "$$";
+        i += 2;
+        continue;
+      }
+
+      const tagMatch = sql.slice(i).match(/^\$[A-Za-z_][A-Za-z0-9_]*\$/);
+      if (tagMatch) {
+        const tag = tagMatch[0];
+        current += tag;
+        inDollarQuote = tag;
+        i += tag.length;
+        continue;
+      }
+    }
+
+    if (ch === ";") {
+      const statement = current.trim();
+      if (statement.length > 0) {
+        statements.push(statement);
+      }
+      current = "";
+      i += 1;
+      continue;
+    }
+
+    current += ch;
+    i += 1;
+  }
+
+  const tail = current.trim();
+  if (tail.length > 0) {
+    statements.push(tail);
+  }
+
+  return statements;
 }
 
 const skipIfAlreadyExists = (err: unknown): boolean => {
@@ -67,7 +184,12 @@ async function cleanupSeedLearningPaths(client: PoolClient) {
           AND title = ANY($1::text[])
           AND description = ANY($2::text[])
       );
+    `,
+    [staleTitles, staleDescriptions],
+  );
 
+  await client.query(
+    `
       DELETE FROM learning_paths
       WHERE created_by = 1
         AND title = ANY($1::text[])
@@ -92,7 +214,9 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
