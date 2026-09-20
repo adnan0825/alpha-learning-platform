@@ -765,6 +765,50 @@ export const defaultTranslations = {
   },
   "admin.revenue.instructor": { en: "Instructor", sm: "Macallin" },
   "admin.revenue.payments": { en: "Payments", sm: "Lacag-bixinno" },
+  "admin.payments.title": {
+    en: "Manual payment receipts",
+    sm: "Rasiidaha lacag-bixinta gacanta",
+  },
+  "admin.payments.subtitle": {
+    en: "Review offline bank and wallet transfer screenshots.",
+    sm: "Dib u eeg sawirrada wareejinta bangiga ama waletka ee offline-ka.",
+  },
+  "admin.payments.loadError": {
+    en: "Could not load receipts",
+    sm: "Rasiidaha lama soo rarin",
+  },
+  "admin.payments.requestFailed": {
+    en: "Request failed",
+    sm: "Codsigu wuu fashilmay",
+  },
+  "admin.payments.receiptApproved": {
+    en: "Receipt approved",
+    sm: "Rasiidka waa la ansixiyay",
+  },
+  "admin.payments.receiptRejected": {
+    en: "Receipt rejected",
+    sm: "Rasiidka waa la diiday",
+  },
+  "admin.payments.updateError": {
+    en: "Could not update receipt",
+    sm: "Rasiidka lama cusboonaysiin karo",
+  },
+  "admin.payments.empty": {
+    en: "No manual payment receipts submitted.",
+    sm: "Rasiido lacag-bixineed oo gacanta ah lama soo gudbin.",
+  },
+  "admin.payments.approveEnroll": {
+    en: "Approve and enroll",
+    sm: "Ansixi oo isdiiwaangeli",
+  },
+  "admin.payments.reject": { en: "Reject", sm: "Diid" },
+  "admin.payments.amount": { en: "Amount", sm: "Qadar" },
+  "admin.payments.notProvided": { en: "Not provided", sm: "Lama bixin" },
+  "admin.payments.submitted": { en: "Submitted", sm: "La soo gudbiyey" },
+  "admin.payments.receiptAlt": {
+    en: "Payment receipt",
+    sm: "Rasiidka lacag-bixinta",
+  },
   "admin.revenue.empty": {
     en: "No enrolled students yet.",
     sm: "Weli ma jiraan arday isdiiwaangeliyay.",
@@ -991,6 +1035,10 @@ export const defaultTranslations = {
   "admin.users.updated": {
     en: "User updated successfully",
     sm: "Isticmaalaha si guul leh ayaa loo cusboonaysiiyay",
+  },
+  "admin.users.updatedDescription": {
+    en: "has been updated successfully",
+    sm: "waa la cusboonaysiiyay",
   },
   "admin.users.updateError": {
     en: "Error updating user",
@@ -1496,6 +1544,12 @@ export const defaultTranslations = {
     en: "Set VITE_GOOGLE_CLIENT_ID in frontend/.env.production, then build again.",
     sm: "Deji VITE_GOOGLE_CLIENT_ID frontend/.env.production, ka dibna mar kale dhis.",
   },
+  "auth.googleSignIn": { en: "Google Sign-In", sm: "Gelitaanka Google" },
+  "notFound.message": {
+    en: "Oops! Page not found",
+    sm: "Waa xumaaday! Bogga lama helin",
+  },
+  "notFound.home": { en: "Return to Home", sm: "Dib ugu noqo Bogga Hore" },
 
   // Common
   "common.allCategories": { en: "All Categories", sm: "Qaybo dhamaan" },
@@ -1503,6 +1557,16 @@ export const defaultTranslations = {
   "common.readMore": { en: "Read More", sm: "Akhriso Walaac" },
   "common.logout": { en: "Logout", sm: "Ka Bax" },
   "common.cancel": { en: "Cancel", sm: "Celis" },
+  "common.view": { en: "View", sm: "Eeg" },
+  "common.refresh": { en: "Refresh", sm: "Cusboonaysii" },
+  "common.tryAgain": { en: "Try again", sm: "Mar kale isku day" },
+  "common.loading": { en: "Loading…", sm: "Waa la soo rarayaa..." },
+  "common.signingIn": { en: "Signing you in…", sm: "Waa lagu galayaa..." },
+  "common.pleaseWait": { en: "Please wait.", sm: "Fadlan sug." },
+  "common.newNotification": {
+    en: "New notification",
+    sm: "Ogeysiis cusub",
+  },
   "common.backToCourses": {
     en: "Back to Courses",
     sm: "Dib ugu laabo Koorsooyinka",
@@ -2144,6 +2208,10 @@ export const defaultTranslations = {
     sm: "Ku shaandhee Koorso",
   },
   "assignments.allCourses": { en: "All Courses", sm: "Dhammaan Koorsooyinka" },
+  "assignments.loadError": {
+    en: "Unable to load your assignments.",
+    sm: "Shaqooyinkaga lama soo rarin.",
+  },
   "assignments.submittedSuccess": {
     en: "Assignment submitted successfully!",
     sm: "Shaqada si guul leh ayaa loo gudbiyay!",
