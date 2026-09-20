@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { manualPaymentsAPI, ManualReceipt } from "@/lib/api";
 
 type AdminReceipt = ManualReceipt & { user_name: string; user_email: string };
 
 const AdminManualPayments: React.FC = () => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [receipts, setReceipts] = useState<AdminReceipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [workingId, setWorkingId] = useState<number | null>(null);
@@ -20,8 +22,11 @@ const AdminManualPayments: React.FC = () => {
       setReceipts(await manualPaymentsAPI.getAdminReceipts());
     } catch (error) {
       toast({
-        title: "Could not load receipts",
-        description: error instanceof Error ? error.message : "Request failed",
+        title: t("admin.payments.loadError"),
+        description:
+          error instanceof Error
+            ? error.message
+            : t("admin.payments.requestFailed"),
         variant: "destructive",
       });
     } finally {
@@ -45,11 +50,18 @@ const AdminManualPayments: React.FC = () => {
             : item,
         ),
       );
-      toast({ title: approved ? "Receipt approved" : "Receipt rejected" });
+      toast({
+        title: approved
+          ? t("admin.payments.receiptApproved")
+          : t("admin.payments.receiptRejected"),
+      });
     } catch (error) {
       toast({
-        title: "Could not update receipt",
-        description: error instanceof Error ? error.message : "Request failed",
+        title: t("admin.payments.updateError"),
+        description:
+          error instanceof Error
+            ? error.message
+            : t("admin.payments.requestFailed"),
         variant: "destructive",
       });
     } finally {
@@ -62,10 +74,10 @@ const AdminManualPayments: React.FC = () => {
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">
-            Manual payment receipts
+            {t("admin.payments.title")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Review offline bank and wallet transfer screenshots.
+            {t("admin.payments.subtitle")}
           </p>
         </div>
         <Button
@@ -75,7 +87,7 @@ const AdminManualPayments: React.FC = () => {
           disabled={loading}
         >
           <RefreshCw size={15} className={loading ? "animate-spin" : ""} />{" "}
-          Refresh
+          {t("common.refresh")}
         </Button>
       </div>
       {loading ? (
@@ -85,7 +97,7 @@ const AdminManualPayments: React.FC = () => {
       ) : receipts.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center text-sm text-muted-foreground">
-            No manual payment receipts submitted.
+            {t("admin.payments.empty")}
           </CardContent>
         </Card>
       ) : (
@@ -101,7 +113,7 @@ const AdminManualPayments: React.FC = () => {
                 >
                   <img
                     src={receipt.receipt_image_url}
-                    alt="Payment receipt"
+                    alt={t("admin.payments.receiptAlt")}
                     className="h-full w-full object-contain"
                   />
                   <ExternalLink
@@ -124,10 +136,10 @@ const AdminManualPayments: React.FC = () => {
                     {receipt.user_name} · {receipt.user_email}
                   </p>
                   <p className="text-sm">
-                    Amount:{" "}
+                    {t("admin.payments.amount")}:{" "}
                     {receipt.amount_etb
                       ? `${Number(receipt.amount_etb).toLocaleString()} ETB`
-                      : "Not provided"}
+                      : t("admin.payments.notProvided")}
                   </p>
                   {receipt.note && (
                     <p className="text-sm text-muted-foreground">
@@ -135,7 +147,8 @@ const AdminManualPayments: React.FC = () => {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Submitted {new Date(receipt.created_at).toLocaleString()}
+                    {t("admin.payments.submitted")}{" "}
+                    {new Date(receipt.created_at).toLocaleString()}
                   </p>
                   {receipt.status === "pending" && (
                     <div className="flex gap-2 pt-2">
@@ -144,7 +157,7 @@ const AdminManualPayments: React.FC = () => {
                         onClick={() => void review(receipt, true)}
                         disabled={workingId === receipt.id}
                       >
-                        <Check size={15} /> Approve and enroll
+                        <Check size={15} /> {t("admin.payments.approveEnroll")}
                       </Button>
                       <Button
                         size="sm"
@@ -152,7 +165,7 @@ const AdminManualPayments: React.FC = () => {
                         onClick={() => void review(receipt, false)}
                         disabled={workingId === receipt.id}
                       >
-                        <X size={15} /> Reject
+                        <X size={15} /> {t("admin.payments.reject")}
                       </Button>
                     </div>
                   )}

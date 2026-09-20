@@ -165,10 +165,10 @@ const StudentAssignments: React.FC = () => {
     return (
       <div className="flex min-h-64 flex-col items-center justify-center gap-4 text-center">
         <p className="text-sm text-muted-foreground">
-          Unable to load your assignments.
+          {t("assignments.loadError")}
         </p>
         <Button onClick={() => window.location.reload()} variant="outline">
-          <RefreshCw size={14} className="mr-2" /> Try again
+          <RefreshCw size={14} className="mr-2" /> {t("common.tryAgain")}
         </Button>
       </div>
     );

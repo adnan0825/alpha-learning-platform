@@ -303,7 +303,7 @@ const navItems: NavItem[] = [
     roles: ["admin"],
   },
   {
-    label: "Payments",
+    labelKey: "admin.revenue.payments",
     path: "/admin/payments",
     icon: <CreditCard size={18} />,
     roles: ["admin"],
@@ -383,14 +383,14 @@ const Layout: React.FC = () => {
                       : "/notifications";
 
                   toast({
-                    title: latestUnread.title,
+                    title: latestUnread.title || t("common.newNotification"),
                     description: latestUnread.message,
                     action: latestUnread.link ? (
                       <ToastAction
-                        altText="View"
+                        altText={t("common.view")}
                         onClick={() => navigate(safeLink)}
                       >
-                        View
+                        {t("common.view")}
                       </ToastAction>
                     ) : undefined,
                   });
@@ -400,14 +400,14 @@ const Layout: React.FC = () => {
                 console.error("Failed to fetch notifications for toast:", err);
                 // fallback if getAll fails
                 toast({
-                  title: "New Notification",
-                  description: "You have a new unread notification.",
+                  title: t("common.newNotification"),
+                  description: t("notifications.emptyDescription"),
                   action: (
                     <ToastAction
-                      altText="View"
+                      altText={t("common.view")}
                       onClick={() => navigate("/notifications")}
                     >
-                      View
+                      {t("common.view")}
                     </ToastAction>
                   ),
                 });

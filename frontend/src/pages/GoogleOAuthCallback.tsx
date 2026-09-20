@@ -10,6 +10,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 
 // Module-level lock — survives re-renders and Strict Mode double-effects in the same JS context.
@@ -31,6 +32,7 @@ export default function GoogleOAuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { loginWithGoogleCode, refreshProfile } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const didRun = useRef(false);
 
@@ -45,7 +47,7 @@ export default function GoogleOAuthCallback() {
 
     const goLogin = (message?: string) => {
       toast({
-        title: "Google Sign-In",
+        title: t("auth.googleSignIn"),
         description: message,
         variant: "destructive",
       });
@@ -97,8 +99,10 @@ export default function GoogleOAuthCallback() {
 
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-2 p-8 text-center text-muted-foreground">
-      <p className="text-sm font-medium text-foreground">Signing you in…</p>
-      <p className="text-xs">Please wait.</p>
+      <p className="text-sm font-medium text-foreground">
+        {t("common.signingIn")}
+      </p>
+      <p className="text-xs">{t("common.pleaseWait")}</p>
     </div>
   );
 }
