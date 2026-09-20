@@ -186,6 +186,12 @@ const navItems: NavItem[] = [
     roles: ["instructor"],
   },
   {
+    labelKey: "sidebar.learningPath",
+    path: "/instructor/learning-paths",
+    icon: <Map size={18} />,
+    roles: ["instructor"],
+  },
+  {
     labelKey: "sidebar.quizManager",
     path: "/instructor/quizzes",
     icon: <FileQuestion size={18} />,
@@ -223,12 +229,6 @@ const navItems: NavItem[] = [
     icon: <DollarSign size={18} />,
     roles: ["instructor"],
     section: "sidebar.finance",
-  },
-  {
-    labelKey: "sidebar.withdrawals",
-    path: "/instructor/withdrawals",
-    icon: <CreditCard size={18} />,
-    roles: ["instructor"],
   },
   {
     labelKey: "nav.profile",
@@ -284,6 +284,13 @@ const navItems: NavItem[] = [
     section: "sidebar.insights",
   },
   {
+    labelKey: "sidebar.adminRevenue",
+    path: "/admin/revenue",
+    icon: <DollarSign size={18} />,
+    roles: ["admin"],
+    section: "sidebar.insights",
+  },
+  {
     labelKey: "sidebar.systemLogs",
     path: "/admin/logs",
     icon: <Activity size={18} />,
@@ -296,7 +303,7 @@ const navItems: NavItem[] = [
     roles: ["admin"],
   },
   {
-    label: "Manual payments",
+    label: "Payments",
     path: "/admin/payments",
     icon: <CreditCard size={18} />,
     roles: ["admin"],

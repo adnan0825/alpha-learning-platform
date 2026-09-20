@@ -1,7 +1,17 @@
 /**
  * Student Calendar Page
  */
-import React from "react";
+import React, { useEffect, useState } from "react";
+import {
+  assignmentsAPI,
+  enrollmentsAPI,
+  quizzesAPI,
+  Assignment,
+  Enrollment,
+  Quiz,
+} from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import {
@@ -17,35 +27,78 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 const StudentCalendar: React.FC = () => {
   const { t } = useLanguage();
-  // Mock calendar data
-  const currentMonth = "April 2025";
-  const days = Array.from({ length: 30 }, (_, i) => i + 1);
-  const events = [
-    {
-      day: 5,
-      title: "React Quiz",
-      type: "quiz",
-      color: "bg-accent/20 text-accent",
-    },
-    {
-      day: 10,
-      title: "Final Project Proposal",
-      type: "assignment",
-      color: "bg-info/20 text-info",
-    },
-    {
-      day: 15,
-      title: "Live Q&A Session",
-      type: "live",
-      color: "bg-success/20 text-success",
-    },
-    {
-      day: 20,
-      title: "Component Library Due",
-      type: "assignment",
-      color: "bg-info/20 text-info",
-    },
-  ];
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const [events, setEvents] = useState<
+    Array<{
+      date: string;
+      title: string;
+      type: "quiz" | "assignment";
+      color: string;
+    }>
+  >([]);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    const loadEvents = async () => {
+      try {
+        const currentEnrollments = await enrollmentsAPI.getMyCourses();
+        setEnrollments(currentEnrollments);
+        const courseData = await Promise.all(
+          currentEnrollments.map(async (enrollment) => {
+            const [assignments, quizzes] = await Promise.all([
+              assignmentsAPI.getByCourse(enrollment.courseId),
+              quizzesAPI.getByCourse(enrollment.courseId),
+            ]);
+            return { assignments, quizzes };
+          }),
+        );
+        const nextEvents = courseData.flatMap(({ assignments, quizzes }) => [
+          ...assignments.map((assignment: Assignment) => ({
+            date: assignment.dueDate,
+            title: assignment.title,
+            type: "assignment" as const,
+            color: "bg-info/20 text-info",
+          })),
+          ...quizzes
+            .filter((quiz: Quiz) => Boolean(quiz.createdAt))
+            .map((quiz: Quiz) => ({
+              date: quiz.createdAt,
+              title: quiz.title,
+              type: "quiz" as const,
+              color: "bg-accent/20 text-accent",
+            })),
+        ]);
+        setEvents(nextEvents);
+      } catch (error) {
+        console.error("Failed to load calendar events:", error);
+        setEvents([]);
+      }
+    };
+    void loadEvents();
+  }, [user]);
+  const currentMonth = visibleMonth.toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+  const daysInMonth = new Date(
+    visibleMonth.getFullYear(),
+    visibleMonth.getMonth() + 1,
+    0,
+  ).getDate();
+  const firstWeekday = visibleMonth.getDay();
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const changeMonth = (offset: number) => {
+    setVisibleMonth(
+      (current) =>
+        new Date(current.getFullYear(), current.getMonth() + offset, 1),
+    );
+  };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -69,10 +122,22 @@ const StudentCalendar: React.FC = () => {
               {currentMonth}
             </h2>
             <div className="flex gap-2">
-              <Button variant="outline" size="icon" className="h-8 w-8">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Previous month"
+                onClick={() => changeMonth(-1)}
+              >
                 <ChevronLeft size={16} />
               </Button>
-              <Button variant="outline" size="icon" className="h-8 w-8">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Next month"
+                onClick={() => changeMonth(1)}
+              >
                 <ChevronRight size={16} />
               </Button>
             </div>
@@ -91,20 +156,25 @@ const StudentCalendar: React.FC = () => {
 
           <div className="grid grid-cols-7 gap-4">
             {/* Empty cells for start of month */}
-            {[1, 2].map((i) => (
+            {Array.from({ length: firstWeekday }, (_, i) => i).map((i) => (
               <div key={`empty-${i}`} />
             ))}
 
             {days.map((day) => {
-              const dayEvents = events.filter((e) => e.day === day);
+              const dayEvents = events.filter((event) => {
+                const date = new Date(event.date);
+                return (
+                  date.getFullYear() === visibleMonth.getFullYear() &&
+                  date.getMonth() === visibleMonth.getMonth() &&
+                  date.getDate() === day
+                );
+              });
               return (
                 <div
                   key={day}
                   className="min-h-[100px] border border-border/50 rounded-xl p-2 hover:bg-muted/20 transition-colors"
                 >
-                  <span
-                    className={`text-sm font-medium ${day === 5 ? "text-accent" : "text-foreground"}`}
-                  >
+                  <span className="text-sm font-medium text-foreground">
                     {day}
                   </span>
                   <div className="mt-2 space-y-1">
@@ -132,7 +202,12 @@ const StudentCalendar: React.FC = () => {
             </h3>
             <div className="space-y-3">
               {events
-                .filter((e) => e.type !== "live")
+                .filter((event) => new Date(event.date) >= new Date())
+                .sort(
+                  (a, b) =>
+                    new Date(a.date).getTime() - new Date(b.date).getTime(),
+                )
+                .slice(0, 10)
                 .map((ev, i) => (
                   <div
                     key={i}
@@ -140,9 +215,13 @@ const StudentCalendar: React.FC = () => {
                   >
                     <div className="flex-col flex items-center justify-center h-12 w-12 rounded-lg bg-muted text-foreground font-bold leading-none">
                       <span className="text-xs uppercase text-muted-foreground">
-                        Apr
+                        {new Date(ev.date).toLocaleDateString(undefined, {
+                          month: "short",
+                        })}
                       </span>
-                      <span className="text-lg">{ev.day}</span>
+                      <span className="text-lg">
+                        {new Date(ev.date).getDate()}
+                      </span>
                     </div>
                     <div className="flex-1">
                       <h4 className="font-medium text-foreground text-sm">
@@ -153,7 +232,11 @@ const StudentCalendar: React.FC = () => {
                       </p>
                     </div>
                     <Badge variant="outline" className="text-[10px]">
-                      <Clock size={10} className="mr-1" /> 11:59 PM
+                      <Clock size={10} className="mr-1" />
+                      {new Date(ev.date).toLocaleTimeString(undefined, {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
                     </Badge>
                   </div>
                 ))}
@@ -169,24 +252,44 @@ const StudentCalendar: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  {t("calendar.studyStreak")}
+                  {t("calendar.enrolledCourses")}
                 </span>
-                <span className="font-bold text-accent">5 Days 🔥</span>
+                <span className="font-bold text-accent">
+                  {enrollments.length}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  {t("calendar.timeSpent")}
+                  {t("calendar.upcomingItems")}
                 </span>
-                <span className="font-bold text-foreground">12h 30m</span>
+                <span className="font-bold text-foreground">
+                  {events.length}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  {t("calendar.lessonsCompleted")}
+                  {t("calendar.completedCourses")}
                 </span>
-                <span className="font-bold text-foreground">8</span>
+                <span className="font-bold text-foreground">
+                  {
+                    enrollments.filter(
+                      (enrollment) => enrollment.progress >= 100,
+                    ).length
+                  }
+                </span>
               </div>
               <div className="pt-4 mt-2 border-t border-border/50">
-                <Button className="w-full gradient-accent text-accent-foreground">
+                <Button
+                  className="w-full gradient-accent text-accent-foreground"
+                  disabled={enrollments.length === 0}
+                  onClick={() => {
+                    const nextCourse =
+                      enrollments.find(
+                        (enrollment) => enrollment.progress < 100,
+                      ) || enrollments[0];
+                    if (nextCourse) navigate(`/course/${nextCourse.courseId}`);
+                  }}
+                >
                   <BookOpen size={16} className="mr-2" />{" "}
                   {t("calendar.continue")}
                 </Button>

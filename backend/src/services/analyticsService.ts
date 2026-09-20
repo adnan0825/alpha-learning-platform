@@ -118,6 +118,22 @@ export const createAdminNotification = async (
   return Promise.all(promises);
 };
 
+export const notifyEnrolledStudents = async (
+  courseId: number,
+  title: string,
+  message: string,
+  type: string = "info",
+  link?: string,
+) => {
+  await query(
+    `INSERT INTO notifications (user_id, title, message, type, link)
+     SELECT e.user_id, $2, $3, $4, $5
+     FROM enrollments e
+     WHERE e.course_id = $1`,
+    [courseId, title, message, type, link],
+  );
+};
+
 export const getUnreadNotificationCount = async (userId: number) => {
   const result = await query(
     "SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND read = false",
@@ -206,15 +222,23 @@ export const createAnnouncement = async (
     "INSERT INTO announcements (instructor_id, course_id, title, content, is_pinned) VALUES ($1, $2, $3, $4, $5) RETURNING *",
     [instructorId, courseId, title, content, isPinned],
   );
+  await notifyEnrolledStudents(
+    courseId,
+    "New course announcement",
+    title,
+    "course",
+    `/course/${courseId}`,
+  );
   return result.rows[0];
 };
 
 export const updateAnnouncement = async (
-  instructorId: number,
+  userId: number,
   announcementId: number,
   title?: string,
   content?: string,
   isPinned?: boolean,
+  actorRole: string = "instructor",
 ) => {
   const updates: string[] = [];
   const values: any[] = [];
@@ -238,22 +262,25 @@ export const updateAnnouncement = async (
   }
 
   updates.push(`updated_at = CURRENT_TIMESTAMP`);
-  values.push(instructorId, announcementId);
+  values.push(userId, announcementId, actorRole);
 
   const result = await query(
-    `UPDATE announcements SET ${updates.join(", ")} WHERE id = $${paramIndex + 1} AND instructor_id = $${paramIndex} RETURNING *`,
+    `UPDATE announcements SET ${updates.join(", ")} 
+     WHERE id = $${paramIndex + 1} AND (instructor_id = $${paramIndex} OR $${paramIndex + 2} = 'admin')
+     RETURNING *`,
     values,
   );
   return result.rows[0];
 };
 
 export const deleteAnnouncement = async (
-  instructorId: number,
+  userId: number,
   announcementId: number,
+  actorRole: string = "instructor",
 ) => {
   await query(
-    "DELETE FROM announcements WHERE id = $1 AND instructor_id = $2",
-    [announcementId, instructorId],
+    "DELETE FROM announcements WHERE id = $1 AND (instructor_id = $2 OR $3 = 'admin')",
+    [announcementId, userId, actorRole],
   );
   return { success: true };
 };
@@ -277,6 +304,21 @@ export const getLearningPaths = async (isActive = true) => {
   return result.rows;
 };
 
+export const getInstructorLearningPaths = async (instructorId: number) => {
+  const result = await query(
+    `SELECT lp.*, u.name as created_by_name,
+            COUNT(lpc.course_id) as course_count
+     FROM learning_paths lp
+     LEFT JOIN users u ON lp.created_by = u.id
+     LEFT JOIN learning_path_courses lpc ON lp.id = lpc.learning_path_id
+     WHERE lp.created_by = $1
+     GROUP BY lp.id, u.name
+     ORDER BY lp.created_at DESC, lp.id DESC`,
+    [instructorId],
+  );
+  return result.rows;
+};
+
 export const getLearningPathById = async (pathId: number) => {
   const result = await query(
     `SELECT lp.*, u.name as created_by_name
@@ -290,8 +332,12 @@ export const getLearningPathById = async (pathId: number) => {
 
 export const getLearningPathCourses = async (pathId: number) => {
   const result = await query(
-    `SELECT lpc.*, c.title, c.description, c.thumbnail, c.category, c.difficulty,
-            u.name as instructor_name
+    `SELECT lpc.position, c.id, c.title, c.description, c.thumbnail,
+            c.intro_video_url, c.intro_video_title, c.video_links,
+            c.total_videos, c.instructor_id, c.category, c.difficulty,
+            c.price, c.duration, c.is_published, c.created_at,
+            u.name as instructor_name,
+            (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) AS enrolled_count
      FROM learning_path_courses lpc
      JOIN courses c ON lpc.course_id = c.id
      JOIN users u ON c.instructor_id = u.id
@@ -299,7 +345,25 @@ export const getLearningPathCourses = async (pathId: number) => {
      ORDER BY lpc.position ASC`,
     [pathId],
   );
-  return result.rows;
+  return result.rows.map((row) => ({
+    id: String(row.id),
+    title: row.title,
+    description: row.description || "",
+    category: row.category || "",
+    thumbnail: row.thumbnail || "",
+    introVideoUrl: row.intro_video_url || "",
+    introVideoTitle: row.intro_video_title || "",
+    videoLinks: row.video_links || [],
+    totalVideos: Number(row.total_videos || 0),
+    instructorId: String(row.instructor_id),
+    instructorName: row.instructor_name || "Instructor",
+    enrolledCount: Number(row.enrolled_count || 0),
+    status: row.is_published ? "published" : "draft",
+    difficulty: row.difficulty || "beginner",
+    duration: row.duration || "",
+    price: Number(row.price || 0),
+    createdAt: row.created_at,
+  }));
 };
 
 export const createLearningPath = async (
@@ -399,15 +463,19 @@ export const removeCourseFromPath = async (
 
 export const getUserLearningPaths = async (userId: number) => {
   const result = await query(
-    `SELECT ulp.*, lp.title, lp.description, lp.course_count,
-            COUNT(lpc.course_id) as completed_courses
+    `SELECT lp.id, ulp.id AS enrollment_id, ulp.user_id, ulp.started_at,
+          ulp.completed_at, ulp.progress,
+          lp.title, lp.description,
+          COUNT(DISTINCT lpc.course_id) AS course_count,
+            COUNT(DISTINCT CASE WHEN e.progress >= 100 THEN lpc.course_id END) as completed_courses
      FROM user_learning_paths ulp
      JOIN learning_paths lp ON ulp.learning_path_id = lp.id
      LEFT JOIN learning_path_courses lpc ON lp.id = lpc.learning_path_id
      LEFT JOIN enrollments e ON e.user_id = ulp.user_id AND e.course_id = lpc.course_id
      LEFT JOIN progress p ON p.user_id = ulp.user_id AND p.completed = true
      WHERE ulp.user_id = $1
-     GROUP BY ulp.id, lp.title, lp.description, lp.course_count
+    GROUP BY lp.id, ulp.id, ulp.user_id, ulp.started_at, ulp.completed_at,
+          ulp.progress, lp.title, lp.description
      ORDER BY ulp.started_at DESC`,
     [userId],
   );
@@ -473,6 +541,7 @@ export const getInstructorStats = async (instructorId: number) => {
     `SELECT 
         COUNT(DISTINCT c.id) as total_courses,
         COUNT(DISTINCT e.id) as total_enrollments,
+        COUNT(DISTINCT e.user_id) as total_students,
         COUNT(DISTINCT r.id) as total_reviews,
         AVG(r.rating) as average_rating,
         COUNT(DISTINCT CASE WHEN c.is_published = true THEN c.id END) as published_courses,
@@ -499,25 +568,58 @@ export const getStudentGrades = async (
   courseId: number,
 ) => {
   const result = await query(
-    `SELECT 
-        u.id as student_id,
-        u.name as student_name,
-        u.email as student_email,
-        u.avatar as student_avatar,
-        q.id as quiz_id,
-        q.title as quiz_title,
-        COALESCE(MAX(qr.score), 0) as highest_score,
-        COALESCE(MIN(qr.score), 0) as lowest_score,
-        COALESCE(AVG(qr.score), 0) as average_score,
-        COUNT(qr.id) as attempts
-     FROM users u
-     JOIN enrollments e ON u.id = e.user_id
-     JOIN courses c ON e.course_id = c.id
-     LEFT JOIN quizzes q ON q.course_id = c.id
-     LEFT JOIN quiz_results qr ON qr.quiz_id = q.id AND qr.student_id = u.id
-     WHERE c.id = $1 AND c.instructor_id = $2
-     GROUP BY u.id, u.name, u.email, u.avatar, q.id, q.title
-     ORDER BY u.name, q.title`,
+    `WITH enrolled_students AS (
+       SELECT u.id, u.name, u.email, u.avatar
+       FROM users u
+       JOIN enrollments e ON e.user_id = u.id
+       JOIN courses c ON c.id = e.course_id
+       WHERE c.id = $1 AND c.instructor_id = $2
+     ), quiz_grades AS (
+       SELECT
+         es.id AS student_id,
+         es.name AS student_name,
+         es.email AS student_email,
+         es.avatar AS student_avatar,
+         q.id AS quiz_id,
+         q.title AS quiz_title,
+         NULL::integer AS assignment_id,
+         NULL::text AS assignment_title,
+         'quiz' AS assessment_type,
+         COALESCE(MAX(qr.score::numeric / NULLIF(qr.total, 0) * 100), 0) AS highest_score,
+         COALESCE(MIN(qr.score::numeric / NULLIF(qr.total, 0) * 100), 0) AS lowest_score,
+         COALESCE(AVG(qr.score::numeric / NULLIF(qr.total, 0) * 100), 0) AS average_score,
+         COUNT(qr.id)::int AS attempts
+       FROM enrolled_students es
+       CROSS JOIN quizzes q
+       LEFT JOIN quiz_results qr ON qr.quiz_id = q.id AND qr.student_id = es.id
+       WHERE q.course_id = $1
+       GROUP BY es.id, es.name, es.email, es.avatar, q.id, q.title
+     ), assignment_grades AS (
+       SELECT
+         es.id AS student_id,
+         es.name AS student_name,
+         es.email AS student_email,
+         es.avatar AS student_avatar,
+         NULL::integer AS quiz_id,
+         NULL::text AS quiz_title,
+         a.id AS assignment_id,
+         a.title AS assignment_title,
+         'assignment' AS assessment_type,
+         COALESCE(MAX(s.grade::numeric / NULLIF(a.points, 0) * 100), 0) AS highest_score,
+         COALESCE(MIN(s.grade::numeric / NULLIF(a.points, 0) * 100), 0) AS lowest_score,
+         COALESCE(AVG(s.grade::numeric / NULLIF(a.points, 0) * 100), 0) AS average_score,
+         COUNT(s.id)::int AS attempts
+       FROM enrolled_students es
+       CROSS JOIN assignments a
+       LEFT JOIN assignment_submissions s
+         ON s.assignment_id = a.id AND s.student_id = es.id AND s.grade IS NOT NULL
+       WHERE a.course_id = $1
+       GROUP BY es.id, es.name, es.email, es.avatar, a.id, a.title
+     )
+     SELECT * FROM quiz_grades
+     UNION ALL
+     SELECT * FROM assignment_grades
+     ORDER BY student_name, assessment_type, quiz_title NULLS LAST, assignment_title NULLS LAST`,
     [courseId, instructorId],
   );
   return result.rows;

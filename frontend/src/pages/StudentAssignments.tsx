@@ -1,13 +1,15 @@
 /**
  * Student Assignments Page
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   assignmentsAPI,
   enrollmentsAPI,
   Assignment,
   Submission,
   Enrollment,
+  uploadsAPI,
+  getPublicFileUrl,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -27,6 +29,7 @@ import {
   CheckCircle,
   Clock,
   Upload,
+  Download,
   Link as LinkIcon,
   RefreshCw,
 } from "lucide-react";
@@ -53,8 +56,14 @@ const StudentAssignments: React.FC = () => {
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [showSubmit, setShowSubmit] = useState<string | null>(null); // Assignment ID
+  const [viewingSubmission, setViewingSubmission] = useState<Submission | null>(
+    null,
+  );
   const [submissionContent, setSubmissionContent] = useState("");
   const [submissionLink, setSubmissionLink] = useState("");
+  const [submissionFile, setSubmissionFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,14 +72,12 @@ const StudentAssignments: React.FC = () => {
         const myEnrollments = await enrollmentsAPI.getMyCourses();
         setEnrollments(myEnrollments);
 
-        // Mock: fetch assignments for the first course or all
-        // In a real app, we'd loop through enrollments
-        if (myEnrollments.length > 0) {
-          const allAssignments = await assignmentsAPI.getByCourse(
-            myEnrollments[0].courseId,
-          );
-          setAssignments(allAssignments);
-        }
+        const assignmentGroups = await Promise.all(
+          myEnrollments.map((enrollment) =>
+            assignmentsAPI.getByCourse(enrollment.courseId),
+          ),
+        );
+        setAssignments(assignmentGroups.flat());
 
         const mySubmissions = await assignmentsAPI.getStudentSubmissions(
           user.id,
@@ -78,6 +85,7 @@ const StudentAssignments: React.FC = () => {
         setSubmissions(mySubmissions);
       } catch (err) {
         console.error(err);
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
@@ -85,24 +93,43 @@ const StudentAssignments: React.FC = () => {
     fetchData();
   }, [user]);
 
+  const visibleAssignments = useMemo(
+    () =>
+      selectedCourse === "all"
+        ? assignments
+        : assignments.filter(
+            (assignment) => assignment.courseId === selectedCourse,
+          ),
+    [assignments, selectedCourse],
+  );
+
   const handleSubmit = async () => {
     if (!showSubmit) return;
+    setUploading(true);
     try {
+      const uploadedFile = submissionFile
+        ? await uploadsAPI.uploadFile(submissionFile)
+        : undefined;
       const sub = await assignmentsAPI.submit(
         showSubmit,
-        submissionContent + "\n" + submissionLink,
+        submissionContent,
+        submissionLink,
+        uploadedFile?.url,
       );
       setSubmissions([...submissions, sub]);
       toast({ title: t("assignments.submittedSuccess") });
       setShowSubmit(null);
       setSubmissionContent("");
       setSubmissionLink("");
+      setSubmissionFile(null);
     } catch (err: any) {
       toast({
         title: t("assignments.submissionFailed"),
         description: err.message,
         variant: "destructive",
       });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -116,7 +143,7 @@ const StudentAssignments: React.FC = () => {
       };
     if (sub.status === "graded")
       return {
-        label: `${t("assignments.graded")}: ${sub.grade}/100`,
+        label: `${t("assignments.graded")}: ${sub.grade}/${sub.points ?? 100}`,
         color: "text-success bg-success/10",
         icon: <CheckCircle size={14} />,
       };
@@ -133,6 +160,19 @@ const StudentAssignments: React.FC = () => {
         <RefreshCw className="animate-spin text-accent" />
       </div>
     );
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-64 flex-col items-center justify-center gap-4 text-center">
+        <p className="text-sm text-muted-foreground">
+          Unable to load your assignments.
+        </p>
+        <Button onClick={() => window.location.reload()} variant="outline">
+          <RefreshCw size={14} className="mr-2" /> Try again
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -167,11 +207,11 @@ const StudentAssignments: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {assignments.map((assignment, i) => {
+        {visibleAssignments.map((assignment, i) => {
           const status = getStatus(assignment.id);
-          const isSubmitted =
-            status.label.includes("Submitted") ||
-            status.label.includes("Graded");
+          const isSubmitted = submissions.some(
+            (submission) => submission.assignmentId === assignment.id,
+          );
 
           return (
             <motion.div
@@ -221,7 +261,14 @@ const StudentAssignments: React.FC = () => {
                         size="sm"
                         variant="outline"
                         className="w-full"
-                        disabled
+                        onClick={() =>
+                          setViewingSubmission(
+                            submissions.find(
+                              (submission) =>
+                                submission.assignmentId === assignment.id,
+                            ) || null,
+                          )
+                        }
                       >
                         View Submission
                       </Button>
@@ -232,7 +279,7 @@ const StudentAssignments: React.FC = () => {
             </motion.div>
           );
         })}
-        {assignments.length === 0 && (
+        {visibleAssignments.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
             No assignments found for this filter.
           </div>
@@ -250,12 +297,17 @@ const StudentAssignments: React.FC = () => {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Description / Notes</Label>
-              <Textarea
-                placeholder="Write any notes for your instructor..."
-                value={submissionContent}
-                onChange={(e) => setSubmissionContent(e.target.value)}
+              <Label>Attachment (PDF, ZIP, Office, or text file)</Label>
+              <Input
+                type="file"
+                accept=".pdf,.zip,.rar,.7z,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"
+                onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)}
               />
+              {submissionFile && (
+                <p className="text-xs text-muted-foreground">
+                  Selected: {submissionFile.name}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Project Link (GitHub, Google Drive, etc.)</Label>
@@ -272,12 +324,13 @@ const StudentAssignments: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground text-sm hover:bg-muted/50 cursor-pointer transition-colors">
-              <Upload className="mx-auto h-8 w-8 mb-2 opacity-50" />
-              <p>Drag & drop files here or click to upload</p>
-              <span className="text-xs opacity-70">
-                (PDF, DOCX, ZIP up to 10MB)
-              </span>
+            <div className="space-y-2">
+              <Label>Description / Notes</Label>
+              <Textarea
+                placeholder="Write any notes for your instructor..."
+                value={submissionContent}
+                onChange={(e) => setSubmissionContent(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
@@ -287,8 +340,71 @@ const StudentAssignments: React.FC = () => {
             <Button
               onClick={handleSubmit}
               className="gradient-accent text-accent-foreground"
+              disabled={
+                uploading ||
+                (!submissionContent.trim() &&
+                  !submissionLink.trim() &&
+                  !submissionFile)
+              }
             >
-              Submit Assignment
+              {uploading ? "Uploading..." : "Submit Assignment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!viewingSubmission}
+        onOpenChange={(open) => !open && setViewingSubmission(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>View Submission</DialogTitle>
+          </DialogHeader>
+          {viewingSubmission && (
+            <div className="space-y-4 py-2">
+              <div className="rounded-md bg-muted p-3 text-sm">
+                <Label>Description / Notes</Label>
+                <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
+                  {viewingSubmission.content || "No notes provided."}
+                </p>
+              </div>
+              {viewingSubmission.fileUrl && (
+                <a
+                  href={getPublicFileUrl(viewingSubmission.fileUrl)}
+                  target="_blank"
+                  rel="noreferrer"
+                  download
+                  className="flex items-center gap-2 text-sm text-accent hover:underline"
+                >
+                  <Download size={15} /> Download attachment
+                </a>
+              )}
+              {viewingSubmission.grade !== undefined ? (
+                <div className="rounded-md border p-3 text-sm">
+                  <p className="font-medium">
+                    Grade: {viewingSubmission.grade}/
+                    {viewingSubmission.points ?? 100}
+                  </p>
+                  {viewingSubmission.feedback && (
+                    <p className="mt-2 whitespace-pre-wrap text-muted-foreground">
+                      Feedback: {viewingSubmission.feedback}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Your submission is waiting for grading.
+                </p>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setViewingSubmission(null)}
+            >
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

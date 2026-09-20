@@ -27,6 +27,36 @@ function parseDuration(value: unknown): number | null {
   return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
 }
 
+export function getVideoCompletionThreshold(durationSeconds: number): number {
+  const safeDuration = Math.max(0, Number(durationSeconds) || 0);
+  return safeDuration > 0 ? Math.max(safeDuration * 0.95, safeDuration - 2) : 0;
+}
+
+export function isVideoCompletionReached({
+  watchedSeconds,
+  durationSeconds,
+  positionSeconds,
+  ended = false,
+}: {
+  watchedSeconds: number;
+  durationSeconds: number;
+  positionSeconds: number;
+  ended?: boolean;
+}): boolean {
+  const safeDuration = Math.max(0, Number(durationSeconds) || 0);
+  if (safeDuration <= 0) return false;
+
+  const safeWatched = Math.max(0, Number(watchedSeconds) || 0);
+  const safePosition = Math.min(
+    Math.max(0, Number(positionSeconds) || 0),
+    safeDuration,
+  );
+  const requiredWatchedSeconds = getVideoCompletionThreshold(safeDuration);
+  const hasReachedEnd = ended || safePosition >= safeDuration * 0.985;
+
+  return safeWatched >= requiredWatchedSeconds && hasReachedEnd;
+}
+
 async function getEnrollmentCourse(userId: number, courseId: number) {
   const result = await query(
     `SELECT e.id, e.completed_videos, c.intro_video_url, c.video_links
@@ -176,12 +206,14 @@ export const recordVideoWatchProgress = async (
       ? Math.min(contiguousAdvance, maxCreditableAdvance)
       : 0;
   const watchedSeconds = Math.min(duration, previousWatched + credited);
-  const requiredWatchedSeconds = Math.max(duration * 0.95, duration - 2);
   const completed =
     Boolean(existing?.completed) ||
-    (watchedSeconds >= requiredWatchedSeconds &&
-      position >= duration * 0.985 &&
-      (ended || position >= duration * 0.985));
+    isVideoCompletionReached({
+      watchedSeconds,
+      durationSeconds: duration,
+      positionSeconds: position,
+      ended,
+    });
   const result = await query(
     `INSERT INTO video_watch_progress
        (enrollment_id, video_index, watched_seconds, duration_seconds, last_position_seconds, completed, last_seen_at)

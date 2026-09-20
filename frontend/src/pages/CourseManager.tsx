@@ -121,7 +121,14 @@ const CourseManager: React.FC = () => {
     type: "lesson" | "quiz";
     index: number;
     title: string;
+    quizId?: string;
   }>({ open: false, type: "lesson", index: -1, title: "" });
+
+  const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
+  const canManageQuiz =
+    user?.role === "admin" ||
+    (course?.instructorId != null &&
+      String(course.instructorId) === String(user?.id));
 
   // New lesson form
   const [showLessonForm, setShowLessonForm] = useState(false);
@@ -147,7 +154,7 @@ const CourseManager: React.FC = () => {
       try {
         const [courseData, quizzesData] = await Promise.all([
           coursesAPI.getById(courseId),
-          quizzesAPI.getByCourse(courseId),
+          quizzesAPI.getByCourse(courseId, true),
         ]);
 
         if (courseData) {
@@ -262,15 +269,36 @@ const CourseManager: React.FC = () => {
       type: "quiz",
       index: lessonIndex,
       title: quizTitle,
+      quizId,
     });
   };
 
-  const confirmDeleteQuiz = () => {
-    const updatedLessons = [...lessons];
-    updatedLessons[deleteConfirm.index].quiz = undefined;
-    setLessons(updatedLessons);
-    setDeleteConfirm({ open: false, type: "quiz", index: -1, title: "" });
-    toast({ title: t("course.quiz.removedFromLesson") });
+  const confirmDeleteQuiz = async () => {
+    if (!deleteConfirm.quizId) {
+      setDeleteConfirm({ open: false, type: "quiz", index: -1, title: "" });
+      return;
+    }
+
+    try {
+      await quizzesAPI.remove(deleteConfirm.quizId);
+      const refreshedQuizzes = await quizzesAPI.getByCourse(courseId!, true);
+      setQuizzes(refreshedQuizzes);
+
+      const updatedLessons = lessons.map((item) =>
+        item.quiz?.id === deleteConfirm.quizId
+          ? { ...item, quiz: undefined }
+          : item,
+      );
+      setLessons(updatedLessons);
+      setDeleteConfirm({ open: false, type: "quiz", index: -1, title: "" });
+      toast({ title: t("course.quiz.removedFromLesson") });
+    } catch (err: any) {
+      toast({
+        title: "Unable to remove quiz",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleMoveLesson = (index: number, direction: "up" | "down") => {
@@ -300,11 +328,23 @@ const CourseManager: React.FC = () => {
   // ============ QUIZZES ============
   const handleOpenQuizForm = (lessonIndex: number) => {
     const lesson = lessons[lessonIndex];
+    const existingQuiz = lessons[lessonIndex].quiz;
+
     setQuizLessonIndex(lessonIndex);
-    setQuizTitle(`Quiz: ${lesson.lesson.title}`);
-    setQuizQuestions([
-      { id: "1", question: "", options: ["", "", "", ""], correctIndex: 0 },
-    ]);
+    setEditingQuizId(existingQuiz?.id ?? null);
+    setQuizTitle(existingQuiz?.title || `Quiz: ${lesson.lesson.title}`);
+    setQuizQuestions(
+      existingQuiz?.questions?.length
+        ? existingQuiz.questions
+        : [
+            {
+              id: "1",
+              question: "",
+              options: ["", "", "", ""],
+              correctIndex: 0,
+            },
+          ],
+    );
     setShowQuizForm(true);
   };
 
@@ -317,39 +357,45 @@ const CourseManager: React.FC = () => {
 
     setSaving(true);
     try {
-      // Check if quiz already exists for this lesson
-      const existingQuiz = lessons[quizLessonIndex].quiz;
+      const payload = {
+        courseId,
+        title: quizTitle,
+        questions: quizQuestions,
+      };
 
-      if (existingQuiz) {
-        // Update existing quiz (would need backend endpoint)
-        toast({
-          title: t("course.quiz.updateSoon"),
-          description: t("course.quiz.updateSoonDescription"),
-        });
-      } else {
-        // Create new quiz
-        await quizzesAPI.create({
-          courseId,
-          title: quizTitle,
-          questions: quizQuestions,
-        });
-        toast({ title: t("course.quiz.createdSuccess") });
+      if (editingQuizId) {
+        const updatedQuiz = await quizzesAPI.update(editingQuizId, payload);
+        toast({ title: "Quiz updated successfully" });
 
-        // Refresh quizzes
-        const updatedQuizzes = await quizzesAPI.getByCourse(courseId);
+        const updatedQuizzes = await quizzesAPI.getByCourse(courseId, true);
         setQuizzes(updatedQuizzes);
 
-        // Update lessons with quiz
+        const updatedLessons = lessons.map((item) =>
+          item.quiz?.id === updatedQuiz.id
+            ? { ...item, quiz: updatedQuiz }
+            : item,
+        );
+        setLessons(updatedLessons);
+      } else {
+        const createdQuiz = await quizzesAPI.create(payload);
+        toast({ title: t("course.quiz.createdSuccess") });
+
+        const updatedQuizzes = await quizzesAPI.getByCourse(courseId, true);
+        setQuizzes(updatedQuizzes);
+
         const updatedLessons = [...lessons];
-        const newQuiz = updatedQuizzes.find((q) => q.title === quizTitle);
+        const newQuiz = updatedQuizzes.find(
+          (q) => q.title === createdQuiz.title,
+        );
         updatedLessons[quizLessonIndex] = {
           ...updatedLessons[quizLessonIndex],
-          quiz: newQuiz,
+          quiz: newQuiz || createdQuiz,
         };
         setLessons(updatedLessons);
       }
 
       setShowQuizForm(false);
+      setEditingQuizId(null);
     } catch (err: any) {
       toast({
         title: t("course.quiz.saveError"),
@@ -916,45 +962,54 @@ const CourseManager: React.FC = () => {
                                     <ClipboardList size={12} />
                                     {item.quiz.questions.length} questions
                                   </Badge>
+                                  {canManageQuiz && (
+                                    <>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          handleOpenQuizForm(index);
+                                          setQuizTitle(
+                                            item.quiz?.title ||
+                                              `Quiz: ${item.lesson.title}`,
+                                          );
+                                          if (item.quiz) {
+                                            setQuizQuestions(
+                                              item.quiz.questions,
+                                            );
+                                          }
+                                        }}
+                                        className="h-7 text-xs"
+                                      >
+                                        <Edit3 size={12} className="mr-1" />{" "}
+                                        Edit Quiz
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() =>
+                                          handleDeleteQuiz(index, item.quiz!.id)
+                                        }
+                                        className="h-7 text-xs text-destructive"
+                                      >
+                                        <Trash2 size={12} className="mr-1" />{" "}
+                                        Remove
+                                      </Button>
+                                    </>
+                                  )}
+                                </>
+                              ) : (
+                                canManageQuiz && (
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => {
-                                      handleOpenQuizForm(index);
-                                      setQuizTitle(
-                                        item.quiz?.title ||
-                                          `Quiz: ${item.lesson.title}`,
-                                      );
-                                      if (item.quiz) {
-                                        setQuizQuestions(item.quiz.questions);
-                                      }
-                                    }}
+                                    onClick={() => handleOpenQuizForm(index)}
                                     className="h-7 text-xs"
                                   >
-                                    <Edit3 size={12} className="mr-1" /> Edit
-                                    Quiz
+                                    <PlusCircle size={12} className="mr-1" />{" "}
+                                    Add Quiz to this lesson
                                   </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleDeleteQuiz(index, item.quiz!.id)
-                                    }
-                                    className="h-7 text-xs text-destructive"
-                                  >
-                                    <Trash2 size={12} className="mr-1" /> Remove
-                                  </Button>
-                                </>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleOpenQuizForm(index)}
-                                  className="h-7 text-xs"
-                                >
-                                  <PlusCircle size={12} className="mr-1" /> Add
-                                  Quiz to this lesson
-                                </Button>
+                                )
                               )}
                             </div>
                           </div>
@@ -1031,13 +1086,16 @@ const CourseManager: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <h3 className="font-display font-semibold text-foreground">
                       {quizLessonIndex !== null && lessons[quizLessonIndex]
-                        ? `Add Quiz: ${lessons[quizLessonIndex].lesson.title}`
+                        ? `${editingQuizId ? "Edit" : "Add"} Quiz: ${lessons[quizLessonIndex].lesson.title}`
                         : "Add Quiz"}
                     </h3>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setShowQuizForm(false)}
+                      onClick={() => {
+                        setShowQuizForm(false);
+                        setEditingQuizId(null);
+                      }}
                     >
                       <X size={18} />
                     </Button>
@@ -1127,11 +1185,18 @@ const CourseManager: React.FC = () => {
                       disabled={saving}
                       className="gradient-accent text-accent-foreground"
                     >
-                      {saving ? "Saving..." : "Save Quiz"}
+                      {saving
+                        ? "Saving..."
+                        : editingQuizId
+                          ? "Update Quiz"
+                          : "Save Quiz"}
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => setShowQuizForm(false)}
+                      onClick={() => {
+                        setShowQuizForm(false);
+                        setEditingQuizId(null);
+                      }}
                     >
                       Cancel
                     </Button>

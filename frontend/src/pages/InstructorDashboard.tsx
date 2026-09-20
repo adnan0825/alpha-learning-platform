@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { coursesAPI, CourseData } from "@/lib/api";
+import { coursesAPI, CourseData, instructorAnalyticsAPI } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 import CourseCard from "@/components/CourseCard";
@@ -36,13 +36,19 @@ const InstructorDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [courses, setCourses] = useState<CourseData[]>([]);
+  const [totalStudents, setTotalStudents] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCourses = async () => {
       if (!user) return;
       try {
-        setCourses(await coursesAPI.getByInstructor(user.id));
+        const [instructorCourses, stats] = await Promise.all([
+          coursesAPI.getByInstructor(user.id),
+          instructorAnalyticsAPI.getStats(),
+        ]);
+        setCourses(instructorCourses);
+        setTotalStudents(Number(stats.total_students || 0));
       } catch (err) {
         console.error(err);
       } finally {
@@ -52,10 +58,6 @@ const InstructorDashboard: React.FC = () => {
     fetchCourses();
   }, [user]);
 
-  const totalStudents = courses.reduce(
-    (sum, c) => sum + (c.enrolledCount || 0),
-    0,
-  );
   const publishedCount = courses.filter((c) => c.status === "published").length;
 
   const chartData = courses.map((c) => ({

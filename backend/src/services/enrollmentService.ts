@@ -1,6 +1,24 @@
 import { query } from "../config/db";
 
 export const enrollUser = async (userId: number, courseId: number) => {
+  const courseResult = await query(
+    `SELECT c.price,
+            EXISTS (
+              SELECT 1 FROM payments p
+              WHERE p.user_id = $1 AND p.course_id = c.id AND p.status = 'completed'
+            ) AS payment_completed
+     FROM courses c
+     WHERE c.id = $2`,
+    [userId, courseId],
+  );
+  if (courseResult.rows.length === 0) {
+    throw new Error("Course not found");
+  }
+  const course = courseResult.rows[0];
+  if (Number(course.price || 0) > 0 && !course.payment_completed) {
+    throw new Error("Complete payment before enrolling in this course");
+  }
+
   const result = await query(
     "INSERT INTO enrollments (user_id, course_id) VALUES ($1, $2) RETURNING *",
     [userId, courseId],
@@ -20,7 +38,8 @@ export const getUserEnrollments = async (userId: number) => {
   const result = await query(
     `SELECT e.*, c.title as course_title, c.thumbnail as course_thumbnail, c.price as course_price
      FROM enrollments e JOIN courses c ON e.course_id = c.id
-     WHERE e.user_id = $1 ORDER BY e.enrolled_at DESC`,
+     WHERE e.user_id = $1
+     ORDER BY e.enrolled_at DESC`,
     [userId],
   );
   return result.rows.map((row) => ({

@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { feedbackAPI } from "@/lib/api";
 import { motion } from "framer-motion";
 import {
   HelpCircle,
@@ -24,6 +25,7 @@ const HelpCenter: React.FC = () => {
   const [search, setSearch] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
   const faqKeys: Array<[TranslationKey, TranslationKey]> = [
@@ -45,13 +47,28 @@ const HelpCenter: React.FC = () => {
       f.a.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const sendMessage = () => {
-    if (!message.trim()) return;
-    toast({
-      title: t("help.sent"),
-      description: t("help.sentDescription"),
-    });
-    setMessage("");
+  const sendMessage = async () => {
+    const trimmed = message.trim();
+    if (!trimmed) return;
+
+    setSending(true);
+    try {
+      await feedbackAPI.submit(undefined, trimmed);
+      toast({
+        title: t("help.sent"),
+        description: t("help.sentDescription"),
+      });
+      setMessage("");
+    } catch (error) {
+      console.error("Failed to send support message:", error);
+      toast({
+        title: "Couldn't send message",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -163,9 +180,11 @@ const HelpCenter: React.FC = () => {
                 </div>
                 <Button
                   onClick={sendMessage}
+                  disabled={sending || !message.trim()}
                   className="gradient-accent text-accent-foreground hover:opacity-90"
                 >
-                  <Send size={14} className="mr-1.5" /> {t("help.send")}
+                  <Send size={14} className="mr-1.5" />
+                  {sending ? "Sending..." : t("help.send")}
                 </Button>
               </div>
             </CardContent>

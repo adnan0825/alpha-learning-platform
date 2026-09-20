@@ -40,6 +40,48 @@ CREATE TABLE IF NOT EXISTS payments (
 CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id);
 CREATE INDEX IF NOT EXISTS idx_payments_course ON payments(course_id);
 CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS admin_share DECIMAL(12, 2);
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS instructor_share DECIMAL(12, 2);
+INSERT INTO payments (
+    user_id, course_id, tx_ref, amount, currency, status, meta,
+    completed_at, admin_share, instructor_share
+)
+SELECT
+    r.user_id,
+    r.course_id,
+    CONCAT('manual-receipt-', r.id),
+    c.price,
+    'ETB',
+    'completed',
+    jsonb_build_object('source', 'manual_receipt_repair', 'receiptId', r.id),
+    COALESCE(r.reviewed_at, r.created_at),
+    ROUND(c.price * 0.20, 2),
+    c.price - ROUND(c.price * 0.20, 2)
+FROM manual_payment_receipts r
+JOIN courses c ON c.id = r.course_id
+WHERE r.status = 'approved'
+ON CONFLICT (tx_ref) DO NOTHING;
+INSERT INTO enrollments (user_id, course_id)
+SELECT r.user_id, r.course_id
+FROM manual_payment_receipts r
+WHERE r.status = 'approved'
+ON CONFLICT (user_id, course_id) DO NOTHING;
+DELETE FROM enrollments e
+USING courses c
+WHERE c.id = e.course_id
+    AND COALESCE(c.price, 0) > 0
+    AND NOT EXISTS (
+        SELECT 1 FROM payments p
+        WHERE p.user_id = e.user_id
+            AND p.course_id = e.course_id
+            AND p.status = 'completed'
+    );
+UPDATE payments p
+SET amount = c.price,
+    admin_share = ROUND(c.price * 0.20, 2),
+    instructor_share = c.price - ROUND(c.price * 0.20, 2)
+FROM courses c
+WHERE p.course_id = c.id AND p.status = 'completed';
 
 -- Screenshots / receipts after manual bank or wallet transfer (not Chapa)
 CREATE TABLE IF NOT EXISTS manual_payment_receipts (
@@ -80,6 +122,35 @@ CREATE TABLE IF NOT EXISTS video_watch_progress (
 CREATE INDEX IF NOT EXISTS idx_video_watch_progress_enrollment
     ON video_watch_progress(enrollment_id);
 
+CREATE TABLE IF NOT EXISTS assignments (
+    id SERIAL PRIMARY KEY,
+    course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    due_date TIMESTAMP NOT NULL,
+    points INTEGER NOT NULL DEFAULT 100 CHECK (points > 0),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_assignments_course ON assignments(course_id);
+
+CREATE TABLE IF NOT EXISTS assignment_submissions (
+    id SERIAL PRIMARY KEY,
+    assignment_id INTEGER NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
+    student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL DEFAULT '',
+    file_url TEXT,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    grade INTEGER CHECK (grade >= 0 AND grade <= 100),
+    feedback TEXT,
+    graded_at TIMESTAMP,
+    UNIQUE(assignment_id, student_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_assignment_submissions_student
+    ON assignment_submissions(student_id);
+
 CREATE TABLE IF NOT EXISTS certificates (
     id SERIAL PRIMARY KEY,
     student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -118,7 +189,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
-    type VARCHAR(50) DEFAULT 'info' CHECK (type IN ('info', 'success', 'warning', 'error', 'course', 'quiz', 'certificate')),
+    type VARCHAR(50) DEFAULT 'info' CHECK (type IN ('info', 'success', 'warning', 'error', 'course', 'quiz', 'assignment', 'certificate')),
     read BOOLEAN DEFAULT false,
     link VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -126,17 +197,22 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read);
+ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
+ALTER TABLE notifications ADD CONSTRAINT notifications_type_check
+    CHECK (type IN ('info', 'success', 'warning', 'error', 'course', 'quiz', 'assignment', 'certificate'));
 
 -- Logged-in user questions / feedback to admins (with optional admin reply)
 CREATE TABLE IF NOT EXISTS user_feedback (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     subject VARCHAR(255),
     message TEXT NOT NULL,
     admin_reply TEXT,
     replied_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE user_feedback ALTER COLUMN user_id DROP NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_user_feedback_user ON user_feedback(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_feedback_created ON user_feedback(created_at DESC);
@@ -147,6 +223,7 @@ CREATE TABLE IF NOT EXISTS quizzes (
     course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     questions JSONB NOT NULL DEFAULT '[]',
+    is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -291,15 +368,24 @@ SELECT
     u.name,
     u.email,
     u.avatar,
-    COUNT(DISTINCT e.course_id) as courses_enrolled,
-    COUNT(DISTINCT CASE WHEN p.completed THEN e.course_id END) as courses_completed,
-    COUNT(DISTINCT p.lesson_id) as lessons_completed,
-    COUNT(DISTINCT c.id) as certificates_earned,
-    AVG(r.rating) as average_rating,
-    COUNT(DISTINCT r.id) as reviews_given
+    COUNT(DISTINCT e.course_id) AS courses_enrolled,
+    COUNT(DISTINCT completed_courses.course_id) AS courses_completed,
+    COUNT(DISTINCT completed_lessons.lesson_id) AS lessons_completed,
+    COUNT(DISTINCT c.id) AS certificates_earned,
+    AVG(r.rating) AS average_rating,
+    COUNT(DISTINCT r.id) AS reviews_given
 FROM users u
 LEFT JOIN enrollments e ON u.id = e.user_id
-LEFT JOIN progress p ON u.id = p.user_id AND p.completed = true
+LEFT JOIN (
+    SELECT user_id, course_id
+    FROM enrollments
+    WHERE progress >= 100
+) AS completed_courses ON completed_courses.user_id = u.id
+LEFT JOIN (
+    SELECT p.user_id, p.lesson_id
+    FROM progress p
+    WHERE p.completed = true
+) AS completed_lessons ON completed_lessons.user_id = u.id
 LEFT JOIN certificates c ON u.id = c.student_id
 LEFT JOIN reviews r ON u.id = r.user_id
 WHERE u.role = 'student'
@@ -309,21 +395,23 @@ ORDER BY courses_completed DESC, lessons_completed DESC, certificates_earned DES
 -- ============================================
 -- INSTRUCTOR REVENUE VIEW
 -- ============================================
-CREATE OR REPLACE VIEW instructor_revenue AS
+DROP VIEW IF EXISTS instructor_revenue;
+CREATE VIEW instructor_revenue AS
 SELECT
     u.id as instructor_id,
     u.name as instructor_name,
     c.id as course_id,
     c.title as course_title,
     COUNT(DISTINCT e.id) as total_enrollments,
-    COALESCE(SUM(pmt.amount), 0) as total_revenue,
-    COALESCE(SUM(CASE WHEN pmt.status = 'completed' THEN pmt.amount ELSE 0 END), 0) as completed_revenue,
-    COUNT(CASE WHEN pmt.status = 'completed' THEN 1 END) as completed_payments,
-    COUNT(CASE WHEN pmt.status = 'pending' THEN 1 END) as pending_payments
+    COALESCE(COUNT(DISTINCT e.id) * c.price, 0) as total_revenue,
+    COALESCE(COUNT(DISTINCT e.id) * c.price, 0) as completed_revenue,
+    COALESCE(COUNT(DISTINCT e.id) * ROUND(c.price * 0.20, 2), 0) as admin_revenue,
+    COALESCE(COUNT(DISTINCT e.id) * (c.price - ROUND(c.price * 0.20, 2)), 0) as instructor_revenue,
+    COUNT(DISTINCT e.id) as completed_payments,
+    0 as pending_payments
 FROM users u
 LEFT JOIN courses c ON u.id = c.instructor_id
 LEFT JOIN enrollments e ON c.id = e.course_id
-LEFT JOIN payments pmt ON e.id = pmt.course_id AND pmt.user_id = e.user_id
 WHERE u.role = 'instructor'
 GROUP BY u.id, u.name, c.id, c.title;
 
@@ -356,13 +444,8 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP;
 
 -- ============================================
--- LEARNING PATHS SEED DATA
+-- LEARNING PATHS ARE CREATED DYNAMICALLY BY INSTRUCTORS/ADMINS
 -- ============================================
-INSERT INTO learning_paths (title, description, created_by, is_active) VALUES
-('Full Stack Web Development', 'Complete path from beginner to full stack developer', 1, true),
-('Data Science & Machine Learning', 'Learn Python, data analysis, and ML fundamentals', 1, true),
-('UI/UX Design Master', 'Master design principles, Figma, and user experience', 1, true)
-ON CONFLICT DO NOTHING;
 
 -- ============================================
 -- DOCUMENTATION COMMENTS

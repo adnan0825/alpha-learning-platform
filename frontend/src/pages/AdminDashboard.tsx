@@ -12,6 +12,7 @@ import {
   UserProfile,
   CourseData,
   UserFeedbackItem,
+  formatFeedbackSender,
 } from "@/lib/api";
 
 import StatCard from "@/components/StatCard";
@@ -636,78 +637,88 @@ const AdminDashboard: React.FC = () => {
                         </td>
                       </tr>
                     ) : (
-                      feedbackList.map((f) => (
-                        <tr
-                          key={f.id}
-                          className="border-b last:border-0 align-top hover:bg-muted/20 transition-colors"
-                        >
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="font-medium text-foreground">
-                                  {f.userName}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {f.userEmail}
-                                </p>
-                                {f.subject ? (
-                                  <p className="mt-1 text-xs font-medium text-accent">
-                                    {f.subject}
+                      feedbackList.map((f) => {
+                        const sender = formatFeedbackSender(f);
+
+                        return (
+                          <tr
+                            key={f.id}
+                            className="border-b last:border-0 align-top hover:bg-muted/20 transition-colors"
+                          >
+                            <td className="px-5 py-3.5">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="font-medium text-foreground">
+                                    {sender.label}
                                   </p>
-                                ) : null}
-                              </div>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="shrink-0 gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                onClick={() => setFeedbackToDelete(f)}
-                              >
-                                <Trash2 size={14} />
-                                Delete
-                              </Button>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3.5 max-w-md text-muted-foreground whitespace-pre-wrap">
-                            {f.message}
-                          </td>
-                          <td className="px-5 py-3.5 min-w-[220px]">
-                            {f.adminReply ? (
-                              <p className="text-xs text-muted-foreground whitespace-pre-wrap border border-border/50 rounded-lg p-2 bg-muted/20">
-                                {f.adminReply}
-                              </p>
-                            ) : (
-                              <div className="space-y-2">
-                                <Textarea
-                                  placeholder="Write a reply…"
-                                  rows={3}
-                                  className="text-xs"
-                                  value={replyDraft[f.id] || ""}
-                                  onChange={(e) =>
-                                    setReplyDraft((p) => ({
-                                      ...p,
-                                      [f.id]: e.target.value,
-                                    }))
-                                  }
-                                />
+                                  <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                                    {sender.roleLabel}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {f.userEmail ||
+                                      (sender.isGuest
+                                        ? "Guest message"
+                                        : "Registered user")}
+                                  </p>
+                                  {f.subject ? (
+                                    <p className="mt-1 text-xs font-medium text-accent">
+                                      {f.subject}
+                                    </p>
+                                  ) : null}
+                                </div>
                                 <Button
+                                  type="button"
+                                  variant="outline"
                                   size="sm"
-                                  className="w-full gradient-accent text-accent-foreground"
-                                  onClick={() => sendFeedbackReply(f.id)}
+                                  className="shrink-0 gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                  onClick={() => setFeedbackToDelete(f)}
                                 >
-                                  Send reply & notify user
+                                  <Trash2 size={14} />
+                                  Delete
                                 </Button>
                               </div>
-                            )}
-                          </td>
-                          <td className="px-5 py-3.5 text-muted-foreground text-xs whitespace-nowrap">
-                            {f.createdAt &&
-                            !Number.isNaN(new Date(f.createdAt).getTime())
-                              ? new Date(f.createdAt).toLocaleString()
-                              : "—"}
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+                            <td className="px-5 py-3.5 max-w-md text-muted-foreground whitespace-pre-wrap">
+                              {f.message}
+                            </td>
+                            <td className="px-5 py-3.5 min-w-[220px]">
+                              {f.adminReply ? (
+                                <p className="text-xs text-muted-foreground whitespace-pre-wrap border border-border/50 rounded-lg p-2 bg-muted/20">
+                                  {f.adminReply}
+                                </p>
+                              ) : (
+                                <div className="space-y-2">
+                                  <Textarea
+                                    placeholder="Write a reply…"
+                                    rows={3}
+                                    className="text-xs"
+                                    value={replyDraft[f.id] || ""}
+                                    onChange={(e) =>
+                                      setReplyDraft((p) => ({
+                                        ...p,
+                                        [f.id]: e.target.value,
+                                      }))
+                                    }
+                                  />
+                                  <Button
+                                    size="sm"
+                                    className="w-full gradient-accent text-accent-foreground"
+                                    onClick={() => sendFeedbackReply(f.id)}
+                                  >
+                                    Send reply & notify user
+                                  </Button>
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-5 py-3.5 text-muted-foreground text-xs whitespace-nowrap">
+                              {f.createdAt &&
+                              !Number.isNaN(new Date(f.createdAt).getTime())
+                                ? new Date(f.createdAt).toLocaleString()
+                                : "—"}
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>

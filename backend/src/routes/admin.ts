@@ -217,6 +217,52 @@ router.get(
 // REPORTS
 // ============================================
 
+// GET /api/admin/revenue - Admin share and payment breakdown
+router.get(
+  "/revenue",
+  authenticate,
+  requireAdmin,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const [summary, courses] = await Promise.all([
+        query(
+          `SELECT
+             COUNT(DISTINCT e.id) as enrolled_students,
+             COALESCE(SUM(CASE WHEN e.id IS NOT NULL THEN c.price ELSE 0 END), 0) as gross_revenue,
+             COALESCE(SUM(CASE WHEN e.id IS NOT NULL THEN ROUND(c.price * 0.20, 2) ELSE 0 END), 0) as admin_revenue,
+             COALESCE(SUM(CASE WHEN e.id IS NOT NULL THEN c.price - ROUND(c.price * 0.20, 2) ELSE 0 END), 0) as instructor_revenue
+           FROM courses c
+           LEFT JOIN enrollments e ON e.course_id = c.id`,
+          [],
+        ),
+        query(
+          `SELECT
+             c.id as course_id,
+             c.title as course_title,
+             u.name as instructor_name,
+             COUNT(DISTINCT e.id) as enrolled_students,
+             COALESCE(COUNT(DISTINCT e.id) * c.price, 0) as gross_revenue,
+             COALESCE(COUNT(DISTINCT e.id) * ROUND(c.price * 0.20, 2), 0) as admin_revenue,
+             COALESCE(COUNT(DISTINCT e.id) * (c.price - ROUND(c.price * 0.20, 2)), 0) as instructor_revenue
+           FROM courses c
+           JOIN users u ON u.id = c.instructor_id
+             LEFT JOIN enrollments e ON e.course_id = c.id
+           GROUP BY c.id, c.title, u.name
+           ORDER BY admin_revenue DESC, c.title ASC`,
+          [],
+        ),
+      ]);
+
+      res.json({
+        summary: summary.rows[0],
+        courses: courses.rows,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+);
+
 // GET /api/admin/reports/overview - Platform overview report
 router.get(
   "/reports/overview",
@@ -224,8 +270,13 @@ router.get(
   requireAdmin,
   async (req: AuthRequest, res: Response) => {
     try {
-      const { period = "30" } = req.query; // days
-      const days = parseInt(period as string);
+      const requestedDays = Number.parseInt(
+        String(req.query.period || "30"),
+        10,
+      );
+      const days = [7, 30, 90, 365].includes(requestedDays)
+        ? requestedDays
+        : 30;
 
       // Get various metrics
       const [userGrowth, courseStats, revenueStats, activityStats] =
@@ -249,7 +300,18 @@ router.get(
           COUNT(*) as total,
           COUNT(*) FILTER (WHERE is_published = true) as published,
           COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '${days} days') as new_courses,
-          AVG(extract(epoch from duration)::integer) as avg_duration
+          AVG(
+            CASE
+              WHEN duration ~ '^\\s*[0-9]+h'
+                THEN (regexp_replace(duration, '^\\s*([0-9]+)h.*$', '\\1')::numeric * 60)
+              ELSE 0
+            END
+            + CASE
+                WHEN duration ~ '[0-9]+m'
+                  THEN regexp_replace(duration, '^.*?([0-9]+)m.*$', '\\1')::numeric
+                ELSE 0
+              END
+          ) as avg_duration_minutes
         FROM courses
       `,
             [],
@@ -262,7 +324,8 @@ router.get(
           COUNT(*) FILTER (WHERE status = 'completed') as completed,
           COUNT(*) FILTER (WHERE status = 'pending') as pending,
           COUNT(*) FILTER (WHERE status = 'failed') as failed,
-          COALESCE(SUM(amount) FILTER (WHERE status = 'completed'), 0) as completed_revenue
+          COALESCE(SUM(amount) FILTER (WHERE status = 'completed'), 0) as completed_revenue,
+          COALESCE(SUM(COALESCE(admin_share, ROUND(amount * 0.20, 2))) FILTER (WHERE status = 'completed'), 0) as admin_revenue
         FROM payments
         WHERE created_at >= NOW() - INTERVAL '${days} days'
       `,
@@ -374,10 +437,20 @@ router.get(
   requireAdmin,
   async (req: AuthRequest, res: Response) => {
     try {
-      const { limit = 50, course } = req.query;
-      const courseFilter = course
-        ? `AND d.course_id = ${parseInt(course as string)}`
-        : "";
+      const requestedLimit = Number.parseInt(
+        String(req.query.limit || "50"),
+        10,
+      );
+      const limit = Number.isFinite(requestedLimit)
+        ? Math.min(Math.max(requestedLimit, 1), 100)
+        : 50;
+      const requestedCourse = req.query.course
+        ? Number.parseInt(String(req.query.course), 10)
+        : undefined;
+      if (requestedCourse !== undefined && !Number.isFinite(requestedCourse)) {
+        return res.status(400).json({ error: "Invalid course id" });
+      }
+      const courseFilter = requestedCourse ? "AND d.course_id = $2" : "";
 
       const discussions = await query(
         `
@@ -393,7 +466,7 @@ router.get(
       ORDER BY d.created_at DESC
       LIMIT $1
     `,
-        [parseInt(limit as string)],
+        requestedCourse ? [limit, requestedCourse] : [limit],
       );
 
       res.json(discussions.rows);
@@ -462,8 +535,17 @@ router.delete(
   requireAdmin,
   async (req: AuthRequest, res: Response) => {
     try {
-      const reviewId = parseInt(req.params.id);
-      await query("DELETE FROM reviews WHERE id = $1", [reviewId]);
+      const reviewId = Number.parseInt(req.params.id, 10);
+      if (!Number.isFinite(reviewId)) {
+        return res.status(400).json({ error: "Invalid review id" });
+      }
+      const result = await query(
+        "DELETE FROM reviews WHERE id = $1 RETURNING id",
+        [reviewId],
+      );
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: "Review not found" });
+      }
       res.json({ success: true, message: "Review deleted" });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -485,9 +567,11 @@ router.get(
       res.json(
         rows.map((r: any) => ({
           id: String(r.id),
-          userId: String(r.user_id),
-          userName: r.user_name,
-          userEmail: r.user_email,
+          userId: r.user_id ? String(r.user_id) : null,
+          userName:
+            r.user_name || (r.user_id ? "Registered user" : "Guest visitor"),
+          userRole: r.user_role || null,
+          userEmail: r.user_email || null,
           subject: r.subject,
           message: r.message,
           adminReply: r.admin_reply,
@@ -515,7 +599,7 @@ router.patch(
       const row = await feedbackService.replyToFeedback(id, reply);
       res.json({
         id: String(row.id),
-        userId: String(row.user_id),
+        userId: row.user_id ? String(row.user_id) : null,
         subject: row.subject,
         message: row.message,
         adminReply: row.admin_reply,

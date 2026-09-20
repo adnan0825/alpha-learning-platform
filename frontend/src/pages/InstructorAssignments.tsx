@@ -2,7 +2,12 @@
  * Instructor Assignments Grading Page
  */
 import React, { useEffect, useState } from "react";
-import { assignmentsAPI, Submission } from "@/lib/api";
+import {
+  assignmentsAPI,
+  Assignment,
+  Submission,
+  getPublicFileUrl,
+} from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { coursesAPI, CourseData } from "@/lib/api";
 
@@ -27,7 +32,7 @@ import {
   User,
   Search,
   RefreshCw,
-  X,
+  Plus,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -37,6 +42,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const InstructorAssignments: React.FC = () => {
@@ -52,6 +58,11 @@ const InstructorAssignments: React.FC = () => {
   );
   const [grade, setGrade] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newDueDate, setNewDueDate] = useState("");
+  const [newPoints, setNewPoints] = useState("100");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -91,9 +102,33 @@ const InstructorAssignments: React.FC = () => {
     fetchSubmissions(courseId);
   };
 
+  const handleCreate = async () => {
+    if (!selectedCourse) return;
+    try {
+      await assignmentsAPI.create(selectedCourse, {
+        title: newTitle,
+        description: newDescription,
+        dueDate: newDueDate,
+        points: Number(newPoints),
+      });
+      toast({ title: "Assignment created" });
+      setShowCreate(false);
+      setNewTitle("");
+      setNewDescription("");
+      setNewDueDate("");
+      setNewPoints("100");
+    } catch (err: any) {
+      toast({
+        title: "Assignment creation failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const openGrading = (sub: Submission) => {
     setGradingSubmission(sub);
-    setGrade(sub.grade ? sub.grade.toString() : "");
+    setGrade(sub.grade !== undefined ? sub.grade.toString() : "");
     setFeedback(sub.feedback || "");
   };
 
@@ -141,6 +176,13 @@ const InstructorAssignments: React.FC = () => {
             {t("instructor.assignments.subtitle")}
           </p>
         </div>
+        <Button
+          onClick={() => setShowCreate(true)}
+          disabled={!selectedCourse}
+          className="gradient-accent text-accent-foreground"
+        >
+          <Plus size={16} className="mr-2" /> Create Assignment
+        </Button>
       </motion.div>
 
       <div className="flex flex-col sm:flex-row gap-4">
@@ -219,7 +261,7 @@ const InstructorAssignments: React.FC = () => {
                           className="text-success border-success/30 bg-success/5"
                         >
                           <CheckCircle size={12} className="mr-1" /> {sub.grade}
-                          /100
+                          /{sub.points ?? 100}
                         </Badge>
                       ) : (
                         <Badge
@@ -250,6 +292,60 @@ const InstructorAssignments: React.FC = () => {
       )}
 
       {/* Grading Dialog */}
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Assignment</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <Input
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Due date</Label>
+                <Input
+                  type="datetime-local"
+                  value={newDueDate}
+                  onChange={(e) => setNewDueDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Points</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={newPoints}
+                  onChange={(e) => setNewPoints(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreate(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreate}
+              className="gradient-accent text-accent-foreground"
+            >
+              Create Assignment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog
         open={!!gradingSubmission}
         onOpenChange={(open) => !open && setGradingSubmission(null)}
@@ -268,22 +364,25 @@ const InstructorAssignments: React.FC = () => {
                   {gradingSubmission.content}
                 </p>
                 {gradingSubmission.fileUrl && (
-                  <div className="mt-2 flex items-center gap-2 text-accent">
-                    <Download size={14} />{" "}
-                    <span className="underline cursor-pointer">
-                      Download Attachment
-                    </span>
-                  </div>
+                  <a
+                    className="mt-2 flex items-center gap-2 text-accent hover:underline"
+                    href={getPublicFileUrl(gradingSubmission.fileUrl)}
+                    target="_blank"
+                    rel="noreferrer"
+                    download
+                  >
+                    <Download size={14} /> Download Attachment
+                  </a>
                 )}
               </div>
 
               <div className="grid grid-cols-4 gap-4">
                 <div className="col-span-1 space-y-2">
-                  <Label>Grade (0-100)</Label>
+                  <Label>Grade (0-{gradingSubmission.points ?? 100})</Label>
                   <Input
                     type="number"
                     min="0"
-                    max="100"
+                    max={gradingSubmission.points ?? 100}
                     value={grade}
                     onChange={(e) => setGrade(e.target.value)}
                   />
