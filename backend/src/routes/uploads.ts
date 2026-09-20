@@ -48,6 +48,7 @@ const videoStorage = multer.diskStorage({
 
 const IMAGE_EXT = /\.(jpe?g|png|gif|webp|bmp|heic|heif)$/i;
 const VIDEO_EXT = /\.(mp4|webm|mov|m4v|ogv|mkv|avi)$/i;
+const DOCUMENT_EXT = /\.(pdf|zip|rar|7z|doc|docx|ppt|pptx|xls|xlsx|txt)$/i;
 
 /** Screenshots / thumbnails: images only (manual payment receipts use this too). */
 const imageUpload = multer({
@@ -72,6 +73,20 @@ const imageUpload = multer({
       new Error(
         "Only image files are allowed (e.g. JPG or PNG screenshot, max 5MB)",
       ),
+    );
+  },
+});
+
+const documentUpload = multer({
+  storage,
+  limits: { fileSize: 25 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path
+      .extname(path.basename(file.originalname || ""))
+      .toLowerCase();
+    if (DOCUMENT_EXT.test(ext)) return cb(null, true);
+    cb(
+      new Error("Only PDF, ZIP, Office, and text files are allowed (max 25MB)"),
     );
   },
 });
@@ -121,6 +136,27 @@ router.post(
       console.error("Upload error:", error);
       res.status(500).json({ error: error.message || "Upload failed" });
     }
+  },
+);
+
+/**
+ * POST /api/uploads/file
+ * Field `file`. Student assignment attachments.
+ */
+router.post(
+  "/file",
+  authenticate,
+  documentUpload.single("file"),
+  (req: Request, res: Response) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    res.json({
+      url: `/uploads/${req.file.filename}`,
+      filename: req.file.originalname,
+      size: req.file.size,
+      contentType: req.file.mimetype,
+    });
   },
 );
 

@@ -20,11 +20,15 @@ const GoogleOAuthCallback = lazy(() => import("./pages/GoogleOAuthCallback"));
 const DashboardRouter = lazy(() => import("./pages/DashboardRouter"));
 const StudentDashboard = lazy(() => import("./pages/StudentDashboard"));
 const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"));
+const InstructorLearningPaths = lazy(
+  () => import("./pages/InstructorLearningPaths"),
+);
 const InstructorCourses = lazy(() => import("./pages/InstructorCourses"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminCourses = lazy(() => import("./pages/AdminCourses"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
+const AdminRevenue = lazy(() => import("./pages/AdminRevenue"));
 const BrowseCourses = lazy(() => import("./pages/BrowseCourses"));
 const MyCourses = lazy(() => import("./pages/MyCourses"));
 const CourseView = lazy(() => import("./pages/CourseView"));
@@ -53,9 +57,7 @@ const StudentCalendar = lazy(() => import("./pages/StudentCalendar"));
 const InstructorAssignments = lazy(
   () => import("./pages/InstructorAssignments"),
 );
-const InstructorWithdrawals = lazy(
-  () => import("./pages/InstructorWithdrawals"),
-);
+const InstructorRevenue = lazy(() => import("./pages/InstructorRevenue"));
 const AdminCoupons = lazy(() => import("./pages/AdminCoupons"));
 const AdminAppearance = lazy(() => import("./pages/AdminAppearance"));
 const AdminFAQ = lazy(() => import("./pages/AdminFAQ"));
@@ -170,6 +172,10 @@ const App = () => (
                     element={<AddCourse />}
                   />
                   <Route
+                    path="/instructor/learning-paths"
+                    element={<InstructorLearningPaths />}
+                  />
+                  <Route
                     path="/instructor/progress"
                     element={<InstructorProgress />}
                   />
@@ -183,8 +189,8 @@ const App = () => (
                     element={<InstructorAssignments />}
                   />
                   <Route
-                    path="/instructor/withdrawals"
-                    element={<InstructorWithdrawals />}
+                    path="/instructor/revenue"
+                    element={<InstructorRevenue />}
                   />
                   <Route
                     path="/instructor/announcements"
@@ -210,6 +216,7 @@ const App = () => (
                   />
                   <Route path="/admin/add-course" element={<AddCourse />} />
                   <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                  <Route path="/admin/revenue" element={<AdminRevenue />} />
                   <Route path="/admin/settings" element={<AdminSettings />} />
                   <Route path="/admin/logs" element={<SystemLogs />} />
                   <Route path="/admin/reports" element={<ReportsPage />} />

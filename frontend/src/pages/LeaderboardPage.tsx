@@ -4,6 +4,10 @@
  */
 import React, { useEffect, useState } from "react";
 import { leaderboardAPI, LeaderboardEntry } from "@/lib/api";
+import {
+  calculateLeaderboardPoints,
+  getLeaderboardAchievements,
+} from "@/lib/leaderboard";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -151,6 +155,7 @@ const LeaderboardPage: React.FC = () => {
                         {[1, 0, 2].map((idx) => {
                           const student = leaderboard[idx];
                           const isFirst = idx === 0;
+                          const points = calculateLeaderboardPoints(student);
                           return (
                             <motion.div
                               key={student.id}
@@ -179,9 +184,13 @@ const LeaderboardPage: React.FC = () => {
                               <p className="text-sm font-semibold text-foreground text-center max-w-[100px] truncate">
                                 {student.name.split(" ")[0]}
                               </p>
-                              <p className="text-xs text-muted-foreground">
-                                {student.coursesCompleted} courses
+                              <p className="text-xs text-muted-foreground text-center">
+                                {student.coursesEnrolled} enrolled •{" "}
+                                {student.coursesCompleted} completed
                               </p>
+                              <div className="mt-1 text-[10px] font-semibold text-accent">
+                                {points} pts
+                              </div>
                               <div
                                 className={`mt-1.5 h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
                                   idx === 0
@@ -201,56 +210,57 @@ const LeaderboardPage: React.FC = () => {
 
                     {/* Full list */}
                     <div className="space-y-2">
-                      {leaderboard.map((student, i) => (
-                        <div
-                          key={student.id}
-                          className={`flex items-center gap-4 p-3 rounded-xl ${i === 0 ? "bg-accent/5" : "hover:bg-muted/30"} transition-colors`}
-                        >
-                          <span
-                            className={`text-sm font-bold w-6 text-center ${i < 3 ? "text-accent" : "text-muted-foreground"}`}
-                          >
-                            #{i + 1}
-                          </span>
+                      {leaderboard.map((student, i) => {
+                        const points = calculateLeaderboardPoints(student);
+                        return (
                           <div
-                            className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${getAvatarColor(i)}`}
+                            key={student.id}
+                            className={`flex items-center gap-4 p-3 rounded-xl ${i === 0 ? "bg-accent/5" : "hover:bg-muted/30"} transition-colors`}
                           >
-                            {student.avatar ? (
-                              <img
-                                src={student.avatar}
-                                alt={student.name}
-                                className="h-full w-full rounded-full object-cover"
-                              />
-                            ) : (
-                              getInitials(student.name)
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
-                              {student.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {student.coursesCompleted} courses •{" "}
-                              {student.lessonsCompleted} lessons
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <span className="font-display font-bold text-foreground text-sm">
-                              {student.coursesCompleted * 100 +
-                                student.lessonsCompleted * 10}
+                            <span
+                              className={`text-sm font-bold w-6 text-center ${i < 3 ? "text-accent" : "text-muted-foreground"}`}
+                            >
+                              #{i + 1}
                             </span>
-                            <span className="text-xs text-muted-foreground ml-1">
-                              pts
-                            </span>
+                            <div
+                              className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${getAvatarColor(i)}`}
+                            >
+                              {student.avatar ? (
+                                <img
+                                  src={student.avatar}
+                                  alt={student.name}
+                                  className="h-full w-full rounded-full object-cover"
+                                />
+                              ) : (
+                                getInitials(student.name)
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {student.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {student.coursesEnrolled} enrolled •{" "}
+                                {student.coursesCompleted} completed
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-display font-bold text-foreground text-sm">
+                                {points}
+                              </span>
+                              <span className="text-xs text-muted-foreground ml-1">
+                                pts
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
             </div>
 
-            {/* Achievements Placeholder */}
             <div>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -263,66 +273,59 @@ const LeaderboardPage: React.FC = () => {
                       Achievement Badges
                     </h3>
                     <div className="grid grid-cols-2 gap-3">
-                      {[
-                        {
-                          icon: <BookOpen size={20} />,
-                          title: "First Course",
-                          desc: "Enroll in your first course",
-                          color: "text-info",
-                        },
-                        {
-                          icon: <Target size={20} />,
-                          title: "Quiz Master",
-                          desc: "Score 100% on any quiz",
-                          color: "text-success",
-                        },
-                        {
-                          icon: <Flame size={20} />,
-                          title: "5-Day Streak",
-                          desc: "Learn 5 days in a row",
-                          color: "text-warning",
-                        },
-                        {
-                          icon: <Trophy size={20} />,
-                          title: "Certificate",
-                          desc: "Complete a course",
-                          color: "text-accent",
-                        },
-                        {
-                          icon: <Star size={20} />,
-                          title: "Top 10",
-                          desc: "Reach top 10 on leaderboard",
-                          color: "text-destructive",
-                        },
-                        {
-                          icon: <Medal size={20} />,
-                          title: "Fast Learner",
-                          desc: "Complete course in 7 days",
-                          color: "text-accent",
-                        },
-                      ].map((badge, i) => (
-                        <motion.div
-                          key={badge.title}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.3 + i * 0.05 }}
-                          className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border/30 bg-muted/30 text-center opacity-50 grayscale"
-                        >
-                          <div className="text-muted-foreground">
-                            {badge.icon}
-                          </div>
-                          <p className="text-[11px] font-semibold text-foreground">
-                            {badge.title}
-                          </p>
-                          <p className="text-[9px] text-muted-foreground leading-tight">
-                            {badge.desc}
-                          </p>
-                        </motion.div>
-                      ))}
+                      {leaderboard[0] &&
+                        getLeaderboardAchievements(
+                          leaderboard[0],
+                          leaderboard.findIndex(
+                            (student) => student.id === leaderboard[0].id,
+                          ) + 1,
+                        ).map((badge, i) => {
+                          const iconMap = [
+                            <BookOpen key={badge.title} size={20} />,
+                            <Target key={badge.title} size={20} />,
+                            <Flame key={badge.title} size={20} />,
+                            <Trophy key={badge.title} size={20} />,
+                            <Star key={badge.title} size={20} />,
+                            <Medal key={badge.title} size={20} />,
+                          ];
+
+                          return (
+                            <motion.div
+                              key={badge.title}
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: 0.3 + i * 0.05 }}
+                              className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center ${
+                                badge.unlocked
+                                  ? "border-accent/40 bg-accent/5"
+                                  : "border-border/30 bg-muted/30 opacity-50 grayscale"
+                              }`}
+                            >
+                              <div
+                                className={
+                                  badge.unlocked
+                                    ? badge.color
+                                    : "text-muted-foreground"
+                                }
+                              >
+                                {iconMap[i]}
+                              </div>
+                              <p className="text-[11px] font-semibold text-foreground">
+                                {badge.title}
+                              </p>
+                              <p className="text-[9px] text-muted-foreground leading-tight">
+                                {badge.description}
+                              </p>
+                            </motion.div>
+                          );
+                        })}
                     </div>
-                    <p className="text-xs text-muted-foreground text-center mt-4">
-                      Achievement system coming soon!
-                    </p>
+                    {leaderboard.length > 0 && (
+                      <p className="text-xs text-muted-foreground text-center mt-4">
+                        Current score:{" "}
+                        {calculateLeaderboardPoints(leaderboard[0])} pts
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>

@@ -1,5 +1,17 @@
 import { query } from "../config/db";
-import { createNotification } from "./analyticsService";
+import {
+  createAdminNotification,
+  createNotification,
+} from "./analyticsService";
+
+const formatRoleLabel = (role?: string | null) => {
+  if (!role) return "Guest";
+  const normalized = role.toLowerCase();
+  if (normalized === "student") return "Student";
+  if (normalized === "instructor") return "Instructor";
+  if (normalized === "admin") return "Admin";
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+};
 
 export async function submitFeedback(
   userId: number | undefined,
@@ -17,24 +29,30 @@ export async function submitFeedback(
   );
   const row = result.rows[0];
 
-  if (userId) {
-    const userRes = await query("SELECT name, email FROM users WHERE id = $1", [
-      userId,
-    ]);
-    const u = userRes.rows[0];
-    const preview =
-      trimmed.length > 140 ? `${trimmed.slice(0, 140)}…` : trimmed;
+  const userRes = userId
+    ? await query("SELECT name, email, role FROM users WHERE id = $1", [userId])
+    : { rows: [] };
+  const u = userRes.rows[0];
+  const preview = trimmed.length > 140 ? `${trimmed.slice(0, 140)}…` : trimmed;
+  const senderLabel = userId
+    ? `${u?.name || "User"} (${formatRoleLabel(u?.role)})`
+    : "Guest visitor";
 
-    const admins = await query(`SELECT id FROM users WHERE role = 'admin'`);
-    for (const admin of admins.rows) {
-      await createNotification(
-        admin.id,
-        `Question from ${u?.name || "User"}`,
-        preview,
-        "info",
-        "/admin/dashboard?tab=feedback",
-      );
-    }
+  await createAdminNotification(
+    `New support request from ${senderLabel}`,
+    `${subject?.trim() ? `${subject.trim()} — ` : ""}${preview}`,
+    "info",
+    "/admin/dashboard?tab=feedback",
+  );
+
+  if (userId) {
+    await createNotification(
+      userId,
+      "Support request received",
+      "Your support message has been sent to the admin team.",
+      "info",
+      "/notifications",
+    );
   }
 
   return row;
@@ -42,9 +60,9 @@ export async function submitFeedback(
 
 export async function listFeedbackForAdmin() {
   const result = await query(
-    `SELECT f.*, u.name AS user_name, u.email AS user_email
+    `SELECT f.*, u.name AS user_name, u.email AS user_email, u.role AS user_role
      FROM user_feedback f
-     JOIN users u ON f.user_id = u.id
+     LEFT JOIN users u ON f.user_id = u.id
      ORDER BY f.created_at DESC`,
   );
   return result.rows;
@@ -69,13 +87,15 @@ export async function replyToFeedback(feedbackId: number, reply: string) {
   }
 
   const preview = trimmed.length > 200 ? `${trimmed.slice(0, 200)}…` : trimmed;
-  await createNotification(
-    row.user_id,
-    "Reply from Alpha Support",
-    preview,
-    "info",
-    "/notifications",
-  );
+  if (row.user_id) {
+    await createNotification(
+      row.user_id,
+      "Reply from Alpha Support",
+      preview,
+      "info",
+      "/notifications",
+    );
+  }
 
   return row;
 }

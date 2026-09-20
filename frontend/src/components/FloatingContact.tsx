@@ -14,8 +14,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-const TELEGRAM = "@alpha_contact";
-const PHONE = "0938350004";
+const TELEGRAM = "@alpha_contact_825";
+const PHONE = "+251978261753";
+const PHONE_LABEL = "+251 97 826 1753";
 
 export default function FloatingContact() {
   const [open, setOpen] = useState(false);
@@ -61,16 +62,16 @@ export default function FloatingContact() {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-auto right-3 top-auto w-[calc(100%-1.5rem)] max-w-xs translate-x-0 translate-y-0 gap-3 rounded-xl p-4 sm:bottom-24 sm:right-6 sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>{t("contact.title")}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-2 py-2">
             <a
               href={`https://t.me/${TELEGRAM.replace("@", "")}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted transition-colors"
+              className="flex items-center gap-3 rounded-lg border border-border p-2.5 text-sm transition-colors hover:bg-muted"
             >
               <MessageCircle className="h-5 w-5 text-accent shrink-0" />
               <div>
@@ -80,16 +81,16 @@ export default function FloatingContact() {
             </a>
             <a
               href={`tel:${PHONE}`}
-              className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted transition-colors"
+              className="flex items-center gap-3 rounded-lg border border-border p-2.5 text-sm transition-colors hover:bg-muted"
             >
               <Phone className="h-5 w-5 text-accent shrink-0" />
               <div>
                 <p className="font-medium">{t("contact.phone")}</p>
-                <p className="text-sm text-muted-foreground">{PHONE}</p>
+                <p className="text-sm text-muted-foreground">{PHONE_LABEL}</p>
               </div>
             </a>
             <button
-              className="w-full flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted transition-colors text-left"
+              className="flex w-full items-center gap-3 rounded-lg border border-border p-2.5 text-left text-sm transition-colors hover:bg-muted"
               onClick={() => {
                 setOpen(false);
                 setMessageOpen(true);
@@ -108,7 +109,7 @@ export default function FloatingContact() {
       </Dialog>
 
       <Dialog open={messageOpen} onOpenChange={setMessageOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-auto right-3 top-auto w-[calc(100%-1.5rem)] max-w-xs translate-x-0 translate-y-0 gap-3 rounded-xl p-4 sm:bottom-24 sm:right-6 sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>{t("contact.sendMessage")}</DialogTitle>
             <DialogDescription>
@@ -117,7 +118,7 @@ export default function FloatingContact() {
                 : t("contact.signInReply")}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 py-2">
+          <div className="space-y-2 py-1">
             <div className="space-y-1.5 text-left">
               <label className="text-sm font-medium text-foreground">
                 {t("contact.subject")}
@@ -136,7 +137,7 @@ export default function FloatingContact() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder={t("contact.messagePlaceholder")}
-                rows={5}
+                rows={4}
                 className="resize-none"
               />
             </div>

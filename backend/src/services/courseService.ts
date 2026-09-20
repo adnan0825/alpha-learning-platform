@@ -1,4 +1,4 @@
-import { query } from '../config/db';
+import { query } from "../config/db";
 
 /**
  * JSONB + node-pg: JavaScript arrays are serialized as Postgres *array* literals ({a,b}), NOT JSON.
@@ -10,7 +10,7 @@ function toPlainVideoLinksArray(raw: unknown): VideoLinkRow[] {
   let arr: unknown[] = [];
   if (raw === undefined || raw === null) {
     arr = [];
-  } else if (typeof raw === 'string') {
+  } else if (typeof raw === "string") {
     const t = raw.trim();
     if (!t) arr = [];
     else {
@@ -18,7 +18,7 @@ function toPlainVideoLinksArray(raw: unknown): VideoLinkRow[] {
         const p = JSON.parse(t);
         arr = Array.isArray(p) ? p : [];
       } catch {
-        throw new Error('video_links must be valid JSON array text');
+        throw new Error("video_links must be valid JSON array text");
       }
     }
   } else if (Array.isArray(raw)) {
@@ -28,14 +28,14 @@ function toPlainVideoLinksArray(raw: unknown): VideoLinkRow[] {
   }
 
   return arr.map((item) => {
-    if (item === null || typeof item !== 'object' || Array.isArray(item)) {
-      return { title: '', url: '', duration: '' };
+    if (item === null || typeof item !== "object" || Array.isArray(item)) {
+      return { title: "", url: "", duration: "" };
     }
     const o = item as Record<string, unknown>;
     return {
-      title: String(o.title ?? ''),
-      url: String(o.url ?? ''),
-      duration: o.duration != null ? String(o.duration) : '',
+      title: String(o.title ?? ""),
+      url: String(o.url ?? ""),
+      duration: o.duration != null ? String(o.duration) : "",
     };
   });
 }
@@ -45,19 +45,19 @@ const transformCourse = (row: any) => {
   return {
     id: String(row.id),
     title: row.title,
-    description: row.description || '',
-    category: row.category || '',
-    thumbnail: row.thumbnail || '',
-    introVideoUrl: row.intro_video_url || '',
-    introVideoTitle: row.intro_video_title || '',
+    description: row.description || "",
+    category: row.category || "",
+    thumbnail: row.thumbnail || "",
+    introVideoUrl: row.intro_video_url || "",
+    introVideoTitle: row.intro_video_title || "",
     videoLinks: row.video_links || [],
     totalVideos: row.total_videos || 0,
     instructorId: String(row.instructor_id),
     instructorName: row.instructor_name || row.instructor_name,
-    enrolledCount: row.enrolled_count || 0,
-    status: row.is_published ? 'published' : 'draft',
-    difficulty: row.difficulty || 'beginner',
-    duration: row.duration || '',
+    enrolledCount: row.live_enrolled_count ?? row.enrolled_count ?? 0,
+    status: row.is_published ? "published" : "draft",
+    difficulty: row.difficulty || "beginner",
+    duration: row.duration || "",
     price: row.price || 0,
     createdAt: row.created_at,
   };
@@ -93,18 +93,26 @@ export const createCourse = async (data: {
       data.price || 0,
       linksJson,
       data.totalVideos || 0,
-      data.duration || '',
-    ]
+      data.duration || "",
+    ],
   );
   const row = result.rows[0];
   // Get instructor name
-  const instructorResult = await query('SELECT name FROM users WHERE id = $1', [data.instructor_id]);
+  const instructorResult = await query("SELECT name FROM users WHERE id = $1", [
+    data.instructor_id,
+  ]);
   row.instructor_name = instructorResult.rows[0]?.name;
   return transformCourse(row);
 };
 
-export const getCourses = async (filters?: { category?: string; difficulty?: string; instructor_id?: number; is_published?: boolean }) => {
-  let sql = 'SELECT c.*, u.name as instructor_name FROM courses c JOIN users u ON c.instructor_id = u.id WHERE 1=1';
+export const getCourses = async (filters?: {
+  category?: string;
+  difficulty?: string;
+  instructor_id?: number;
+  is_published?: boolean;
+}) => {
+  let sql =
+    "SELECT c.*, u.name as instructor_name, (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as live_enrolled_count FROM courses c JOIN users u ON c.instructor_id = u.id WHERE 1=1";
   const params: any[] = [];
   let paramIndex = 1;
 
@@ -125,7 +133,7 @@ export const getCourses = async (filters?: { category?: string; difficulty?: str
     params.push(filters.is_published);
   }
 
-  sql += ' ORDER BY c.created_at DESC';
+  sql += " ORDER BY c.created_at DESC";
   const result = await query(sql, params);
   return result.rows.map(transformCourse);
 };
@@ -134,32 +142,35 @@ export const getCourseById = async (id: number) => {
   const result = await query(
     `SELECT c.*, u.name as instructor_name, u.avatar as instructor_avatar
      FROM courses c JOIN users u ON c.instructor_id = u.id WHERE c.id = $1`,
-    [id]
+    [id],
   );
   const row = result.rows[0];
   if (!row) return null;
   return transformCourse(row);
 };
 
-export const updateCourse = async (id: number, data: Partial<{
-  title: string;
-  description: string;
-  thumbnail: string;
-  introVideoUrl: string;
-  introVideoTitle: string;
-  intro_video_url: string;
-  intro_video_title: string;
-  category: string;
-  difficulty: string;
-  price: number;
-  is_published: boolean;
-  status: string;
-  videoLinks: any[];
-  video_links: any[];
-  totalVideos: number;
-  total_videos: number;
-  duration: string;
-}>) => {
+export const updateCourse = async (
+  id: number,
+  data: Partial<{
+    title: string;
+    description: string;
+    thumbnail: string;
+    introVideoUrl: string;
+    introVideoTitle: string;
+    intro_video_url: string;
+    intro_video_title: string;
+    category: string;
+    difficulty: string;
+    price: number;
+    is_published: boolean;
+    status: string;
+    videoLinks: any[];
+    video_links: any[];
+    totalVideos: number;
+    total_videos: number;
+    duration: string;
+  }>,
+) => {
   const fields: string[] = [];
   const values: unknown[] = [];
   let p = 1;
@@ -181,58 +192,58 @@ export const updateCourse = async (id: number, data: Partial<{
   const introTitle = data.introVideoTitle ?? data.intro_video_title;
 
   if (data.status !== undefined) {
-    push('is_published', data.status === 'published');
+    push("is_published", data.status === "published");
   }
   if (videoLinks !== undefined) {
     pushVideoLinksJsonb(toPlainVideoLinksArray(videoLinks));
   }
   if (totalVideos !== undefined) {
-    push('total_videos', totalVideos);
+    push("total_videos", totalVideos);
   }
   if (data.duration !== undefined) {
-    push('duration', data.duration);
+    push("duration", data.duration);
   }
   if (introUrl !== undefined) {
-    push('intro_video_url', introUrl?.trim() ? introUrl.trim() : null);
+    push("intro_video_url", introUrl?.trim() ? introUrl.trim() : null);
   }
   if (introTitle !== undefined) {
-    push('intro_video_title', introTitle?.trim() ? introTitle.trim() : null);
+    push("intro_video_title", introTitle?.trim() ? introTitle.trim() : null);
   }
-  if (data.title !== undefined) push('title', data.title);
-  if (data.description !== undefined) push('description', data.description);
-  if (data.category !== undefined) push('category', data.category);
-  if (data.thumbnail !== undefined) push('thumbnail', data.thumbnail);
-  if (data.difficulty !== undefined) push('difficulty', data.difficulty);
-  if (data.price !== undefined) push('price', data.price);
+  if (data.title !== undefined) push("title", data.title);
+  if (data.description !== undefined) push("description", data.description);
+  if (data.category !== undefined) push("category", data.category);
+  if (data.thumbnail !== undefined) push("thumbnail", data.thumbnail);
+  if (data.difficulty !== undefined) push("difficulty", data.difficulty);
+  if (data.price !== undefined) push("price", data.price);
 
   if (fields.length === 0) return null;
 
-  fields.push('updated_at = CURRENT_TIMESTAMP');
+  fields.push("updated_at = CURRENT_TIMESTAMP");
   values.push(id);
 
   const result = await query(
-    `UPDATE courses SET ${fields.join(', ')} WHERE id = $${p} RETURNING *`,
-    values
+    `UPDATE courses SET ${fields.join(", ")} WHERE id = $${p} RETURNING *`,
+    values,
   );
   const row = result.rows[0];
   if (!row) return null;
 
   const instructorResult = await query(
-    'SELECT u.name FROM courses c JOIN users u ON c.instructor_id = u.id WHERE c.id = $1',
-    [id]
+    "SELECT u.name FROM courses c JOIN users u ON c.instructor_id = u.id WHERE c.id = $1",
+    [id],
   );
   row.instructor_name = instructorResult.rows[0]?.name;
   return transformCourse(row);
 };
 
 export const deleteCourse = async (id: number) => {
-  await query('DELETE FROM courses WHERE id = $1', [id]);
+  await query("DELETE FROM courses WHERE id = $1", [id]);
 };
 
 export const getCourseModules = async (courseId: number) => {
   const result = await query(
-    'SELECT * FROM modules WHERE course_id = $1 ORDER BY position',
-    [courseId]
+    "SELECT * FROM modules WHERE course_id = $1 ORDER BY position",
+    [courseId],
   );
   return result.rows;
 };

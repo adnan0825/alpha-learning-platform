@@ -37,10 +37,11 @@ const QuizManager: React.FC = () => {
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [questions, setQuestions] = useState<
     { question: string; options: string[]; correctIndex: number }[]
-  >([{ question: "", options: ["", "", "", ""], correctIndex: 0 }]);
+  >([{ question: "", options: ["", "", ""], correctIndex: 0 }]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -53,7 +54,7 @@ const QuizManager: React.FC = () => {
         setCourses(c);
         if (c.length > 0) {
           setSelectedCourse(c[0].id);
-          const q = await quizzesAPI.getByCourse(c[0].id);
+          const q = await quizzesAPI.getByCourse(c[0].id, true);
           setQuizzes(q);
         }
       } catch (err) {
@@ -67,7 +68,7 @@ const QuizManager: React.FC = () => {
 
   const loadQuizzes = async (courseId: string) => {
     setSelectedCourse(courseId);
-    const q = await quizzesAPI.getByCourse(courseId);
+    const q = await quizzesAPI.getByCourse(courseId, true);
     setQuizzes(q);
   };
 
@@ -98,23 +99,88 @@ const QuizManager: React.FC = () => {
     );
   };
 
+  const resetForm = () => {
+    setShowCreate(false);
+    setEditingQuizId(null);
+    setNewTitle("");
+    setQuestions([
+      { question: "", options: ["", "", "", ""], correctIndex: 0 },
+    ]);
+  };
+
+  const startEditQuiz = (quiz: Quiz) => {
+    setEditingQuizId(quiz.id);
+    setNewTitle(quiz.title);
+    setQuestions(
+      quiz.questions.map((q) => ({
+        question: q.question,
+        options: q.options,
+        correctIndex: q.correctIndex,
+      })),
+    );
+    setShowCreate(true);
+  };
+
+  const toggleQuizStatus = async (quizId: string, nextIsActive: boolean) => {
+    try {
+      const updated = await quizzesAPI.setActive(quizId, nextIsActive);
+      setQuizzes((prev) =>
+        prev.map((quiz) =>
+          quiz.id === quizId
+            ? { ...quiz, isActive: updated.isActive ?? nextIsActive }
+            : quiz,
+        ),
+      );
+      toast({ title: nextIsActive ? "Quiz activated" : "Quiz deactivated" });
+      if (editingQuizId === quizId) {
+        resetForm();
+      }
+    } catch (err: any) {
+      toast({
+        title: nextIsActive
+          ? "Failed to activate quiz"
+          : "Failed to deactivate quiz",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const createQuiz = async () => {
     if (!newTitle.trim() || !selectedCourse) return;
+
     try {
-      const quiz = await quizzesAPI.create({
-        courseId: selectedCourse,
-        title: newTitle,
-        questions: questions.map((q, i) => ({ id: `q${i}`, ...q })),
-      });
-      setQuizzes((prev) => [...prev, quiz]);
-      setShowCreate(false);
-      setNewTitle("");
-      setQuestions([
-        { question: "", options: ["", "", "", ""], correctIndex: 0 },
-      ]);
-      toast({ title: t("quiz.created") });
-    } catch (err) {
+      if (editingQuizId) {
+        const updated = await quizzesAPI.update(editingQuizId, {
+          courseId: selectedCourse,
+          title: newTitle,
+          questions: questions.map((q, i) => ({ id: `q${i}`, ...q })),
+        });
+
+        setQuizzes((prev) =>
+          prev.map((quiz) => (quiz.id === editingQuizId ? updated : quiz)),
+        );
+        toast({ title: "Quiz updated" });
+      } else {
+        const quiz = await quizzesAPI.create({
+          courseId: selectedCourse,
+          title: newTitle,
+          questions: questions.map((q, i) => ({ id: `q${i}`, ...q })),
+        });
+        setQuizzes((prev) => [...prev, quiz]);
+        toast({ title: t("quiz.created") });
+      }
+
+      resetForm();
+    } catch (err: any) {
       console.error(err);
+      toast({
+        title: editingQuizId
+          ? "Failed to update quiz"
+          : "Failed to create quiz",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -136,10 +202,24 @@ const QuizManager: React.FC = () => {
             </p>
           </div>
           <Button
-            onClick={() => setShowCreate(!showCreate)}
+            onClick={() => {
+              if (showCreate && editingQuizId) {
+                resetForm();
+                return;
+              }
+              setShowCreate(!showCreate);
+              if (!showCreate) {
+                setEditingQuizId(null);
+                setNewTitle("");
+                setQuestions([
+                  { question: "", options: ["", "", "", ""], correctIndex: 0 },
+                ]);
+              }
+            }}
             className="gradient-accent text-accent-foreground hover:opacity-90"
           >
-            <Plus size={16} className="mr-1.5" /> {t("quiz.create")}
+            <Plus size={16} className="mr-1.5" />{" "}
+            {editingQuizId ? "Cancel Edit" : t("quiz.create")}
           </Button>
         </motion.div>
 
@@ -241,17 +321,14 @@ const QuizManager: React.FC = () => {
                 </Button>
 
                 <div className="flex gap-2 justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowCreate(false)}
-                  >
+                  <Button variant="outline" onClick={() => resetForm()}>
                     {t("quiz.cancel")}
                   </Button>
                   <Button
                     onClick={createQuiz}
                     className="gradient-accent text-accent-foreground hover:opacity-90"
                   >
-                    {t("quiz.create")}
+                    {editingQuizId ? "Update Quiz" : t("quiz.create")}
                   </Button>
                 </div>
               </CardContent>
@@ -294,8 +371,33 @@ const QuizManager: React.FC = () => {
                         {quiz.questions.length} {t("quiz.questions")}
                       </p>
                     </div>
-                    <Badge variant="outline" className="text-[10px]">
-                      {t("quiz.active")}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => startEditQuiz(quiz)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant={
+                          quiz.isActive === false ? "default" : "secondary"
+                        }
+                        size="sm"
+                        onClick={() =>
+                          toggleQuizStatus(quiz.id, quiz.isActive === false)
+                        }
+                      >
+                        {quiz.isActive === false ? "Activate" : "Deactivate"}
+                      </Button>
+                    </div>
+                    <Badge
+                      variant={
+                        quiz.isActive === false ? "secondary" : "outline"
+                      }
+                      className="text-[10px]"
+                    >
+                      {quiz.isActive === false ? "Inactive" : "Active"}
                     </Badge>
                   </CardContent>
                 </Card>

@@ -4,6 +4,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
+  announcementsAPI,
+  bookmarksAPI,
   coursesAPI,
   enrollmentsAPI,
   discussionsAPI,
@@ -14,7 +16,9 @@ import {
   Enrollment,
   Discussion,
   Quiz,
+  QuizResult,
   VideoWatchProgress,
+  Announcement,
 } from "@/lib/api";
 import { getOrderedLessons } from "@/lib/courseIntro";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,6 +44,8 @@ import {
   ClipboardList,
   Trash2,
   Video,
+  Bookmark,
+  BookmarkCheck,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -56,8 +62,14 @@ const CourseView: React.FC = () => {
     Record<number, VideoWatchProgress>
   >({});
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [quizResults, setQuizResults] = useState<Record<string, QuizResult>>(
+    {},
+  );
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarking, setBookmarking] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [deletingDiscussionId, setDeletingDiscussionId] = useState<
     string | null
@@ -104,36 +116,51 @@ const CourseView: React.FC = () => {
           try {
             const enrollments = await enrollmentsAPI.getByStudent(user.id);
             const found = enrollments.find((e) => e.courseId === courseId);
-            if (found) {
-              setEnrollment(found);
-              setCompletedVideos(found.completedVideos || []);
+            const isCourseOwner =
+              user.role === "instructor" &&
+              courseData.instructorId === String(user.id);
+
+            if (found || isCourseOwner) {
+              setEnrollment(found ?? null);
+              setCompletedVideos(found?.completedVideos || []);
               try {
-                const savedWatchProgress =
-                  await progressAPI.getCourseVideoProgress(courseId);
+                const [savedWatchProgress, courseAnnouncements] =
+                  await Promise.all([
+                    progressAPI.getCourseVideoProgress(courseId),
+                    announcementsAPI.getByCourse(courseId),
+                  ]);
                 setWatchProgress(
                   Object.fromEntries(
                     savedWatchProgress.map((item) => [item.videoIndex, item]),
                   ),
                 );
+                setAnnouncements(courseAnnouncements);
               } catch (watchError) {
-                console.error("Video progress load failed:", watchError);
+                console.error(
+                  "Watch progress or announcements load failed:",
+                  watchError,
+                );
                 setWatchProgress({});
+                setAnnouncements([]);
               }
             } else {
               setEnrollment(null);
               setCompletedVideos([]);
               setWatchProgress({});
+              setAnnouncements([]);
             }
           } catch (e) {
             console.error("Enrollments load failed:", e);
             setEnrollment(null);
             setCompletedVideos([]);
             setWatchProgress({});
+            setAnnouncements([]);
           }
         } else {
           setEnrollment(null);
           setCompletedVideos([]);
           setWatchProgress({});
+          setAnnouncements([]);
         }
       } catch (err) {
         console.error("Error:", err);
@@ -162,6 +189,125 @@ const CourseView: React.FC = () => {
     const idx = full ? Math.min(Math.max(0, currentVideoIndex), maxI) : 0;
     return { lessons: ordered, activeIdx: idx, fullLessonAccess: full };
   }, [course, enrollment, currentVideoIndex, user?.role, user?.id]);
+
+  useEffect(() => {
+    if (!user || !courseId) {
+      setIsBookmarked(false);
+      return;
+    }
+
+    let isMounted = true;
+    bookmarksAPI
+      .check(courseId)
+      .then(({ isBookmarked: bookmarked }) => {
+        if (isMounted) setIsBookmarked(Boolean(bookmarked));
+      })
+      .catch(() => {
+        if (isMounted) setIsBookmarked(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, courseId]);
+
+  useEffect(() => {
+    if (!user || !fullLessonAccess || quizzes.length === 0) {
+      setQuizResults({});
+      return;
+    }
+    Promise.all(
+      quizzes.map(
+        async (quiz) =>
+          [quiz.id, await quizzesAPI.getResults(quiz.id, user.id)] as const,
+      ),
+    )
+      .then((results) =>
+        setQuizResults(
+          Object.fromEntries(
+            results.filter((entry): entry is [string, QuizResult] =>
+              Boolean(entry[1]),
+            ),
+          ),
+        ),
+      )
+      .catch((error) => console.error("Quiz results load failed:", error));
+  }, [fullLessonAccess, quizzes, user]);
+
+  useEffect(() => {
+    if (!enrollment || !course || lessons.length === 0) return;
+
+    const flushCurrentVideo = () => {
+      const current = latestPlaybackRef.current[activeIdx];
+      if (
+        !current ||
+        !Number.isFinite(current.position) ||
+        !Number.isFinite(current.duration)
+      ) {
+        return;
+      }
+      void reportVideoProgress(
+        activeIdx,
+        current.position,
+        current.duration,
+        false,
+        false,
+        true,
+      );
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") flushCurrentVideo();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", flushCurrentVideo);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", flushCurrentVideo);
+    };
+  }, [activeIdx, course, enrollment, lessons.length]);
+
+  const toggleBookmark = async () => {
+    if (!user || !courseId) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save this course.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setBookmarking(true);
+    try {
+      if (isBookmarked) {
+        await bookmarksAPI.remove(courseId);
+        setIsBookmarked(false);
+        toast({
+          title: "Bookmark removed",
+          description: "This course was removed from your saved list.",
+        });
+      } else {
+        await bookmarksAPI.add(courseId);
+        setIsBookmarked(true);
+        toast({
+          title: "Course saved",
+          description: "This course has been added to your bookmarks.",
+        });
+      }
+    } catch (error) {
+      console.error("Bookmark toggle failed:", error);
+      toast({
+        title: "Could not update bookmark",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setBookmarking(false);
+    }
+  };
 
   const toggleComplete = async (videoIndex: number) => {
     if (!enrollment || !course || lessons.length === 0) return;
@@ -399,22 +545,44 @@ const CourseView: React.FC = () => {
             )}
 
             <div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <h1 className="font-display text-xl font-bold text-foreground">
                   {course.title}
                 </h1>
-                {isInstructor && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      navigate(`/instructor/courses/${courseId}/edit`)
-                    }
-                    className="gap-1"
-                  >
-                    Edit Course
-                  </Button>
-                )}
+                <div className="flex items-center gap-2">
+                  {user && user.role === "student" && (
+                    <Button
+                      variant={isBookmarked ? "secondary" : "outline"}
+                      size="sm"
+                      onClick={toggleBookmark}
+                      disabled={bookmarking}
+                      className="gap-2"
+                    >
+                      {isBookmarked ? (
+                        <BookmarkCheck size={16} />
+                      ) : (
+                        <Bookmark size={16} />
+                      )}
+                      {bookmarking
+                        ? "Saving..."
+                        : isBookmarked
+                          ? "Saved"
+                          : "Save course"}
+                    </Button>
+                  )}
+                  {isInstructor && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        navigate(`/instructor/courses/${courseId}/edit`)
+                      }
+                      className="gap-1"
+                    >
+                      Edit Course
+                    </Button>
+                  )}
+                </div>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 By {course.instructorName} • {activeLesson?.title}
@@ -423,6 +591,44 @@ const CourseView: React.FC = () => {
                 {course.description}
               </p>
             </div>
+
+            {announcements.length > 0 && (
+              <div className="space-y-3 pt-2">
+                <h3 className="font-display text-base font-semibold text-foreground">
+                  Course announcements
+                </h3>
+                {announcements.map((announcement) => (
+                  <Card
+                    key={announcement.id}
+                    className="border-accent/20 bg-accent/5"
+                  >
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent">
+                            {announcement.isPinned ? "Pinned" : "Update"}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {announcement.instructorName}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">
+                          {new Date(
+                            announcement.createdAt,
+                          ).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <h4 className="font-semibold text-foreground">
+                        {announcement.title}
+                      </h4>
+                      <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
+                        {announcement.content}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
 
             {/* Tabs: Lessons, Discussion & Quizzes */}
             <Tabs defaultValue="lessons" className="mt-6">
@@ -566,7 +772,9 @@ const CourseView: React.FC = () => {
                           )}
                           {fullLessonAccess && (
                             <Button variant="outline" size="sm">
-                              Take Quiz
+                              {quizResults[quiz.id]
+                                ? `Completed: ${quizResults[quiz.id].score}/${quizResults[quiz.id].total}`
+                                : "Take Quiz"}
                             </Button>
                           )}
                         </CardContent>

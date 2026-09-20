@@ -13,6 +13,7 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useToast } from "@/hooks/use-toast";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ import {
 const LearningPath: React.FC = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [availablePaths, setAvailablePaths] = useState<LearningPathType[]>([]);
   const [selectedPath, setSelectedPath] = useState<LearningPathType | null>(
@@ -42,6 +44,9 @@ const LearningPath: React.FC = () => {
   const [enrolledCourses, setEnrolledCourses] = useState<
     Map<string, { progress: number; completed: boolean }>
   >(new Map());
+  const [enrolledPathIds, setEnrolledPathIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
 
@@ -52,6 +57,8 @@ const LearningPath: React.FC = () => {
         // Load available learning paths
         const paths = await learningPathsAPI.getAll();
         setAvailablePaths(paths);
+        const myPaths = await learningPathsAPI.getMyPaths();
+        setEnrolledPathIds(new Set(myPaths.map((path) => String(path.id))));
 
         if (paths.length > 0) {
           // Load first path by default
@@ -101,11 +108,15 @@ const LearningPath: React.FC = () => {
     setEnrolling(true);
     try {
       await learningPathsAPI.enroll(selectedPath.id);
-      // Refresh user paths
       const myPaths = await learningPathsAPI.getMyPaths();
-      console.log("Enrolled in path:", myPaths);
-    } catch (err) {
+      setEnrolledPathIds(new Set(myPaths.map((path) => String(path.id))));
+      toast({ title: t("path.enrolled") });
+    } catch (err: any) {
       console.error("Failed to enroll:", err);
+      toast({
+        title: err?.message || "Unable to enroll in learning path",
+        variant: "destructive",
+      });
     } finally {
       setEnrolling(false);
     }
@@ -227,9 +238,15 @@ const LearningPath: React.FC = () => {
                     size="sm"
                     className="gradient-accent text-accent-foreground text-xs"
                     onClick={handleEnrollInPath}
-                    disabled={enrolling}
+                    disabled={
+                      enrolling || enrolledPathIds.has(String(selectedPath.id))
+                    }
                   >
-                    {enrolling ? t("path.enrolling") : t("path.enroll")}
+                    {enrolling
+                      ? t("path.enrolling")
+                      : enrolledPathIds.has(String(selectedPath.id))
+                        ? t("path.enrolled")
+                        : t("path.enroll")}
                   </Button>
                 </div>
               </CardContent>
@@ -250,7 +267,7 @@ const LearningPath: React.FC = () => {
               const locked =
                 i > 0 &&
                 pathCourses[i - 1] &&
-                getCourseStatus(pathCourses[i - 1]) === "not-enrolled";
+                getCourseStatus(pathCourses[i - 1]) !== "completed";
 
               return (
                 <motion.div

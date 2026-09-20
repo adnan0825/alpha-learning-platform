@@ -693,7 +693,6 @@ export const defaultTranslations = {
   "sidebar.studentGrades": { en: "Student Grades", sm: "Darajooyinka Ardayda" },
   "sidebar.announcements": { en: "Announcements", sm: "Ogeysiisyada Guud" },
   "sidebar.revenue": { en: "Revenue", sm: "Dakhliga" },
-  "sidebar.withdrawals": { en: "Withdrawals", sm: "Lacag-bixinnada" },
   "sidebar.addCourse": { en: "Add Course", sm: "Ku Dar Koorso" },
   "sidebar.contentModeration": {
     en: "Content Moderation",
@@ -702,6 +701,7 @@ export const defaultTranslations = {
   "sidebar.coupons": { en: "Coupons", sm: "Kuubannada" },
   "sidebar.systemLogs": { en: "System Logs", sm: "Diiwaannada Nidaamka" },
   "sidebar.reports": { en: "Reports", sm: "Warbixinnada" },
+  "sidebar.adminRevenue": { en: "Revenue", sm: "Dakhliga" },
   "sidebar.appearance": { en: "Appearance", sm: "Muuqaalka" },
   "sidebar.landingFaq": { en: "Landing FAQ", sm: "Su'aalaha Bogga Hore" },
   "sidebar.uiTranslations": { en: "UI translations", sm: "Turjumaadaha UI" },
@@ -736,6 +736,58 @@ export const defaultTranslations = {
   "admin.analytics.categories": {
     en: "Category Distribution",
     sm: "Qaybinta Qaybaha",
+  },
+  "admin.revenue.title": { en: "Admin Revenue", sm: "Dakhliga Maamulka" },
+  "admin.revenue.subtitle": {
+    en: "Track the platform's 20% share of enrolled course revenue",
+    sm: "La soco 20% qaybta madasha ee dakhliga koorsooyinka la isdiiwaangeliyay",
+  },
+  "admin.revenue.adminShare": {
+    en: "Admin Share (20%)",
+    sm: "Qaybta Maamulka (20%)",
+  },
+  "admin.revenue.instructorShare": {
+    en: "Instructor Share (80%)",
+    sm: "Qaybta Macallinka (80%)",
+  },
+  "admin.revenue.gross": { en: "Gross Revenue", sm: "Dakhliga Guud" },
+  "admin.revenue.completedPayments": {
+    en: "Enrolled Students",
+    sm: "Ardayda Isdiiwaangelisay",
+  },
+  "admin.revenue.breakdown": {
+    en: "Revenue by Course",
+    sm: "Dakhliga Koorsadiiba",
+  },
+  "admin.revenue.splitHint": {
+    en: "Each enrollment contributes the course price: 20% to the platform and 80% to the instructor.",
+    sm: "Isdiiwaangelin kastaa waxay ku darsataa qiimaha koorsada: 20% madasha, 80% macallinka.",
+  },
+  "admin.revenue.instructor": { en: "Instructor", sm: "Macallin" },
+  "admin.revenue.payments": { en: "Payments", sm: "Lacag-bixinno" },
+  "admin.revenue.empty": {
+    en: "No enrolled students yet.",
+    sm: "Weli ma jiraan arday isdiiwaangeliyay.",
+  },
+  "admin.revenue.loadError": {
+    en: "Unable to load revenue data",
+    sm: "Xogta dakhliga lama soo qaadi karin",
+  },
+  "admin.revenue.last7": {
+    en: "Last 7 days",
+    sm: "7dii maalmood ee u dambeeyay",
+  },
+  "admin.revenue.last30": {
+    en: "Last 30 days",
+    sm: "30kii maalmood ee u dambeeyay",
+  },
+  "admin.revenue.last90": {
+    en: "Last 90 days",
+    sm: "90kii maalmood ee u dambeeyay",
+  },
+  "admin.revenue.last365": {
+    en: "Last 365 days",
+    sm: "365kii maalmood ee u dambeeyay",
   },
   "admin.appearance.title": { en: "Appearance", sm: "Muuqaalka" },
   "admin.appearance.subtitle": {
@@ -1048,6 +1100,18 @@ export const defaultTranslations = {
     en: "Lessons Completed",
     sm: "Casharrada La Dhammaystiray",
   },
+  "calendar.enrolledCourses": {
+    en: "Enrolled Courses",
+    sm: "Koorsooyinka La Isdiiwaangeliyay",
+  },
+  "calendar.upcomingItems": {
+    en: "Upcoming Items",
+    sm: "Waxyaabaha Soo Socda",
+  },
+  "calendar.completedCourses": {
+    en: "Completed Courses",
+    sm: "Koorsooyinka La Dhammeeyay",
+  },
   "calendar.continue": { en: "Continue Learning", sm: "Sii Wad Barashada" },
   "path.title": { en: "Learning Paths", sm: "Waddooyinka Barashada" },
   "path.subtitle": {
@@ -1056,6 +1120,7 @@ export const defaultTranslations = {
   },
   "path.complete": { en: "Complete", sm: "Dhammaystiran" },
   "path.enrolling": { en: "Enrolling...", sm: "Waa la isdiiwaangelinayaa..." },
+  "path.enrolled": { en: "Enrolled", sm: "Waa lagu biiray" },
   "path.enroll": { en: "Enroll in Path", sm: "Ku Biir Waddada" },
   "path.completed": { en: "Completed", sm: "La dhammaystiray" },
   "path.inProgress": { en: "In Progress", sm: "Socota" },
@@ -1195,35 +1260,6 @@ export const defaultTranslations = {
   "announcements.deleteError": {
     en: "Error deleting announcement",
     sm: "Khalad ayaa dhacay markii ogeysiiska la tirtirayay",
-  },
-  "withdrawals.title": { en: "Withdrawals", sm: "Lacag-bixinnada" },
-  "withdrawals.subtitle": {
-    en: "Manage your earnings and payouts",
-    sm: "Maamul kasbashadaada iyo lacag-bixinnadaada",
-  },
-  "withdrawals.balance": {
-    en: "Available Balance",
-    sm: "Hadhaaga La Heli Karo",
-  },
-  "withdrawals.total": { en: "Total Withdrawn", sm: "Wadarta La Baxshay" },
-  "withdrawals.pending": { en: "Pending Request", sm: "Codsi Sugaya" },
-  "withdrawals.history": {
-    en: "Withdrawal History",
-    sm: "Taariikhda Lacag-bixinnada",
-  },
-  "withdrawals.request": { en: "Request Payout", sm: "Codso Lacag-bixin" },
-  "withdrawals.available": {
-    en: "Available for withdrawal",
-    sm: "Loo heli karo lacag-bixin",
-  },
-  "withdrawals.now": { en: "Withdraw Now", sm: "Hadda Baxso" },
-  "withdrawals.requested": {
-    en: "Withdrawal Requested",
-    sm: "Lacag-bixinta waa la codsaday",
-  },
-  "withdrawals.requestDescription": {
-    en: "Your request has been sent to admin for approval.",
-    sm: "Codsigaaga waxaa loo diray maamulaha si loo ansixiyo.",
   },
   "logs.title": { en: "System Logs", sm: "Diiwaannada Nidaamka" },
   "logs.subtitle": {
@@ -2001,6 +2037,10 @@ export const defaultTranslations = {
   },
   "dashboard.refresh": { en: "Refresh", sm: "Cusboonaysii" },
   "dashboard.totalEarnings": { en: "Total Earnings", sm: "Wadarta Kasbashada" },
+  "dashboard.totalCourseRevenue": {
+    en: "Total Course Revenue",
+    sm: "Wadarta Dakhliga Koorsooyinka",
+  },
   "dashboard.thisMonth": { en: "This Month", sm: "Bishan" },
   "dashboard.pendingPayout": { en: "Pending Payout", sm: "Bixin Sugaysa" },
   "reports.title": { en: "Reports & Export", sm: "Warbixinnada iyo Dhoofinta" },

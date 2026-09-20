@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import { pool } from "./config/db";
 import { assertRequiredEnvironment } from "./config/env";
+import { ensureQuizStatusColumn } from "./config/ensureQuizSchema";
 import authRoutes from "./routes/auth";
 import courseRoutes from "./routes/courses";
 import lessonRoutes from "./routes/lessons";
@@ -20,6 +21,7 @@ import adminRoutes from "./routes/admin";
 import settingsRoutes from "./routes/settings";
 import feedbackRoutes from "./routes/feedback";
 import manualPaymentsRoutes from "./routes/manualPayments";
+import assignmentsRoutes from "./routes/assignments";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import path from "path";
 
@@ -28,6 +30,42 @@ assertRequiredEnvironment();
 
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
+const staleLearningPathTitles = [
+  "Full Stack Web Development",
+  "Data Science & Machine Learning",
+  "UI/UX Design Master",
+];
+const staleLearningPathDescriptions = [
+  "Complete path from beginner to full stack developer",
+  "Learn Python, data analysis, and ML fundamentals",
+  "Master design principles, Figma, and user experience",
+];
+
+async function cleanupStaleSeedLearningPaths() {
+  try {
+    await pool.query(
+      `
+        DELETE FROM learning_path_courses
+        WHERE learning_path_id IN (
+          SELECT id
+          FROM learning_paths
+          WHERE created_by = 1
+            AND title = ANY($1::text[])
+            AND description = ANY($2::text[])
+        );
+
+        DELETE FROM learning_paths
+        WHERE created_by = 1
+          AND title = ANY($1::text[])
+          AND description = ANY($2::text[]);
+      `,
+      [staleLearningPathTitles, staleLearningPathDescriptions],
+    );
+  } catch (error) {
+    console.warn("Skipping stale learning path cleanup:", error);
+  }
+}
+
 const apiRateLimit = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000),
   limit: Number(process.env.RATE_LIMIT_MAX || 300),
@@ -129,6 +167,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/manual-payments", manualPaymentsRoutes);
+app.use("/api/assignments", assignmentsRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
@@ -136,6 +175,8 @@ app.use(errorHandler);
 async function start() {
   try {
     await pool.query("SELECT 1");
+    await ensureQuizStatusColumn();
+    await cleanupStaleSeedLearningPaths();
     app.listen(PORT, () => {
       console.log("Alpha API started", {
         port: PORT,

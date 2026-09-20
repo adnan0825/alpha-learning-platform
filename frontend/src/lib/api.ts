@@ -10,6 +10,14 @@
  */
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
+export function getPublicFileUrl(fileUrl: string): string {
+  if (/^https?:\/\//i.test(fileUrl)) return fileUrl;
+  const apiOrigin = API_BASE_URL.startsWith("http")
+    ? new URL(API_BASE_URL).origin
+    : window.location.origin;
+  return new URL(fileUrl, apiOrigin).toString();
+}
+
 // ============ TYPES ============
 export interface UserProfile {
   id: string;
@@ -73,6 +81,7 @@ export interface Quiz {
   courseId: string;
   title: string;
   questions: QuizQuestion[];
+  isActive?: boolean;
   createdAt: string;
 }
 
@@ -91,6 +100,7 @@ export interface QuizResult {
   total: number;
   answers: number[];
   submittedAt: string;
+  points?: number;
 }
 
 export interface Certificate {
@@ -144,6 +154,7 @@ export interface Notification {
     | "error"
     | "course"
     | "quiz"
+    | "assignment"
     | "certificate";
   read: boolean;
   link?: string;
@@ -152,14 +163,38 @@ export interface Notification {
 
 export interface UserFeedbackItem {
   id: string;
-  userId: string;
+  userId: string | null;
   userName: string;
-  userEmail: string;
+  userRole?: string | null;
+  userEmail: string | null;
   subject: string | null;
   message: string;
   adminReply: string | null;
   repliedAt: string | null;
   createdAt: string;
+}
+
+export function formatFeedbackSender(item: UserFeedbackItem) {
+  const roleValue = item.userRole || "guest";
+  const normalizedRole = String(roleValue).toLowerCase();
+  const roleLabel =
+    normalizedRole === "admin"
+      ? "Admin"
+      : normalizedRole === "instructor"
+        ? "Instructor"
+        : normalizedRole === "student"
+          ? "Student"
+          : "Guest";
+
+  const isGuest =
+    !item.userId || !item.userName || item.userName === "Guest visitor";
+  const label = isGuest ? "Guest visitor" : item.userName || "Registered user";
+
+  return {
+    label,
+    roleLabel,
+    isGuest,
+  };
 }
 
 export interface CourseNote {
@@ -197,6 +232,18 @@ export interface LearningPath {
   createdAt: string;
 }
 
+function normalizeLearningPath(path: any): LearningPath {
+  return {
+    id: String(path.id ?? ""),
+    title: path.title ?? "",
+    description: path.description ?? "",
+    createdBy: String(path.created_by ?? path.createdBy ?? ""),
+    courseCount: Number(path.course_count ?? path.courseCount ?? 0),
+    isActive: Boolean(path.is_active ?? path.isActive ?? true),
+    createdAt: path.created_at ?? path.createdAt ?? new Date().toISOString(),
+  };
+}
+
 export interface LeaderboardEntry {
   id: string;
   name: string;
@@ -208,6 +255,87 @@ export interface LeaderboardEntry {
   certificatesEarned: number;
   averageRating?: number;
   reviewsGiven: number;
+}
+
+function normalizeTimestamp(value: unknown): string {
+  if (value == null || value === "") return "";
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "string" || typeof value === "number") {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? String(value) : date.toISOString();
+  }
+  return String(value);
+}
+
+export function normalizeBookmarkRow(row: Record<string, unknown>): Bookmark {
+  return {
+    id: String(row.id ?? ""),
+    userId: String(row.userId ?? row.user_id ?? ""),
+    courseId: String(row.courseId ?? row.course_id ?? ""),
+    title: String(row.title ?? ""),
+    description: String(row.description ?? ""),
+    thumbnail: row.thumbnail != null ? String(row.thumbnail) : "",
+    category: String(row.category ?? ""),
+    difficulty: String(row.difficulty ?? ""),
+    instructorName: String(
+      row.instructorName ?? row.instructor_name ?? "Instructor",
+    ),
+    createdAt: normalizeTimestamp(row.createdAt ?? row.created_at),
+  };
+}
+
+export function normalizeCourseNoteRow(
+  row: Record<string, unknown>,
+): CourseNote {
+  return {
+    id: String(row.id ?? ""),
+    userId: String(row.userId ?? row.user_id ?? ""),
+    courseId: String(row.courseId ?? row.course_id ?? ""),
+    courseTitle: String(row.courseTitle ?? row.course_title ?? ""),
+    lessonIndex:
+      row.lessonIndex != null
+        ? Number(row.lessonIndex)
+        : row.lesson_index != null
+          ? Number(row.lesson_index)
+          : undefined,
+    lessonTitle:
+      row.lessonTitle != null
+        ? String(row.lessonTitle)
+        : row.lesson_title != null
+          ? String(row.lesson_title)
+          : undefined,
+    content: String(row.content ?? ""),
+    createdAt: normalizeTimestamp(row.createdAt ?? row.created_at),
+    updatedAt: normalizeTimestamp(row.updatedAt ?? row.updated_at),
+  };
+}
+
+export function normalizeLeaderboardRow(
+  row: Record<string, unknown>,
+): LeaderboardEntry {
+  return {
+    id: String(row.id ?? ""),
+    name: String(row.name ?? ""),
+    email: String(row.email ?? ""),
+    avatar: row.avatar != null ? String(row.avatar) : undefined,
+    coursesEnrolled: Number(row.coursesEnrolled ?? row.courses_enrolled ?? 0),
+    coursesCompleted: Number(
+      row.coursesCompleted ?? row.courses_completed ?? 0,
+    ),
+    lessonsCompleted: Number(
+      row.lessonsCompleted ?? row.lessons_completed ?? 0,
+    ),
+    certificatesEarned: Number(
+      row.certificatesEarned ?? row.certificates_earned ?? 0,
+    ),
+    averageRating:
+      row.averageRating != null
+        ? Number(row.averageRating)
+        : row.average_rating != null
+          ? Number(row.average_rating)
+          : undefined,
+    reviewsGiven: Number(row.reviewsGiven ?? row.reviews_given ?? 0),
+  };
 }
 
 // ============ API HELPER ============
@@ -481,13 +609,39 @@ export const progressAPI = {
 
 // ============ QUIZZES API ============
 export const quizzesAPI = {
-  async getByCourse(courseId: string): Promise<Quiz[]> {
-    return apiCall(`/quizzes/course/${courseId}`);
+  async getByCourse(
+    courseId: string,
+    includeInactive = false,
+  ): Promise<Quiz[]> {
+    const query = includeInactive ? "?includeInactive=true" : "";
+    return apiCall(`/quizzes/course/${courseId}${query}`);
   },
-  async create(quiz: Omit<Quiz, "id" | "createdAt">): Promise<Quiz> {
+  async create(
+    quiz: Omit<Quiz, "id" | "createdAt" | "isActive">,
+  ): Promise<Quiz> {
     return apiCall("/quizzes", {
       method: "POST",
       body: JSON.stringify(quiz),
+    });
+  },
+  async update(
+    quizId: string,
+    quiz: Omit<Quiz, "id" | "createdAt" | "isActive">,
+  ): Promise<Quiz> {
+    return apiCall(`/quizzes/${quizId}`, {
+      method: "PUT",
+      body: JSON.stringify(quiz),
+    });
+  },
+  async setActive(quizId: string, isActive: boolean): Promise<Quiz> {
+    return apiCall(`/quizzes/${quizId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ isActive }),
+    });
+  },
+  async remove(quizId: string): Promise<Quiz> {
+    return apiCall(`/quizzes/${quizId}`, {
+      method: "DELETE",
     });
   },
   async submit(quizId: string, answers: number[]): Promise<QuizResult> {
@@ -554,6 +708,22 @@ export const discussionsAPI = {
 
 // ============ UPLOADS API ============
 export const uploadsAPI = {
+  async uploadFile(file: File): Promise<{ url: string; filename: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`${API_BASE_URL}/uploads/file`, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: "Upload failed" }));
+      throw new Error(error.error || `Upload failed: ${res.status}`);
+    }
+    return res.json();
+  },
+
   async uploadImage(file: File): Promise<{ url: string }> {
     const formData = new FormData();
     formData.append("image", file);
@@ -687,7 +857,10 @@ export const manualPaymentsAPI = {
 // ============ BOOKMARKS API ============
 export const bookmarksAPI = {
   async getMyBookmarks(): Promise<Bookmark[]> {
-    return apiCall("/analytics/bookmarks");
+    const rows = await apiCall<Record<string, unknown>[] | null>(
+      "/analytics/bookmarks",
+    );
+    return Array.isArray(rows) ? rows.map(normalizeBookmarkRow) : [];
   },
   async add(courseId: string): Promise<any> {
     return apiCall(`/analytics/bookmarks/${courseId}`, { method: "POST" });
@@ -721,6 +894,7 @@ function normalizeNotificationRow(row: Record<string, unknown>): Notification {
     t === "error" ||
     t === "course" ||
     t === "quiz" ||
+    t === "assignment" ||
     t === "certificate"
       ? t
       : "info";
@@ -789,7 +963,10 @@ export const feedbackAPI = {
 export const notesAPI = {
   async getAll(courseId?: string): Promise<CourseNote[]> {
     const query = courseId ? `?courseId=${courseId}` : "";
-    return apiCall(`/analytics/notes${query}`);
+    const rows = await apiCall<Record<string, unknown>[] | null>(
+      `/analytics/notes${query}`,
+    );
+    return Array.isArray(rows) ? rows.map(normalizeCourseNoteRow) : [];
   },
   async create(
     courseId: string,
@@ -814,9 +991,40 @@ export const notesAPI = {
 };
 
 // ============ ANNOUNCEMENTS API ============
+function normalizeAnnouncementRow(row: Record<string, unknown>): Announcement {
+  const createdAt = row.createdAt ?? row.created_at;
+  const updatedAt = row.updatedAt ?? row.updated_at;
+  return {
+    id: String(row.id ?? ""),
+    instructorId: String(row.instructorId ?? row.instructor_id ?? ""),
+    courseId: String(row.courseId ?? row.course_id ?? ""),
+    title: String(row.title ?? ""),
+    content: String(row.content ?? ""),
+    isPinned: Boolean(row.isPinned ?? row.is_pinned),
+    instructorName: String(row.instructorName ?? row.instructor_name ?? ""),
+    instructorAvatar:
+      row.instructorAvatar != null
+        ? String(row.instructorAvatar)
+        : row.instructor_avatar != null
+          ? String(row.instructor_avatar)
+          : undefined,
+    createdAt:
+      createdAt instanceof Date
+        ? createdAt.toISOString()
+        : String(createdAt ?? ""),
+    updatedAt:
+      updatedAt instanceof Date
+        ? updatedAt.toISOString()
+        : String(updatedAt ?? ""),
+  };
+}
+
 export const announcementsAPI = {
   async getByCourse(courseId: string): Promise<Announcement[]> {
-    return apiCall(`/analytics/announcements/course/${courseId}`);
+    const rows = await apiCall<Record<string, unknown>[]>(
+      `/analytics/announcements/course/${courseId}`,
+    );
+    return rows.map(normalizeAnnouncementRow);
   },
   async create(
     courseId: string,
@@ -824,19 +1032,27 @@ export const announcementsAPI = {
     content: string,
     isPinned?: boolean,
   ): Promise<Announcement> {
-    return apiCall("/analytics/announcements", {
-      method: "POST",
-      body: JSON.stringify({ courseId, title, content, isPinned }),
-    });
+    const row = await apiCall<Record<string, unknown>>(
+      "/analytics/announcements",
+      {
+        method: "POST",
+        body: JSON.stringify({ courseId, title, content, isPinned }),
+      },
+    );
+    return normalizeAnnouncementRow(row);
   },
   async update(
     announcementId: string,
     data: Partial<{ title: string; content: string; isPinned: boolean }>,
   ): Promise<Announcement> {
-    return apiCall(`/analytics/announcements/${announcementId}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
+    const row = await apiCall<Record<string, unknown>>(
+      `/analytics/announcements/${announcementId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(data),
+      },
+    );
+    return normalizeAnnouncementRow(row);
   },
   async delete(announcementId: string): Promise<any> {
     return apiCall(`/analytics/announcements/${announcementId}`, {
@@ -849,6 +1065,7 @@ export const announcementsAPI = {
 export interface Assignment {
   id: string;
   courseId: string;
+  courseTitle?: string;
   title: string;
   description: string;
   dueDate: string;
@@ -861,6 +1078,7 @@ export interface Submission {
   studentId: string;
   studentName: string;
   submittedAt: string;
+  points?: number;
   fileUrl?: string;
   content?: string;
   grade?: number;
@@ -869,86 +1087,48 @@ export interface Submission {
 }
 
 export const assignmentsAPI = {
-  // Mock implementations for now
   async getByCourse(courseId: string): Promise<Assignment[]> {
-    return [
-      {
-        id: "1",
-        courseId,
-        title: "Final Project Proposal",
-        description: "Submit a PDF outlining your project.",
-        dueDate: "2025-04-10",
-        points: 100,
-      },
-      {
-        id: "2",
-        courseId,
-        title: "React Component Library",
-        description: "Build 5 reusable components.",
-        dueDate: "2025-04-20",
-        points: 50,
-      },
-    ];
+    return apiCall(`/assignments/courses/${courseId}`);
   },
   async getStudentSubmissions(studentId: string): Promise<Submission[]> {
-    return [
-      {
-        id: "s1",
-        assignmentId: "1",
-        studentId,
-        studentName: "You",
-        submittedAt: "2025-04-01",
-        status: "graded",
-        grade: 95,
-        feedback: "Great work!",
-      },
-    ];
+    void studentId;
+    return apiCall("/assignments/student/submissions");
   },
   async submit(
     assignmentId: string,
     content: string,
-    file?: File,
+    fileUrl?: string,
+    uploadedFileUrl?: string,
   ): Promise<Submission> {
-    // Mock submission
-    return {
-      id: `s-${Date.now()}`,
-      assignmentId,
-      studentId: "current-user",
-      studentName: "Current User",
-      submittedAt: new Date().toISOString(),
-      content,
-      status: "pending",
-    };
+    return apiCall(`/assignments/${assignmentId}/submissions`, {
+      method: "POST",
+      body: JSON.stringify({
+        content,
+        fileUrl: uploadedFileUrl?.trim() || fileUrl?.trim() || undefined,
+      }),
+    });
   },
   async getSubmissionsForInstructor(courseId: string): Promise<Submission[]> {
-    return [
-      {
-        id: "s1",
-        assignmentId: "1",
-        studentId: "u2",
-        studentName: "Alice Johnson",
-        submittedAt: "2025-04-02",
-        content: "Here is my proposal...",
-        status: "pending",
-      },
-      {
-        id: "s2",
-        assignmentId: "1",
-        studentId: "u3",
-        studentName: "Bob Smith",
-        submittedAt: "2025-04-03",
-        content: "Project link attached.",
-        status: "graded",
-        grade: 88,
-      },
-    ];
+    return apiCall(`/assignments/courses/${courseId}/submissions`);
   },
   async gradeSubmission(
     submissionId: string,
     grade: number,
     feedback: string,
   ): Promise<void> {
-    console.log(`Graded submission ${submissionId}: ${grade}`);
+    await apiCall(`/assignments/submissions/${submissionId}/grade`, {
+      method: "PATCH",
+      body: JSON.stringify({ grade, feedback }),
+    });
+  },
+  async create(
+    courseId: string,
+    data: Pick<Assignment, "title" | "description" | "dueDate" | "points">,
+  ): Promise<Assignment> {
+    return apiCall(`/assignments/courses/${courseId}`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
 };
 
@@ -1006,10 +1186,43 @@ export const couponsAPI = {
 // ============ LEARNING PATHS API ============
 export const learningPathsAPI = {
   async getAll(): Promise<LearningPath[]> {
-    return apiCall("/analytics/learning-paths");
+    const paths = await apiCall<any[]>("/analytics/learning-paths");
+    return (Array.isArray(paths) ? paths : []).map(normalizeLearningPath);
   },
   async getById(id: string): Promise<LearningPath> {
-    return apiCall(`/analytics/learning-paths/${id}`);
+    const path = await apiCall<any>(`/analytics/learning-paths/${id}`);
+    return normalizeLearningPath(path);
+  },
+  async getMine(): Promise<LearningPath[]> {
+    const paths = await apiCall<any[]>("/analytics/learning-paths/mine");
+    return (Array.isArray(paths) ? paths : []).map(normalizeLearningPath);
+  },
+  async create(path: {
+    title: string;
+    description?: string;
+    courseIds?: number[];
+  }): Promise<LearningPath> {
+    return apiCall("/analytics/learning-paths", {
+      method: "POST",
+      body: JSON.stringify(path),
+    });
+  },
+  async update(
+    id: string,
+    path: {
+      title?: string;
+      description?: string;
+      isActive?: boolean;
+      courseIds?: number[];
+    },
+  ): Promise<LearningPath> {
+    return apiCall(`/analytics/learning-paths/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(path),
+    });
+  },
+  async delete(id: string): Promise<void> {
+    await apiCall(`/analytics/learning-paths/${id}`, { method: "DELETE" });
   },
   async getCourses(id: string): Promise<CourseData[]> {
     return apiCall(`/analytics/learning-paths/${id}/courses`);
@@ -1034,7 +1247,10 @@ export const learningPathsAPI = {
 export const leaderboardAPI = {
   async get(limit?: number): Promise<LeaderboardEntry[]> {
     const query = limit ? `?limit=${limit}` : "";
-    return apiCall(`/analytics/leaderboard${query}`);
+    const rows = await apiCall<Record<string, unknown>[] | null>(
+      `/analytics/leaderboard${query}`,
+    );
+    return Array.isArray(rows) ? rows.map(normalizeLeaderboardRow) : [];
   },
 };
 
@@ -1101,6 +1317,24 @@ export const settingsAPI = {
 };
 
 // ============= ADMIN API ============
+export interface AdminRevenueResponse {
+  summary: {
+    enrolled_students: number | string;
+    gross_revenue: number | string;
+    admin_revenue: number | string;
+    instructor_revenue: number | string;
+  };
+  courses: Array<{
+    course_id: number;
+    course_title: string;
+    instructor_name: string;
+    enrolled_students: number | string;
+    gross_revenue: number | string;
+    admin_revenue: number | string;
+    instructor_revenue: number | string;
+  }>;
+}
+
 export const adminAPI = {
   async getSettings(): Promise<any> {
     return apiCall("/admin/settings");
@@ -1110,6 +1344,9 @@ export const adminAPI = {
       method: "PUT",
       body: JSON.stringify(data),
     });
+  },
+  async getRevenue(): Promise<AdminRevenueResponse> {
+    return apiCall("/admin/revenue");
   },
   async getLogs(limit?: number): Promise<any[]> {
     const query = limit ? `?limit=${limit}` : "";

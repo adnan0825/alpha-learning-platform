@@ -164,7 +164,9 @@ const ReportsPage: React.FC = () => {
                           size="sm"
                           variant="default"
                           className="text-xs h-8 px-4 gradient-accent text-accent-foreground"
-                          onClick={() => handleExport(report.id, report.title)}
+                          onClick={() =>
+                            handleExport(report.id, t(report.titleKey as any))
+                          }
                           disabled={exporting === report.id}
                         >
                           {exporting === report.id ? (

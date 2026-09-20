@@ -64,7 +64,8 @@ const AdminAnalytics: React.FC = () => {
     fetchData();
   }, []);
 
-  const maxEnrolled = courses[0]?.enrolledCount || 1;
+  const popularCourses = courses.slice(0, 5);
+  const maxEnrolled = popularCourses[0]?.enrolledCount || 1;
 
   // Color palette for categories
   const categoryColors = [
@@ -311,22 +312,28 @@ const AdminAnalytics: React.FC = () => {
                   Course Popularity
                 </h3>
                 <div className="space-y-4">
-                  {courses.map((c, i) => (
-                    <div key={c.id}>
-                      <div className="flex items-center justify-between text-sm mb-1.5">
-                        <span className="text-foreground font-medium truncate mr-4">
-                          {c.title}
-                        </span>
-                        <span className="text-muted-foreground flex-shrink-0 text-xs font-semibold">
-                          {c.enrolledCount} students
-                        </span>
+                  {popularCourses.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No course enrollment data yet.
+                    </p>
+                  ) : (
+                    popularCourses.map((c) => (
+                      <div key={c.id}>
+                        <div className="flex items-center justify-between text-sm mb-1.5">
+                          <span className="text-foreground font-medium truncate mr-4">
+                            {c.title}
+                          </span>
+                          <span className="text-muted-foreground flex-shrink-0 text-xs font-semibold">
+                            {c.enrolledCount} students
+                          </span>
+                        </div>
+                        <Progress
+                          value={(c.enrolledCount / maxEnrolled) * 100}
+                          className="h-2"
+                        />
                       </div>
-                      <Progress
-                        value={(c.enrolledCount / maxEnrolled) * 100}
-                        className="h-2"
-                      />
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>

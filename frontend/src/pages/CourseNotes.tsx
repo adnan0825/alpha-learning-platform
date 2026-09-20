@@ -36,6 +36,17 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+const formatTime = (value?: string) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
 const CourseNotes: React.FC = () => {
   const { t } = useLanguage();
   const [notes, setNotes] = useState<CourseNoteType[]>([]);
@@ -44,6 +55,8 @@ const CourseNotes: React.FC = () => {
   const [search, setSearch] = useState("");
   const [newNote, setNewNote] = useState("");
   const [selectedCourse, setSelectedCourse] = useState<string>("");
+  const [courseFilter, setCourseFilter] = useState<string>("all");
+  const [sortMode, setSortMode] = useState<"newest" | "oldest">("newest");
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
@@ -56,12 +69,12 @@ const CourseNotes: React.FC = () => {
   const fetchData = async () => {
     try {
       const [notesData, enrollmentsData] = await Promise.all([
-        notesAPI.getAll(),
+        notesAPI.getAll(courseFilter !== "all" ? courseFilter : undefined),
         enrollmentsAPI.getMyCourses(),
       ]);
       setNotes(notesData);
       setEnrollments(enrollmentsData);
-      if (enrollmentsData.length > 0) {
+      if (enrollmentsData.length > 0 && !selectedCourse) {
         setSelectedCourse(enrollmentsData[0].courseId);
       }
     } catch (err) {
@@ -71,12 +84,26 @@ const CourseNotes: React.FC = () => {
     }
   };
 
+  const refreshNotes = async (nextFilter = courseFilter) => {
+    try {
+      const data = await notesAPI.getAll(
+        nextFilter !== "all" ? nextFilter : undefined,
+      );
+      setNotes(data);
+    } catch (err) {
+      console.error("Failed to load notes:", err);
+    }
+  };
+
   const handleAddNote = async () => {
     if (!newNote.trim() || !selectedCourse) return;
     setSaving(true);
     try {
       const note = await notesAPI.create(selectedCourse, newNote);
       setNotes((prev) => [note, ...prev]);
+      if (courseFilter === "all" || courseFilter === selectedCourse) {
+        await refreshNotes(courseFilter);
+      }
       setNewNote("");
       setShowAdd(false);
     } catch (err) {
@@ -119,13 +146,23 @@ const CourseNotes: React.FC = () => {
     setEditContent("");
   };
 
-  const filtered = notes.filter(
-    (n) =>
-      n.content.toLowerCase().includes(search.toLowerCase()) ||
-      n.courseTitle.toLowerCase().includes(search.toLowerCase()) ||
-      (n.lessonTitle &&
-        n.lessonTitle.toLowerCase().includes(search.toLowerCase())),
-  );
+  const filtered = notes
+    .filter(
+      (n) =>
+        n.content.toLowerCase().includes(search.toLowerCase()) ||
+        n.courseTitle.toLowerCase().includes(search.toLowerCase()) ||
+        (n.lessonTitle &&
+          n.lessonTitle.toLowerCase().includes(search.toLowerCase())),
+    )
+    .sort((a, b) => {
+      const aTime = new Date(a.updatedAt || a.createdAt).getTime();
+      const bTime = new Date(b.updatedAt || b.createdAt).getTime();
+      return sortMode === "newest" ? bTime - aTime : aTime - bTime;
+    });
+
+  const activeCourseTitle =
+    enrollments.find((e) => e.courseId === courseFilter)?.courseTitle ||
+    "All courses";
 
   if (loading) {
     return (
@@ -169,18 +206,79 @@ const CourseNotes: React.FC = () => {
           </Button>
         </motion.div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            placeholder={t("notes.search")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 bg-card"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              Total
+            </p>
+            <p className="mt-2 text-2xl font-bold text-foreground">
+              {notes.length}
+            </p>
+          </div>
+          <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              Filter
+            </p>
+            <p className="mt-2 text-sm font-semibold text-foreground">
+              {activeCourseTitle}
+            </p>
+          </div>
+          <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              Search
+            </p>
+            <p className="mt-2 text-sm font-semibold text-foreground">
+              {search.trim() ? "Active" : "All notes"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="relative flex-1">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              placeholder={t("notes.search")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 bg-card"
+            />
+          </div>
+
+          <Select
+            value={courseFilter}
+            onValueChange={(value) => {
+              setCourseFilter(value);
+              void refreshNotes(value);
+            }}
+          >
+            <SelectTrigger className="w-full md:w-[200px] bg-card">
+              <SelectValue placeholder="Filter by course" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All courses</SelectItem>
+              {enrollments.map((e) => (
+                <SelectItem key={e.courseId} value={e.courseId}>
+                  {e.courseTitle}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={sortMode}
+            onValueChange={(value) => setSortMode(value as "newest" | "oldest")}
+          >
+            <SelectTrigger className="w-full md:w-[180px] bg-card">
+              <SelectValue placeholder="Sort" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="oldest">Oldest first</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Add Note */}

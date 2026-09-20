@@ -33,8 +33,11 @@ interface StudentGrade {
   student_name: string;
   student_email: string;
   student_avatar?: string;
-  quiz_id: string;
-  quiz_title: string;
+  quiz_id: string | null;
+  quiz_title: string | null;
+  assignment_id: string | null;
+  assignment_title: string | null;
+  assessment_type: "quiz" | "assignment";
   highest_score: number;
   lowest_score: number;
   average_score: number;
@@ -74,7 +77,21 @@ const StudentGrades: React.FC = () => {
     setRefreshing(true);
     try {
       const data = await instructorAnalyticsAPI.getGrades(courseId);
-      setGrades(data);
+      setGrades(
+        data.map((grade) => ({
+          ...grade,
+          average_score: Number.isFinite(Number(grade.average_score))
+            ? Number(grade.average_score)
+            : 0,
+          highest_score: Number.isFinite(Number(grade.highest_score))
+            ? Number(grade.highest_score)
+            : 0,
+          lowest_score: Number.isFinite(Number(grade.lowest_score))
+            ? Number(grade.lowest_score)
+            : 0,
+          attempts: Math.max(0, Number(grade.attempts) || 0),
+        })),
+      );
     } catch (err) {
       console.error("Failed to load grades:", err);
     } finally {
@@ -91,22 +108,29 @@ const StudentGrades: React.FC = () => {
           name: grade.student_name,
           email: grade.student_email,
           avatar: grade.student_avatar,
-          quizzes: [],
+          assessments: [],
           avgScore: 0,
         };
       }
-      acc[grade.student_id].quizzes.push(grade);
+      acc[grade.student_id].assessments.push(grade);
 
       // Calculate overall average
-      const allScores = acc[grade.student_id].quizzes.flatMap((q) =>
-        Array(q.attempts).fill(q.average_score),
+      const completedAssessments = acc[grade.student_id].assessments.filter(
+        (assessment: StudentGrade) =>
+          assessment.attempts > 0 && Number.isFinite(assessment.average_score),
+      );
+      const totalAttempts = completedAssessments.reduce(
+        (sum: number, assessment: StudentGrade) => sum + assessment.attempts,
+        0,
+      );
+      const totalScore = completedAssessments.reduce(
+        (sum: number, assessment: StudentGrade) =>
+          sum + assessment.average_score * assessment.attempts,
+        0,
       );
       acc[grade.student_id].avgScore =
-        allScores.length > 0
-          ? Math.round(
-              allScores.reduce((sum, score) => sum + score, 0) /
-                allScores.length,
-            )
+        totalAttempts > 0 && Number.isFinite(totalScore)
+          ? Math.round(totalScore / totalAttempts)
           : 0;
 
       return acc;
@@ -266,7 +290,13 @@ const StudentGrades: React.FC = () => {
                         <div className="flex items-center gap-1">
                           <Trophy size={14} className="text-accent" />
                           <span className="text-sm font-medium">
-                            {s.quizzes.length} {t("grades.quizzes")}
+                            {
+                              s.assessments.filter(
+                                (assessment: StudentGrade) =>
+                                  assessment.attempts > 0,
+                              ).length
+                            }{" "}
+                            Assessments
                           </span>
                         </div>
                       </td>

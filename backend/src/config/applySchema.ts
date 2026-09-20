@@ -19,12 +19,18 @@ function splitStatements(sql: string): string[] {
 }
 
 const skipIfAlreadyExists = (err: unknown): boolean => {
-  const code = typeof err === "object" && err !== null && "code" in err ? String((err as { code: string }).code) : "";
+  const code =
+    typeof err === "object" && err !== null && "code" in err
+      ? String((err as { code: string }).code)
+      : "";
   // 42P07 duplicate_table, 42710 duplicate_object (e.g. duplicate index name)
   return code === "42P07" || code === "42710";
 };
 
-async function runSqlFile(client: PoolClient, fileName: string): Promise<number> {
+async function runSqlFile(
+  client: PoolClient,
+  fileName: string,
+): Promise<number> {
   const filePath = resolveSqlFile(fileName);
   const sql = fs.readFileSync(filePath, "utf8");
   const statements = splitStatements(sql);
@@ -39,6 +45,38 @@ async function runSqlFile(client: PoolClient, fileName: string): Promise<number>
   return statements.length;
 }
 
+async function cleanupSeedLearningPaths(client: PoolClient) {
+  const staleTitles = [
+    "Full Stack Web Development",
+    "Data Science & Machine Learning",
+    "UI/UX Design Master",
+  ];
+  const staleDescriptions = [
+    "Complete path from beginner to full stack developer",
+    "Learn Python, data analysis, and ML fundamentals",
+    "Master design principles, Figma, and user experience",
+  ];
+
+  await client.query(
+    `
+      DELETE FROM learning_path_courses
+      WHERE learning_path_id IN (
+        SELECT id
+        FROM learning_paths
+        WHERE created_by = 1
+          AND title = ANY($1::text[])
+          AND description = ANY($2::text[])
+      );
+
+      DELETE FROM learning_paths
+      WHERE created_by = 1
+        AND title = ANY($1::text[])
+        AND description = ANY($2::text[]);
+    `,
+    [staleTitles, staleDescriptions],
+  );
+}
+
 async function main() {
   const client = await pool.connect();
   try {
@@ -46,6 +84,8 @@ async function main() {
     console.log(`Applied ${n1} statements from schema.sql`);
     const n2 = await runSqlFile(client, "schema-extensions.sql");
     console.log(`Applied ${n2} statements from schema-extensions.sql`);
+    await cleanupSeedLearningPaths(client);
+    console.log("Removed stale hardcoded learning path seed rows");
   } finally {
     client.release();
     await pool.end();

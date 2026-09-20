@@ -159,7 +159,7 @@ router.post(
         `UPDATE manual_payment_receipts
        SET status = 'approved', reviewed_at = CURRENT_TIMESTAMP, reviewed_by = $2
        WHERE id = $1 AND COALESCE(status, 'pending') = 'pending'
-       RETURNING user_id, course_id`,
+       RETURNING user_id, course_id, amount_etb`,
         [Number.parseInt(req.params.id, 10), req.user!.id],
       );
       if (receipt.rows.length === 0) {
@@ -168,7 +168,37 @@ router.post(
           .status(400)
           .json({ error: "Receipt not found or already processed" });
       }
-      const { user_id: userId, course_id: courseId } = receipt.rows[0];
+      const {
+        user_id: userId,
+        course_id: courseId,
+        amount_etb: receiptAmount,
+      } = receipt.rows[0];
+      const course = await client.query(
+        "SELECT title, price FROM courses WHERE id = $1",
+        [courseId],
+      );
+      const coursePrice = Number(course.rows[0]?.price ?? 0);
+      if (!Number.isFinite(coursePrice) || coursePrice <= 0) {
+        throw new Error("Course has an invalid price");
+      }
+      const grossAmount = coursePrice;
+      await client.query(
+        `INSERT INTO payments
+          (user_id, course_id, tx_ref, amount, currency, status, meta, completed_at, admin_share, instructor_share)
+         VALUES ($1, $2, $3, $4, 'ETB', 'completed', $5, CURRENT_TIMESTAMP,
+                 ROUND($4 * 0.20, 2), $4 - ROUND($4 * 0.20, 2))
+         ON CONFLICT (tx_ref) DO NOTHING`,
+        [
+          userId,
+          courseId,
+          `manual-receipt-${req.params.id}`,
+          grossAmount,
+          JSON.stringify({
+            source: "manual_receipt",
+            receiptId: Number(req.params.id),
+          }),
+        ],
+      );
       await client.query(
         "INSERT INTO enrollments (user_id, course_id) VALUES ($1, $2) ON CONFLICT (user_id, course_id) DO NOTHING",
         [userId, courseId],
