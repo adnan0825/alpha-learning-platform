@@ -32,7 +32,8 @@ const NAV: { icon: typeof LayoutDashboard; titleKey: TranslationKey }[] = [
 ];
 
 /** Default platform intro (YouTube). Override with `introVideoSrc` or `VITE_HERO_INTRO_VIDEO_URL`. */
-const DEFAULT_INTRO_VIDEO_URL = "https://www.youtube.com/watch?v=aqz-KE-bpKQ";
+const DEFAULT_INTRO_VIDEO_URL =
+  "/api/uploads/video/1789838885442-z9sar1rkzmf.mp4";
 
 const NATIVE_SEEK_SEC = 10;
 
