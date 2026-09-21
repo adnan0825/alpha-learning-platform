@@ -6,7 +6,11 @@ export function getConfiguredCorsOrigins(): string[] {
 }
 
 export function getPublicBaseUrl(): string {
-  return (process.env.PUBLIC_BASE_URL || process.env.APP_PUBLIC_URL || "").trim();
+  return (
+    process.env.PUBLIC_BASE_URL ||
+    process.env.APP_PUBLIC_URL ||
+    ""
+  ).trim();
 }
 
 export function buildPublicUrl(pathname: string): string {
@@ -55,7 +59,8 @@ export function isAllowedCorsOrigin(origin: string): boolean {
 
   const localhostPattern = /^https?:\/\/localhost(?::\d+)?$/i;
   const loopbackPattern = /^https?:\/\/127\.0\.0\.1(?::\d+)?$/i;
-  if (localhostPattern.test(origin) || loopbackPattern.test(origin)) return true;
+  if (localhostPattern.test(origin) || loopbackPattern.test(origin))
+    return true;
 
   const cloudPatterns = [
     /^https?:\/\/([a-z0-9-]+\.)*pages\.dev(?::\d+)?$/i,
