@@ -26,9 +26,9 @@ services:
       - key: GOOGLE_BOOTSTRAP_ADMIN_EMAIL
         sync: false
       - key: CORS_ORIGINS
-        value: https://placeholder.pages.dev
+        value: https://alpha-learning-platform.pages.dev
       - key: PUBLIC_BASE_URL
-        value: https://alpha-api.onrender.com
+        value: https://alpha-api-zeky.onrender.com
       - key: R2_ENDPOINT
         sync: false
       - key: R2_REGION
