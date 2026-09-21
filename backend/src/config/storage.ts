@@ -1,4 +1,8 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import fs from "fs";
 import path from "path";
@@ -19,7 +23,11 @@ export function getStorageConfig(): StorageConfig {
     accessKeyId: (process.env.R2_ACCESS_KEY_ID || "").trim(),
     secretAccessKey: (process.env.R2_SECRET_ACCESS_KEY || "").trim(),
     bucket: (process.env.R2_BUCKET || "").trim(),
-    publicUrl: (process.env.R2_PUBLIC_URL || process.env.R2_CUSTOM_DOMAIN || "").trim(),
+    publicUrl: (
+      process.env.R2_PUBLIC_URL ||
+      process.env.R2_CUSTOM_DOMAIN ||
+      ""
+    ).trim(),
     customDomain: (process.env.R2_CUSTOM_DOMAIN || "").trim(),
   };
 }
@@ -29,12 +37,18 @@ export function isR2Enabled(): boolean {
   return Boolean(endpoint && accessKeyId && secretAccessKey && bucket);
 }
 
-export function getStorageObjectKey(filename: string, folder: "uploads" | "videos") {
+export function getStorageObjectKey(
+  filename: string,
+  folder: "uploads" | "videos",
+) {
   if (!filename) return folder;
   return `${folder}/${filename}`;
 }
 
-export function getStoragePublicUrl(filename: string, folder: "uploads" | "videos") {
+export function getStoragePublicUrl(
+  filename: string,
+  folder: "uploads" | "videos",
+) {
   const key = getStorageObjectKey(filename, folder);
   const { publicUrl } = getStorageConfig();
 
@@ -102,7 +116,10 @@ export async function uploadBufferToStorage({
   return getStoragePublicUrl(path.basename(key), folder);
 }
 
-export async function getSignedObjectUrl(key: string, expiresInSeconds = 300): Promise<string> {
+export async function getSignedObjectUrl(
+  key: string,
+  expiresInSeconds = 300,
+): Promise<string> {
   const client = getR2Client();
   const bucket = getStorageConfig().bucket;
   if (!client || !bucket) {

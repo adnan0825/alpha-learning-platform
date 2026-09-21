@@ -369,7 +369,10 @@ router.get(
           expiresIn: "5m",
         });
         const url = isR2Enabled()
-          ? await getSignedObjectUrl(getStorageObjectKey(filename, "videos"), 300)
+          ? await getSignedObjectUrl(
+              getStorageObjectKey(filename, "videos"),
+              300,
+            )
           : `/api/uploads/video/${encodeURIComponent(filename)}?access=${encodeURIComponent(access)}`;
         return res.json({ url });
       }
@@ -378,7 +381,10 @@ router.get(
           expiresIn: "5m",
         });
         const url = isR2Enabled()
-          ? await getSignedObjectUrl(getStorageObjectKey(filename, "videos"), 300)
+          ? await getSignedObjectUrl(
+              getStorageObjectKey(filename, "videos"),
+              300,
+            )
           : `/api/uploads/video/${encodeURIComponent(filename)}?access=${encodeURIComponent(access)}`;
         return res.json({ url });
       }
@@ -403,7 +409,10 @@ router.get(
           );
           res.json({
             url: isR2Enabled()
-              ? await getSignedObjectUrl(getStorageObjectKey(filename, "videos"), 300)
+              ? await getSignedObjectUrl(
+                  getStorageObjectKey(filename, "videos"),
+                  300,
+                )
               : `/api/uploads/video/${encodeURIComponent(filename)}?access=${encodeURIComponent(access)}`,
           });
         } catch {
@@ -449,7 +458,10 @@ router.get("/video/:filename", async (req: Request, res: Response) => {
         }
         try {
           return res.redirect(
-            await getSignedObjectUrl(getStorageObjectKey(filename, "videos"), 300),
+            await getSignedObjectUrl(
+              getStorageObjectKey(filename, "videos"),
+              300,
+            ),
           );
         } catch {
           return res.status(500).json({ error: "Video unavailable" });
