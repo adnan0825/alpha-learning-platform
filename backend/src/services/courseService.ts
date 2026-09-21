@@ -4,7 +4,12 @@ import { query } from "../config/db";
  * JSONB + node-pg: JavaScript arrays are serialized as Postgres *array* literals ({a,b}), NOT JSON.
  * For a jsonb column you must bind JSON *text* once and cast: $n::jsonb (see node-pg lib/utils.js prepareValue).
  */
-type VideoLinkRow = { title: string; url: string; duration: string };
+type VideoLinkRow = {
+  title: string;
+  url: string;
+  duration: string;
+  isFree?: boolean;
+};
 
 function toPlainVideoLinksArray(raw: unknown): VideoLinkRow[] {
   let arr: unknown[] = [];
@@ -29,13 +34,14 @@ function toPlainVideoLinksArray(raw: unknown): VideoLinkRow[] {
 
   return arr.map((item) => {
     if (item === null || typeof item !== "object" || Array.isArray(item)) {
-      return { title: "", url: "", duration: "" };
+      return { title: "", url: "", duration: "", isFree: false };
     }
     const o = item as Record<string, unknown>;
     return {
       title: String(o.title ?? ""),
       url: String(o.url ?? ""),
       duration: o.duration != null ? String(o.duration) : "",
+      isFree: Boolean(o.isFree),
     };
   });
 }

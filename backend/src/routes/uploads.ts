@@ -309,23 +309,17 @@ router.get(
       }
       const preview = await query(
         `SELECT EXISTS (
-           SELECT 1 FROM courses c
-           WHERE c.is_published = true
-             AND c.intro_video_url LIKE $1
-         ) OR EXISTS (
            SELECT 1
            FROM courses c
-           JOIN modules m ON m.course_id = c.id
-           JOIN lessons l ON l.module_id = m.id
            WHERE c.is_published = true
-             AND l.video_url LIKE $1
-             AND l.id = (
-               SELECT first_lesson.id
-               FROM modules first_module
-               JOIN lessons first_lesson ON first_lesson.module_id = first_module.id
-               WHERE first_module.course_id = c.id
-               ORDER BY first_module.position, first_lesson.position, first_lesson.id
-               LIMIT 1
+             AND (
+               c.intro_video_url LIKE $1
+               OR EXISTS (
+                 SELECT 1
+                 FROM jsonb_array_elements(COALESCE(c.video_links, '[]'::jsonb)) AS lesson
+                 WHERE lesson->>'url' LIKE $1
+                   AND COALESCE((lesson->>'isFree')::boolean, (lesson->>'is_free')::boolean, false) = true
+               )
              )
          ) AS allowed`,
         [`%${filename}%`],

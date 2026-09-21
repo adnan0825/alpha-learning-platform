@@ -115,7 +115,10 @@ const AdminTranslations: React.FC = () => {
       }
       await settingsAPI.updateTranslations(next);
       window.dispatchEvent(new Event(ALPHA_TRANSLATIONS_UPDATED));
-      toast({ title: "Saved", description: key });
+      toast({
+        title: "Saved",
+        description: "The translation has been updated.",
+      });
     } catch (e: unknown) {
       toast({
         title: "Save failed",

@@ -20,7 +20,10 @@ import {
   VideoWatchProgress,
   Announcement,
 } from "@/lib/api";
-import { getOrderedLessons } from "@/lib/courseIntro";
+import {
+  getOrderedLessons,
+  getPreviewableLessonIndexes,
+} from "@/lib/courseIntro";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
@@ -176,7 +179,12 @@ const CourseView: React.FC = () => {
   const { lessons, activeIdx, fullLessonAccess } = useMemo(() => {
     if (!course) {
       return {
-        lessons: [] as { title: string; url: string; duration?: string }[],
+        lessons: [] as {
+          title: string;
+          url: string;
+          duration?: string;
+          isFree?: boolean;
+        }[],
         activeIdx: 0,
         fullLessonAccess: false,
       };
@@ -185,9 +193,20 @@ const CourseView: React.FC = () => {
     const isInstr =
       user?.role === "instructor" && course.instructorId === user.id;
     const full = Boolean(enrollment || isInstr);
+    const previewable = getPreviewableLessonIndexes(course);
     const maxI = Math.max(0, ordered.length - 1);
-    const idx = full ? Math.min(Math.max(0, currentVideoIndex), maxI) : 0;
-    return { lessons: ordered, activeIdx: idx, fullLessonAccess: full };
+    const fallbackIdx = previewable.length > 0 ? previewable[0] : 0;
+    const desiredIdx = full
+      ? Math.min(Math.max(0, currentVideoIndex), maxI)
+      : previewable.includes(currentVideoIndex)
+        ? currentVideoIndex
+        : fallbackIdx;
+
+    return {
+      lessons: ordered,
+      activeIdx: Math.min(Math.max(0, desiredIdx), maxI),
+      fullLessonAccess: full,
+    };
   }, [course, enrollment, currentVideoIndex, user?.role, user?.id]);
 
   useEffect(() => {
@@ -646,29 +665,61 @@ const CourseView: React.FC = () => {
 
               <TabsContent value="lessons" className="mt-4">
                 <div className="space-y-2">
-                  {lessons.map((lesson, index) => (
-                    <Card
-                      key={index}
-                      className={`p-3 flex items-center gap-3 ${!fullLessonAccess ? "opacity-60" : ""}`}
-                    >
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-sm">{lesson.title}</h4>
-                        {lesson.duration && (
-                          <p className="text-xs text-muted-foreground">
-                            {lesson.duration}
-                          </p>
+                  {lessons.map((lesson, index) => {
+                    const isPreviewable =
+                      fullLessonAccess ||
+                      Boolean(lesson.isFree) ||
+                      (course?.introVideoUrl?.trim() &&
+                        lesson.url === course.introVideoUrl.trim());
+
+                    const handleLessonSelect = () => {
+                      if (!isPreviewable) return;
+                      setCurrentVideoIndex(index);
+                    };
+
+                    return (
+                      <Card
+                        key={index}
+                        onClick={handleLessonSelect}
+                        onKeyDown={(event) => {
+                          if (
+                            (event.key === "Enter" || event.key === " ") &&
+                            isPreviewable
+                          ) {
+                            event.preventDefault();
+                            handleLessonSelect();
+                          }
+                        }}
+                        role="button"
+                        tabIndex={isPreviewable ? 0 : -1}
+                        aria-label={`Open lesson ${index + 1}: ${lesson.title}`}
+                        className={`p-3 flex items-center gap-3 transition-colors ${
+                          !isPreviewable
+                            ? "opacity-60 cursor-default"
+                            : "cursor-pointer hover:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-accent/60"
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm">
+                            {lesson.title}
+                          </h4>
+                          {lesson.duration && (
+                            <p className="text-xs text-muted-foreground">
+                              {lesson.duration}
+                            </p>
+                          )}
+                        </div>
+                        {!isPreviewable && (
+                          <Badge variant="outline" className="text-xs">
+                            Locked
+                          </Badge>
                         )}
-                      </div>
-                      {!fullLessonAccess && (
-                        <Badge variant="outline" className="text-xs">
-                          Locked
-                        </Badge>
-                      )}
-                    </Card>
-                  ))}
+                      </Card>
+                    );
+                  })}
                 </div>
               </TabsContent>
 

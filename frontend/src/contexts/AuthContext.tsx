@@ -4,7 +4,7 @@
  */
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { authAPI, UserProfile } from "@/lib/api";
-import { clearStoredToken } from "@/lib/authStorage";
+import { clearStoredToken, setStoredToken } from "@/lib/authStorage";
 
 export type UserRole = "student" | "instructor" | "admin";
 
@@ -72,7 +72,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const login = async (email: string, password: string) => {
-    const { user: u } = await authAPI.login(email, password);
+    const { user: u, token } = await authAPI.login(email, password);
+    setStoredToken(token);
     persistUser(u);
   };
 
@@ -82,17 +83,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     name: string,
     role: UserRole,
   ) => {
-    const { user: u } = await authAPI.signup(email, password, name, role);
+    const { user: u, token } = await authAPI.signup(
+      email,
+      password,
+      name,
+      role,
+    );
+    setStoredToken(token);
     persistUser(u);
   };
 
   const loginWithGoogle = async (credential: string) => {
-    const { user: u } = await authAPI.loginWithGoogle(credential);
+    const { user: u, token } = await authAPI.loginWithGoogle(credential);
+    setStoredToken(token);
     persistUser(u);
   };
 
   const loginWithGoogleCode = async (code: string, redirectUri: string) => {
-    const { user: u } = await authAPI.loginWithGoogleCode(code, redirectUri);
+    const { user: u, token } = await authAPI.loginWithGoogleCode(
+      code,
+      redirectUri,
+    );
+    setStoredToken(token);
     persistUser(u);
   };
 

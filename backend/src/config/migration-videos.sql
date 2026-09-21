@@ -10,10 +10,14 @@ CREATE TABLE IF NOT EXISTS media (
     media_type VARCHAR(32) NOT NULL CHECK (media_type IN ('video')),
     visibility VARCHAR(16) NOT NULL DEFAULT 'protected' CHECK (visibility IN ('public', 'protected')),
     status VARCHAR(32) NOT NULL DEFAULT 'ready' CHECK (status IN ('uploading', 'ready', 'failed', 'deleted')),
-    created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE media DROP CONSTRAINT IF EXISTS media_created_by_fkey;
+ALTER TABLE media ADD CONSTRAINT media_created_by_fkey
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE media ADD COLUMN IF NOT EXISTS visibility VARCHAR(16) NOT NULL DEFAULT 'protected';
 
