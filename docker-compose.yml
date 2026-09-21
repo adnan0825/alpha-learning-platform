@@ -19,7 +19,7 @@ services:
       dockerfile: Dockerfile
     environment:
       PORT: 3000
-      DATABASE_URL: postgresql://alpha:${POSTGRES_PASSWORD}@postgres:5432/alpha
+      DATABASE_URL: postgresql://neondb_owner:npg_yag3lChf9qnA@ep-hidden-sound-b1orw759-pooler.c-5.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
       JWT_SECRET: ${JWT_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}

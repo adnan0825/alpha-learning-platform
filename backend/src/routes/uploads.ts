@@ -10,6 +10,14 @@ import {
 } from "../middleware/auth";
 import { query } from "../config/db";
 import { getJwtSecret } from "../config/env";
+import { buildPublicUrl } from "../config/runtime";
+import {
+  getSignedObjectUrl,
+  getStorageObjectKey,
+  getStoragePublicUrl,
+  isR2Enabled,
+  uploadBufferToStorage,
+} from "../config/storage";
 
 const router = Router();
 const uploadsDir = path.join(__dirname, "../../uploads"); // Match static serving: backend/uploads
@@ -123,18 +131,26 @@ router.post(
   "/image",
   authenticate,
   imageUpload.single("image"),
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      const imageUrl = `/uploads/${req.file.filename}`;
+      const key = getStorageObjectKey(req.file.filename, "uploads");
+      const imageUrl = isR2Enabled()
+        ? await uploadBufferToStorage({
+            filePath: req.file.path,
+            key,
+            contentType: req.file.mimetype || "application/octet-stream",
+            folder: "uploads",
+          })
+        : buildPublicUrl(`/uploads/${req.file.filename}`);
 
-      res.json({ url: imageUrl });
+      return res.json({ url: imageUrl });
     } catch (error: any) {
       console.error("Upload error:", error);
-      res.status(500).json({ error: error.message || "Upload failed" });
+      return res.status(500).json({ error: error.message || "Upload failed" });
     }
   },
 );
@@ -147,12 +163,22 @@ router.post(
   "/file",
   authenticate,
   documentUpload.single("file"),
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    res.json({
-      url: `/uploads/${req.file.filename}`,
+    const key = getStorageObjectKey(req.file.filename, "uploads");
+    const fileUrl = isR2Enabled()
+      ? await uploadBufferToStorage({
+          filePath: req.file.path,
+          key,
+          contentType: req.file.mimetype || "application/octet-stream",
+          folder: "uploads",
+        })
+      : buildPublicUrl(`/uploads/${req.file.filename}`);
+
+    return res.json({
+      url: fileUrl,
       filename: req.file.originalname,
       size: req.file.size,
       contentType: req.file.mimetype,
@@ -212,6 +238,16 @@ router.post(
       fs.renameSync(req.file.path, finalPath);
       temporaryPath = undefined;
 
+      if (isR2Enabled()) {
+        const key = getStorageObjectKey(storedFilename, "videos");
+        await uploadBufferToStorage({
+          filePath: finalPath,
+          key,
+          contentType: req.file.mimetype || "application/octet-stream",
+          folder: "videos",
+        });
+      }
+
       let mediaId: string;
       const visibility =
         req.body.visibility === "public" &&
@@ -240,7 +276,11 @@ router.post(
         throw databaseError;
       }
 
-      const videoUrl = `/api/uploads/video/${encodeURIComponent(storedFilename)}`;
+      const videoUrl = isR2Enabled()
+        ? getStoragePublicUrl(storedFilename, "videos")
+        : buildPublicUrl(
+            `/api/uploads/video/${encodeURIComponent(storedFilename)}`,
+          );
 
       res.json({
         url: videoUrl,
@@ -328,17 +368,19 @@ router.get(
         const access = jwt.sign({ media: filename }, getJwtSecret(), {
           expiresIn: "5m",
         });
-        return res.json({
-          url: `/api/uploads/video/${encodeURIComponent(filename)}?access=${encodeURIComponent(access)}`,
-        });
+        const url = isR2Enabled()
+          ? await getSignedObjectUrl(getStorageObjectKey(filename, "videos"), 300)
+          : `/api/uploads/video/${encodeURIComponent(filename)}?access=${encodeURIComponent(access)}`;
+        return res.json({ url });
       }
       if (result.rows[0].visibility === "public") {
         const access = jwt.sign({ media: filename }, getJwtSecret(), {
           expiresIn: "5m",
         });
-        return res.json({
-          url: `/api/uploads/video/${encodeURIComponent(filename)}?access=${encodeURIComponent(access)}`,
-        });
+        const url = isR2Enabled()
+          ? await getSignedObjectUrl(getStorageObjectKey(filename, "videos"), 300)
+          : `/api/uploads/video/${encodeURIComponent(filename)}?access=${encodeURIComponent(access)}`;
+        return res.json({ url });
       }
       authenticate(req as AuthRequest, res, async () => {
         try {
@@ -360,7 +402,9 @@ router.get(
             { expiresIn: "5m" },
           );
           res.json({
-            url: `/api/uploads/video/${encodeURIComponent(filename)}?access=${encodeURIComponent(access)}`,
+            url: isR2Enabled()
+              ? await getSignedObjectUrl(getStorageObjectKey(filename, "videos"), 300)
+              : `/api/uploads/video/${encodeURIComponent(filename)}?access=${encodeURIComponent(access)}`,
           });
         } catch {
           res.status(500).json({ error: "Video unavailable" });
@@ -372,10 +416,54 @@ router.get(
   },
 );
 
-router.get("/video/:filename", (req: Request, res: Response) => {
+router.get("/video/:filename", async (req: Request, res: Response) => {
   const filename = path.basename(req.params.filename);
   if (filename !== req.params.filename || filename.includes("..")) {
     return res.status(400).json({ error: "Invalid video name" });
+  }
+
+  if (isR2Enabled()) {
+    const access = req.query.access;
+    if (typeof access !== "string") {
+      return res.status(401).json({ error: "Video access token required" });
+    }
+
+    let payload: { media?: string; userId?: number };
+    try {
+      payload = jwt.verify(access, getJwtSecret()) as {
+        media?: string;
+        userId?: number;
+      };
+    } catch {
+      return res.status(401).json({ error: "Invalid or expired video access" });
+    }
+
+    if (payload.media !== filename) {
+      return res.status(403).json({ error: "Invalid video access" });
+    }
+
+    if (payload.userId !== undefined) {
+      return authenticate(req as AuthRequest, res, async () => {
+        if ((req as AuthRequest).user?.id !== payload.userId) {
+          return res.status(403).json({ error: "Invalid video access" });
+        }
+        try {
+          return res.redirect(
+            await getSignedObjectUrl(getStorageObjectKey(filename, "videos"), 300),
+          );
+        } catch {
+          return res.status(500).json({ error: "Video unavailable" });
+        }
+      });
+    }
+
+    try {
+      return res.redirect(
+        await getSignedObjectUrl(getStorageObjectKey(filename, "videos"), 300),
+      );
+    } catch {
+      return res.status(500).json({ error: "Video unavailable" });
+    }
   }
 
   const filePath = path.join(videoStorageDir, filename);

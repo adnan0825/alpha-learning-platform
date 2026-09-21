@@ -24,12 +24,18 @@ import manualPaymentsRoutes from "./routes/manualPayments";
 import assignmentsRoutes from "./routes/assignments";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import path from "path";
+import {
+  getListenHost,
+  getListenPort,
+  isAllowedCorsOrigin,
+} from "./config/runtime";
 
 dotenv.config();
 assertRequiredEnvironment();
 
 const app: Application = express();
-const PORT = process.env.PORT || 3000;
+const PORT = getListenPort();
+const HOST = getListenHost();
 const staleLearningPathTitles = [
   "Full Stack Web Development",
   "Data Science & Machine Learning",
@@ -87,30 +93,6 @@ const authRateLimit = rateLimit({
     error: "Too many authentication attempts. Please try again later.",
   },
 });
-
-/** Extra allowed origins from env, e.g. CORS_ORIGINS=https://app.example.com,http://localhost:4173 */
-const envCorsOrigins = (process.env.CORS_ORIGINS || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
-
-const defaultCorsOrigins = new Set([
-  "http://localhost:8080",
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "http://localhost:4173",
-  "https://alpha.online",
-  "https://www.alpha.online",
-]);
-
-function isAllowedCorsOrigin(origin: string): boolean {
-  if (envCorsOrigins.includes(origin) || defaultCorsOrigins.has(origin))
-    return true;
-  // Any local dev port (Vite/Webpack preview, etc.)
-  if (/^https?:\/\/localhost(?::\d+)?$/.test(origin)) return true;
-  if (/^https?:\/\/127\.0\.0\.1(?::\d+)?$/.test(origin)) return true;
-  return false;
-}
 
 app.use(
   helmet({
@@ -182,8 +164,9 @@ async function start() {
     await pool.query("SELECT 1");
     await ensureQuizStatusColumn();
     await cleanupStaleSeedLearningPaths();
-    app.listen(PORT, () => {
+    app.listen(PORT, HOST, () => {
       console.log("Alpha API started", {
+        host: HOST,
         port: PORT,
         environment: process.env.NODE_ENV || "development",
         database: "connected",
