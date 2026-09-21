@@ -724,10 +724,17 @@ export const uploadsAPI = {
     const formData = new FormData();
     formData.append("file", file);
 
+    const token = getStoredToken();
+    const headers = new Headers();
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+
     const res = await fetch(`${API_BASE_URL}/uploads/file`, {
       method: "POST",
       body: formData,
       credentials: "include",
+      headers,
     });
     if (!res.ok) {
       const error = await res.json().catch(() => ({ error: "Upload failed" }));
@@ -740,10 +747,17 @@ export const uploadsAPI = {
     const formData = new FormData();
     formData.append("image", file);
 
+    const token = getStoredToken();
+    const headers = new Headers();
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+
     const res = await fetch(`${API_BASE_URL}/uploads/image`, {
       method: "POST",
       body: formData,
       credentials: "include",
+      headers,
     });
 
     if (!res.ok) {
