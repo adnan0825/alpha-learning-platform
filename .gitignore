@@ -33,7 +33,10 @@ dist-ssr
 
 # Environment — never commit real credentials (examples stay tracked)
 **/.env
+**/.env.production
+**/.env.*.local
 !**/.env.example
+!**/.env.production.example
 
 # User uploads (avatars, receipts); create dir on deploy or use .gitkeep
 backend/uploads/*
