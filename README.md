@@ -1,374 +1,706 @@
-# Alpha
+# Alpha Learning Platform
 
-E-learning platform: **Express + PostgreSQL** backend, **Vite + React** frontend. Runs on **Node.js** with **PostgreSQL** database. Works on **Ubuntu/Linux**, **macOS**, and **Windows**.
+This repository contains a full-stack learning platform built with an Express.js API, a Vite + React frontend, and a PostgreSQL database. The app includes course browsing, instructor and admin tooling, progress tracking, quizzes, assignments, certificates, and Google-based sign-in.
+
+The code in this repository is the source of truth. The information below matches the actual implementation in the current project rather than the earlier project notes or stale README text.
+
+## Overview
+
+The platform is organized as:
+
+- Frontend: React + TypeScript + Vite
+- Backend: Express + TypeScript + PostgreSQL
+- Auth: JWT-based session tokens plus Google OAuth
+- Storage: local filesystem uploads by default; Cloudflare R2 support is available when configured
+- Deployment: Render web service for the backend; frontend is a static build served by Nginx in Docker and can be hosted separately
+
+## Architecture
+
+```text
+                         ┌─────────────────────────────┐
+                         │        Frontend React       │
+                         │        frontend/            │
+                         │  Vite + TS + Tailwind       │
+                         │  React Router               │
+                         └──────────────┬──────────────┘
+                                        │ HTTP / JSON
+                                        │ `/api/*`
+                                        ▼
+                         ┌─────────────────────────────┐
+                         │       Express Backend       │
+                         │        backend/             │
+                         │  Auth / API / Uploads       │
+                         │  Middleware / Services      │
+                         └────────────┬───────┬────────┘
+                                      │       │
+                           SQL / pg   │       │ S3-compatible API
+                                      ▼       ▼
+                         ┌───────────────┐  ┌────────────────────┐
+                         │ PostgreSQL    │  │ Object Storage     │
+                         │ schema +      │  │ Cloudflare R2      │
+                         │ extensions +  │  │ (production path)  │
+                         │ migrations    │  └────────────────────┘
+                         └───────────────┘
+```
+
+## Features implemented in the current codebase
+
+### Public / unauthenticated
+
+- Landing page and marketing-style homepage
+- Public course preview pages
+- Public certificate verification page at `/verify/:certificateNumber`
+- Google OAuth redirect flow
+- Help center and public content sections
+
+### Student features
+
+- Role-based dashboard routing
+- Course catalog and course enrollment flow
+- My courses and course progress tracking
+- Quizzes and quiz submission flow
+- Assignments and grade-related views
+- Bookmarks, notifications, notes, and learning-path browsing
+- Certificates generation and verification
+- Leaderboard and analytics views
+- Profile page and account session handling
+
+### Instructor features
+
+- Instructor dashboards and revenue/progress views
+- Course creation, editing, and course management pages
+- Intro video support and upload handling
+- Quiz management
+- Assignment review flows
+- Course announcements
+
+### Administrator features
+
+- Admin dashboard and analytics
+- User administration
+- Course moderation and management
+- Revenue and manual-payment review
+- Settings pages, FAQ, appearance, translations, moderation, reports, and logs
+- Role-based authorization checks
+
+## Project structure
+
+```text
+alpha-learning-platform-main/
+├── backend/              # Express + TypeScript + PostgreSQL API
+├── frontend/             # React + TypeScript + Vite UI
+├── docker-compose.yml
+├── render.yaml
+├── .env.example
+├── .gitignore
+└── README.md
+```
+
+```
+backend/
+├── scripts/               # DB/build/operational scripts
+├── src/
+│ ├── config/              # DB, env, runtime, storage, schema, migrations
+│ ├── middleware/          # Auth, authorization, error handling
+│ ├── routes/              # API endpoints
+│ └── services/            # Business/data logic
+├── uploads/               # Runtime uploads
+└── private-media/         # Private/application-managed media
+```
+
+```
+frontend/
+├── public/                 # Static hosting assets
+└── src/
+    ├── pages/              # Route-level pages
+    ├── components/         # Reusable feature components
+    │   ├── landing/
+    │   └── ui/             # shadcn/Radix UI primitives
+    ├── contexts/           # Auth + language state
+    ├── hooks/
+    ├── lib/                # API/service/domain utilities
+    ├── assets/
+    ├── test/
+    ├── App.tsx
+    └── main.tsx
+```
+
+Key directories:
+
+- `backend/src/config`: database config, schema SQL, migrations, runtime env checks, and storage helpers
+- `backend/src/routes`: API routers for auth, courses, progress, uploads, admin, settings, etc.
+- `backend/src/services`: business logic and database access abstractions
+- `backend/src/middleware`: JWT auth and authorization middleware
+- `frontend/src/pages`: route-level pages and dashboard areas
+- `frontend/src/components`: UI, forms, layout, and reusable platform widgets
+- `frontend/src/lib`: API functions, auth storage, and frontend utilities
+
+## Tech stack
+
+### Frontend
+
+- React 18
+- TypeScript
+- Vite
+- React Router DOM
+- Tailwind CSS
+- TanStack React Query
+- Vitest + Testing Library
+
+### Backend
+
+- Node.js
+- TypeScript
+- Express.js
+- PostgreSQL via `pg`
+- JWT for authentication
+- Multer for file uploads
+- Helmet, CORS, rate limiting
+- Google OAuth verification via `google-auth-library`
+- Cloudflare R2 support via AWS S3 SDK
+
+### Database
+
+- PostgreSQL
+- Schema scripts are bundled in `backend/src/config/*.sql`
+- Migrations are tracked in `schema_migrations`
 
 ## Prerequisites
 
-- **Node.js** (v18 or higher) — [download](https://nodejs.org/)
-- **npm** (comes with Node.js)
-- **PostgreSQL** (v14 or higher) — [download](https://www.postgresql.org/download/)
+The current code expects:
 
-### PostgreSQL Setup
+- Node.js
+- npm
+- PostgreSQL running locally or a reachable PostgreSQL service
+- Google OAuth web client configured when using Google sign-in
+- Optional: Cloudflare R2 credentials for production media uploads
 
-PostgreSQL must be **installed and running** on your system before starting the application.
+## Local development
 
-#### Ubuntu/Linux
-
-```bash
-# Debian/Ubuntu
-sudo apt-get update
-sudo apt-get install postgresql postgresql-contrib
-
-# Start PostgreSQL
-sudo systemctl start postgresql
-sudo systemctl enable postgresql  # Auto-start on boot
-```
-
-#### macOS
-
-```bash
-# Using Homebrew
-brew install postgresql
-
-# Start PostgreSQL
-brew services start postgresql
-```
-
-#### Windows
-
-- Download the official PostgreSQL installer from [postgresql.org](https://www.postgresql.org/download/windows/)
-- Run the installer and follow the setup wizard
-- Remember the password you set for the `postgres` superuser
-- PostgreSQL will start automatically
-
-### Verify PostgreSQL Connection
-
-After installation, verify PostgreSQL is accessible:
-
-```bash
-# Linux/macOS
-psql --version
-psql -U postgres -h 127.0.0.1 -c "SELECT version();"
-
-# Windows (using psql from PostgreSQL bin directory, or add it to PATH)
-psql --version
-psql -U postgres -h 127.0.0.1 -c "SELECT version();"
-```
-
----
-
-## Run Locally (Node.js + PostgreSQL)
-
-### 1. Clone and Setup
+### 1) Clone the repository
 
 ```bash
 git clone <repository-url>
-cd alpha
+cd alpha-main
 ```
 
-### 2. Backend Setup
+### 2) Configure the backend
 
 ```bash
 cd backend
-
-# Install dependencies
-npm install
-
-# Create .env from template
 cp .env.example .env
 ```
 
-Edit `.env` and configure PostgreSQL:
+Use values appropriate for your local PostgreSQL setup. The project’s backend `.env.example` is the reference file.
+
+Example:
 
 ```env
-# PostgreSQL credentials (must match your PostgreSQL installation)
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_USER=postgres              # Default PostgreSQL superuser
-DB_PASSWORD=your_db_password  # Password set during PostgreSQL installation
-DB_NAME=alpha
+PORT=3000
+HOST=0.0.0.0
+JWT_SECRET=replace-with-a-long-random-secret
+DATABASE_URL=postgresql://alpha:alpha_password@127.0.0.1:5432/alpha
+# or use DB_HOST / DB_PORT / DB_USER / DB_PASSWORD / DB_NAME
 
-# Other required settings
-JWT_SECRET=your_jwt_secret_min_32_characters_required_change_this_value
-GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-google-client-secret
+CORS_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
 ```
 
-### 3. Initialize Database
+Important notes:
 
-The following commands will create and configure your PostgreSQL database:
+- `JWT_SECRET` is required in production mode and should be a long random value.
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are required for Google sign-in.
+- Password login is disabled unless `AUTH_ALLOW_PASSWORD_LOGIN=true` is explicitly set.
+- `DATABASE_URL` takes precedence over `DB_*` values if it is set.
+
+### 3) Create the database and initialize schema
+
+Run the database setup scripts from the `backend` directory:
 
 ```bash
-# Create the 'alpha' database (if it doesn't exist)
+cd backend
+npm install
 npm run db:setup
-
-# Create tables and schema
 npm run db:schema
-
-# Seed initial data (showcase courses, FAQs, etc.)
+npm run db:migrate
 npm run db:seed
 ```
 
-### 4. Start Backend
+Current behavior:
+
+- `db:setup` creates the PostgreSQL database if it does not exist.
+- `db:schema` applies the main schema and extension SQL files.
+- `db:migrate` applies the numbered migration SQL files in order and records them in `schema_migrations`.
+- `db:seed` currently prints a status message and exits; the current implementation does not add user-generated course content automatically.
+
+### 4) Start the backend
 
 ```bash
+cd backend
 npm run dev
-# Backend runs at http://127.0.0.1:5000 (or your configured PORT)
 ```
 
-### 5. Frontend Setup (new terminal)
+The default local backend URL is:
+
+- http://127.0.0.1:3000
+- health endpoint: http://127.0.0.1:3000/health
+
+### 5) Configure the frontend
 
 ```bash
 cd frontend
-
-# Install dependencies
-npm install
-
-# Create .env from template (optional)
 cp .env.example .env
+```
 
-# Start dev server
+Typical values:
+
+```env
+VITE_API_URL=/api
+VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+# Optional override for local proxy target:
+# VITE_PROXY_API_TARGET=http://127.0.0.1:3000
+```
+
+### 6) Start the frontend
+
+```bash
+cd frontend
+npm install
 npm run dev
-# Frontend runs at http://localhost:5173
 ```
 
-### 6. Access the Application
+The Vite dev server uses port 8080 by default:
 
-Open your browser to:
+- http://localhost:8080
 
-- **Frontend:** http://localhost:5173
-- **Backend API:** http://localhost:5000/api
-- **Health check:** http://localhost:5000/health
+The dev server proxies `/api` and `/uploads` to `http://127.0.0.1:3000` unless `VITE_PROXY_API_TARGET` is overridden.
 
-### Video uploads
+## Environment variables
 
-- Only authenticated administrators and instructors can upload videos.
-- Supported containers are MP4, WebM, MOV, OGV, MKV, and AVI. The server checks both the declared type and container signature.
-- The default maximum upload size is 200 MB. Set `MAX_VIDEO_SIZE_MB` in the backend environment to change it.
-- New videos are staged under `backend/private-media/video-temp`, then moved to `backend/private-media/videos` after validation. They are never served through the public `/uploads` directory.
-- Video metadata is stored in PostgreSQL in the `media` table; existing course and lesson URL fields remain compatible.
-- Application-managed videos are streamed through `/api/uploads/video/:filename` with HTTP range support. Existing external URLs and legacy files remain unchanged.
-- Run `npm run db:schema` for a fresh database, or `npm run db:extensions` for an existing database, to apply the media metadata table. `npm run db:migrate` also applies the dedicated video migration.
+The repository contains actual environment-variable references in code and config. The most important values are:
 
----
+### Backend variables
 
-## Database Management
+| Variable                       | Required                     | Used by                  | Notes                                                   |
+| ------------------------------ | ---------------------------- | ------------------------ | ------------------------------------------------------- |
+| `PORT`                         | No                           | backend runtime          | Default is `3000` in code; `HOST` defaults to `0.0.0.0` |
+| `HOST`                         | No                           | backend runtime          | Bind address for the Express app                        |
+| `JWT_SECRET`                   | Yes in production            | auth middleware          | Required when `NODE_ENV=production`                     |
+| `DATABASE_URL`                 | No                           | PostgreSQL connection    | Overrides `DB_*` if present                             |
+| `DB_HOST`                      | No                           | PostgreSQL connection    | Local default: `127.0.0.1`                              |
+| `DB_PORT`                      | No                           | PostgreSQL connection    | Local default: `5432`                                   |
+| `DB_USER`                      | No                           | PostgreSQL connection    | Local default: `alpha`                                  |
+| `DB_PASSWORD`                  | No                           | PostgreSQL connection    | Local default: `alpha_password`                         |
+| `DB_NAME`                      | No                           | PostgreSQL connection    | Local default: `alpha`                                  |
+| `DB_SSL`                       | No                           | PostgreSQL connection    | Set to `true` for managed Postgres providers            |
+| `DB_SSL_REJECT_UNAUTHORIZED`   | No                           | PostgreSQL connection    | Optional TLS setting                                    |
+| `GOOGLE_CLIENT_ID`             | Yes for Google sign-in       | Google auth              | Web client ID                                           |
+| `GOOGLE_CLIENT_SECRET`         | Yes for Google redirect flow | Google auth exchange     | Secret; never expose publicly                           |
+| `GOOGLE_BOOTSTRAP_ADMIN_EMAIL` | No                           | admin bootstrap          | Optional first-user admin promotion                     |
+| `CORS_ORIGINS`                 | No                           | Express CORS             | Comma-separated origin list                             |
+| `PUBLIC_BASE_URL`              | No                           | generated public URLs    | Used for public asset URL generation                    |
+| `RATE_LIMIT_WINDOW_MS`         | No                           | Express rate limits      | Optional tuning                                         |
+| `RATE_LIMIT_MAX`               | No                           | Express rate limits      | Optional tuning                                         |
+| `AUTH_RATE_LIMIT_WINDOW_MS`    | No                           | auth limit               | Optional tuning                                         |
+| `AUTH_RATE_LIMIT_MAX`          | No                           | auth limit               | Optional tuning                                         |
+| `AUTH_ALLOW_PASSWORD_LOGIN`    | No                           | `/api/auth/login`        | Only enables email/password auth for local testing      |
+| `R2_ENDPOINT`                  | No                           | storage                  | Cloudflare R2 endpoint                                  |
+| `R2_REGION`                    | No                           | storage                  | Usually `auto`                                          |
+| `R2_ACCESS_KEY_ID`             | No                           | storage                  | Secret                                                  |
+| `R2_SECRET_ACCESS_KEY`         | No                           | storage                  | Secret                                                  |
+| `R2_BUCKET`                    | No                           | storage                  | Storage bucket name                                     |
+| `R2_PUBLIC_URL`                | No                           | public URLs              | Public media origin                                     |
+| `MAX_VIDEO_SIZE_MB`            | No                           | video upload validation  | Default `200`                                           |
+| `FRONTEND_URL`                 | No                           | certificate generation   | Optional public frontend URL                            |
+| `API_URL`                      | No                           | manual payment callbacks | Optional API base URL                                   |
 
-### Database Commands
+### Frontend variables
+
+| Variable                       | Required             | Used by            | Notes                               |
+| ------------------------------ | -------------------- | ------------------ | ----------------------------------- |
+| `VITE_API_URL`                 | No                   | API client         | Defaults to `/api`                  |
+| `VITE_GOOGLE_CLIENT_ID`        | Yes for Google login | OAuth login button | Public client ID                    |
+| `VITE_PROXY_API_TARGET`        | No                   | Vite dev proxy     | Defaults to `http://127.0.0.1:3000` |
+| `VITE_HERO_INTRO_VIDEO_URL`    | No                   | landing page video | Optional mock hero video            |
+| `VITE_HERO_INTRO_VIDEO_POSTER` | No                   | landing page video | Optional poster image               |
+
+## Database and schema
+
+### Fresh setup
+
+The project is designed around PostgreSQL. The required database is usually named `alpha` unless overridden by `DB_NAME` or `DATABASE_URL`.
 
 ```bash
 cd backend
-
-# Create database if it doesn't exist
 npm run db:setup
-
-# Apply schema (tables, indexes, constraints)
 npm run db:schema
-
-# Seed showcase courses and initial data
-npm run db:seed
-
-# Apply pending numbered/ordered migrations to an existing database
 npm run db:migrate
-
-# Run schema + seed together
-npm run db:init
-```
-
-`db:schema` bootstraps a new database from the base and extension schemas. For
-an existing database, `db:migrate` applies the ordered SQL files
-(`migration.sql`, `migration-add-tables.sql`, `migration-certificates.sql`, and
-`migration-videos.sql`) once each and records them in `schema_migrations`.
-
-### Check Database Status
-
-```bash
-# Connect to the database directly
-psql -U postgres -h 127.0.0.1 -d alpha
-
-# In psql, common commands:
-\dt                    # List tables
-\du                    # List users
-SELECT version();      # PostgreSQL version
-\q                     # Exit psql
-```
-
-### Reset Database (DESTRUCTIVE)
-
-```bash
-cd backend
-
-# Delete the entire database and recreate it
-psql -U postgres -h 127.0.0.1 -c "DROP DATABASE IF EXISTS alpha;"
-npm run db:setup
-npm run db:schema
 npm run db:seed
 ```
 
----
+`db:schema` applies:
+
+- `schema.sql`
+- `schema-extensions.sql`
+
+`db:migrate` applies migrations in this order:
+
+1. `migration.sql`
+2. `migration-add-tables.sql`
+3. `migration-certificates.sql`
+4. `migration-videos.sql`
+5. `migration-video-progress.sql`
+
+The migration runner records each migration name in a `schema_migrations` table to avoid re-running completed migrations.
+
+### Existing database upgrade
+
+If the project is already running against an existing database, the intended migration flow is:
+
+```bash
+cd backend
+npm run db:migrate
+```
+
+The migrations are designed to be applied once per name.
+
+### Destructive reset
+
+A full reset is destructive and drops the app’s schema data. The project does not ship a built-in reset script. The typical manual reset is:
+
+```bash
+psql -U postgres -h 127.0.0.1 -d postgres
+DROP DATABASE alpha;
+```
+
+Then recreate it:
+
+```bash
+cd backend
+npm run db:setup
+npm run db:schema
+npm run db:migrate
+```
+
+Do not run destructive resets against a production database.
 
 ## Authentication
 
-### Google Sign-In (Recommended)
+### JWT and cookies
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
-2. Create an OAuth 2.0 **Web** client credential
-3. Set Authorized origins and redirect URIs:
+The backend sets an `alpha_token` cookie with `httpOnly`, `sameSite: "lax"`, and a 7-day max age. JWT tokens are also accepted from the `Authorization: Bearer ...` header.
 
-**For local development:**
+Middleware in `backend/src/middleware/auth.ts` checks token validity and assigns a user object with `id`, `email`, and `role`.
 
-- **Authorized JavaScript origins:** `http://localhost:5173`, `http://127.0.0.1:5173`
-- **Authorized redirect URIs:** `http://localhost:5173/oauth/google/callback`, `http://127.0.0.1:5173/oauth/google/callback`
+### Google OAuth
 
-**For production:**
+The platform supports Google Sign-In using the OAuth web client flow.
 
-- **Authorized JavaScript origins:** `https://your-domain.com`
-- **Authorized redirect URIs:** `https://your-domain.com/oauth/google/callback`
+Verified behavior:
 
-4. Copy your **Client ID** and **Client Secret** to backend `.env`:
+- Frontend builds a Google authorization URL with `VITE_GOOGLE_CLIENT_ID` and redirects to `/oauth/google/callback`
+- Backend verifies Google ID tokens and also supports the OAuth code exchange flow using `GOOGLE_CLIENT_SECRET`
+- User records are created or updated in the `users` table on successful Google login
+- The first user may become admin via the `enforce_first_user_admin_role` schema trigger, or admin assignment may be influenced by `GOOGLE_BOOTSTRAP_ADMIN_EMAIL` in deployment config
 
-```env
-GOOGLE_CLIENT_ID=your-client-id
-GOOGLE_CLIENT_SECRET=your-client-secret
+Local development Google redirect URL pattern:
+
+- http://localhost:8080/oauth/google/callback
+- http://127.0.0.1:8080/oauth/google/callback
+
+The project is configured to use Vite port 8080, not 5173, in the frontend config.
+
+### Password auth
+
+Email/password routes exist but they are disabled unless `AUTH_ALLOW_PASSWORD_LOGIN=true` is set explicitly in the backend environment.
+
+That means:
+
+- password signup or login is development/testing-only by default
+- production usage is expected to rely on Google sign-in
+
+## File uploads and media
+
+### Upload routes
+
+The API includes these upload routes:
+
+- `POST /api/uploads/image` for image uploads (max 5MB)
+- `POST /api/uploads/file` for document files (max 25MB)
+- `POST /api/uploads/video` for instructor/admin-managed video uploads (max `MAX_VIDEO_SIZE_MB`, default 200MB)
+
+### Local upload storage
+
+The backend stores uploaded files under:
+
+- `backend/uploads` for general uploads
+- `backend/private-media/video-temp` for temporary uploaded videos
+- `backend/private-media/videos` for finalized video files
+
+### Production object storage
+
+If `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET` are all configured, the app uses Cloudflare R2 for uploaded video and file content. Otherwise it falls back to local storage and public URLs based on `PUBLIC_BASE_URL` or relative `/uploads` paths.
+
+The storage helper supports:
+
+- public URL generation via `R2_PUBLIC_URL`
+- signed URLs via S3 presigner
+- local fallback paths when object storage is not configured
+
+### Video access rules
+
+- Video upload requires instructor/admin auth.
+- Videos are validated by extension and magic bytes before final storage.
+- Protected videos are served via signed URLs and access tokens.
+- HTTP range requests are supported for local video streaming (`Accept-Ranges: bytes` and partial content responses).
+- External URLs and legacy content are not removed by the code; the app supports both app-managed and legacy URLs.
+
+## API map
+
+The backend mounts these major API routers under `/api`:
+
+- `/api/auth` — login, signup/register, logout, Google auth, profile endpoints
+- `/api/users` — user profiles and updates
+- `/api/courses` — courses, modules, instructor listings
+- `/api/modules` — lesson and module access
+- `/api/enrollments` — enrollment handling
+- `/api/progress` — learning progress updates
+- `/api/quizzes` — quiz retrieval and submissions
+- `/api/assignments` — assignment-related routes
+- `/api/certificates` — certificate creation and verification support
+- `/api/uploads` — image, file, and video upload endpoints
+- `/api/analytics` — notes, leaderboard, learning paths, reports
+- `/api/discussions` — discussions and replies
+- `/api/settings` — appearance, FAQ, translations
+- `/api/feedback` — user feedback entry point
+- `/api/manual-payments` — manual payment and receipt flows
+- `/api/admin` — admin-only management endpoints
+
+The root API health route is:
+
+```bash
+GET /health
+GET /api
 ```
 
-### Password Authentication (Optional)
+## Frontend routing
 
-By default, password login is disabled. To enable:
+The frontend uses `BrowserRouter` and route guards. Verified route groups include:
 
-```env
-AUTH_ALLOW_PASSWORD_LOGIN=true
+- Public: `/`, `/login`, `/course/:courseId`, `/verify/:certificateNumber`, `/oauth/google/callback`
+- Shared authenticated area: `/dashboard`, `/profile`, `/courses`, `/browse`, `/bookmarks`, `/help`, `/notes`, `/notifications`, `/leaderboard`
+- Student: `/student/dashboard`, `/student/assignments`, `/student/calendar`, `/certificates`, `/learning-path`
+- Instructor: `/instructor/*`
+- Admin: `/admin/*`
+- Catch-all: `*` -> `NotFound`
+
+The `ProtectedRoute` component redirects unauthenticated users to `/login`.
+
+## Testing and validation
+
+### Frontend
+
+The project defines these frontend scripts in `frontend/package.json`:
+
+```bash
+cd frontend
+npm run dev
+npm run build
+npm run build:dev
+npm run lint
+npm run preview
+npm run test
+npm run test:watch
 ```
 
-Note: This should only be used for development/testing. Production should use OAuth.
+Verified locally:
 
----
+- `npm run test` passed: 12 test files, 22 tests passed
+- `npm run build` passed
+- `npm run lint` currently fails because of existing `@typescript-eslint/no-explicit-any` and related lint issues in older code paths
 
-## Building for Production
+### Backend
 
-### Frontend Build
+The backend scripts are:
+
+```bash
+cd backend
+npm run dev
+npm run build
+npm run start
+npm run db:setup
+npm run db:schema
+npm run db:extensions
+npm run db:migrate
+npm run db:seed
+npm run db:init
+```
+
+Verified locally:
+
+- `npm run build` succeeded
+- There is no `npm test` script in the backend package.json
+
+## Production build and runtime
+
+### Backend
+
+Production build command:
+
+```bash
+cd backend
+npm install
+npm run build
+```
+
+The backend build script copies the TypeScript output and SQL config files into `backend/dist`.
+
+Runtime start:
+
+```bash
+cd backend
+npm run start
+```
+
+This runs:
+
+```bash
+node dist/index.js
+```
+
+### Frontend
+
+Production build command:
 
 ```bash
 cd frontend
 npm install
 npm run build
-# Output: frontend/dist/
 ```
 
-### Backend Build
+The build output directory is `frontend/dist`.
+
+A preview server can be started with:
 
 ```bash
-cd backend
-npm install
-npm run build
-# Output: backend/dist/
+cd frontend
+npm run preview
 ```
 
----
+## Docker
+
+The repository includes Docker support for both frontend and backend.
+
+### Compose quick start
+
+```bash
+cp .env.example .env
+# then edit the file as needed if you want to supply DB and OAuth settings
+
+docker compose up --build
+```
+
+The docker-compose file defines:
+
+- `postgres` service with a named volume for PostgreSQL state
+- `backend` service built from `backend/Dockerfile`
+- `frontend` service built from `frontend/Dockerfile` and served by Nginx on port 80 inside the container
+
+The compose file uses environment variables such as:
+
+- `POSTGRES_PASSWORD`
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `CORS_ORIGINS`
+
+## Deployment
+
+The repository is configured for Render in `render.yaml`.
+
+Verified deployment configuration:
+
+- backend web service at `rootDir: backend`
+- build command: `npm ci --include=dev && npm run build`
+- start command: `npm run start`
+- health check: `/health`
+- backend public port: `PORT=10000`
+- `JWT_SECRET` generated automatically by Render
+- `DATABASE_URL` is set externally
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `R2_*` variables are also expected to be set externally
+
+The Render config is a strong hint that the app is intended to run with:
+
+- frontend hosted separately from backend
+- backend exposed as an API service
+- object storage optional but intended for production media
+
+## Security notes
+
+This project contains sensitive values and local-only files. Keep them out of public repositories.
+
+never commit:
+
+- `.env` files with real secrets
+- OAuth client secrets
+- database passwords
+- R2 access keys
+- generated upload directories with private media
+
+The repository’s `.gitignore` explicitly ignores `.env` files and local upload data.
 
 ## Troubleshooting
 
-### PostgreSQL Connection Failed
+### Database connection failure
 
-**Error:** `Unable to connect to PostgreSQL`
+Check:
 
-**Solution:**
+- PostgreSQL is running
+- `DATABASE_URL` or `DB_*` values are correct
+- the database exists
+- the user has permission to connect
 
-1. Verify PostgreSQL is running:
-   - **Linux:** `sudo systemctl status postgresql`
-   - **macOS:** `brew services list | grep postgresql`
-   - **Windows:** Check Services (postgresql should be running)
-
-2. Verify credentials in `.env`:
-
-   ```bash
-   psql -U postgres -h 127.0.0.1
-   ```
-
-3. If password is wrong, reset it (as superuser):
-   ```bash
-   sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'new_password';"
-   ```
-
-### Port Already in Use
-
-**Error:** `EADDRINUSE: address already in use :::5000`
-
-**Solution:** Either:
-
-1. Stop the process using port 5000: `lsof -i :5000` (macOS/Linux) or Task Manager (Windows)
-2. Change the port in `.env`: `PORT=3000`
-
-### Database Setup Hangs
-
-If `npm run db:setup` appears to hang:
-
-1. Press Ctrl+C to cancel
-2. Check PostgreSQL status (see above)
-3. Verify no firewall is blocking localhost:5432
-
-### API Returns 500 Errors
-
-**Solution:** The database tables may not exist. Run:
-
-```bash
-npm run db:schema
-npm run db:seed
-```
-
----
-
-## Production Deploy
-
-### Prerequisites
-
-- Server with Node.js, npm, and PostgreSQL installed
-- SSL certificates (for HTTPS)
-- Reverse proxy (Nginx, Caddy, etc.)
-
-### Deployment Scripts (optional)
-
-Copy templates and edit with your credentials:
-
-```bash
-cp deploy-all.sh.example deploy-all.sh && chmod +x deploy-all.sh
-cp sync-db.sh.example sync-db.sh && chmod +x sync-db.sh
-```
-
-### Systemd Service (Linux)
-
-Example service file: [`deploy/alpha-backend.service.example`](deploy/alpha-backend.service.example)
-
-### Environment Variables
-
-Create `.env` on the server with production values:
-
-```env
-DB_HOST=your-db-host
-DB_PORT=5432
-DB_USER=alpha_user
-DB_PASSWORD=strong_password
-DB_NAME=alpha
-DB_SSL=true                    # For remote managed databases
-NODE_ENV=production
-JWT_SECRET=long_random_string
-GOOGLE_CLIENT_ID=prod_id
-GOOGLE_CLIENT_SECRET=prod_secret
-CORS_ORIGINS=https://your-domain.com
-```
-
-### Build and Deploy
+Typical command:
 
 ```bash
 cd backend
-npm install
-npm run build
-npm run db:schema
-npm run db:seed
-
-# Start with Node process manager (PM2, systemd, etc.)
-npm start
+npm run db:setup
 ```
+
+### Port conflicts
+
+- backend default: `3000`
+- frontend default: `8080`
+- override values using environment variables or Vite config if needed
+
+### CORS issues
+
+Ensure `CORS_ORIGINS` includes the exact frontend origin, especially in production.
+
+### Google OAuth issues
+
+Confirm:
+
+- `GOOGLE_CLIENT_ID` matches the frontend and backend config
+- `GOOGLE_CLIENT_SECRET` is set on the backend
+- redirect URIs in Google Cloud Console match the actual app URLs
+- the frontend is using the correct `VITE_GOOGLE_CLIENT_ID`
+
+### Upload / media issues
+
+If uploads fail:
+
+- verify `MAX_VIDEO_SIZE_MB` if a video is too large
+- ensure the app can write to `backend/uploads` and `backend/private-media` directories
+- check whether R2 is configured; if not, local file storage is expected
+
+### Build issues
+
+- backend: `npm run build` is the configured production build
+- frontend: `npm run build` is the configured production build
+- lint is separate and currently reports existing TypeScript ESLint issues in the source tree
 
 ---
 
