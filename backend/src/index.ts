@@ -34,6 +34,7 @@ dotenv.config();
 assertRequiredEnvironment();
 
 const app: Application = express();
+app.set("trust proxy", 1);
 const PORT = getListenPort();
 const HOST = getListenHost();
 const staleLearningPathTitles = [
