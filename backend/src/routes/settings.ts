@@ -1,6 +1,7 @@
 import { Router, Response } from "express";
 import { authenticate, AuthRequest, requireAdmin } from "../middleware/auth";
 import { query } from "../config/db";
+import { buildPublicUrl } from "../config/runtime";
 
 const router = Router();
 
@@ -8,7 +9,9 @@ const defaultAppearance = {
   primaryColor: "#fbbf24",
   logo: "",
   fontFamily: "Inter",
-  heroIntroVideoUrl: "/api/uploads/video/1789914018184-7flk6bkl96.mp4",
+  heroIntroVideoUrl: buildPublicUrl(
+    "/api/uploads/video/1789914018184-7flk6bkl96.mp4",
+  ),
 };
 
 function asPlainObject(value: unknown): Record<string, unknown> {
@@ -36,6 +39,15 @@ router.get("/appearance", async (req, res: Response) => {
     const raw =
       result.rows.length > 0 ? asPlainObject(result.rows[0].value) : {};
     const appearance = { ...defaultAppearance, ...raw };
+    if (
+      typeof appearance.heroIntroVideoUrl === "string" &&
+      appearance.heroIntroVideoUrl.trim()
+    ) {
+      const url = appearance.heroIntroVideoUrl.trim();
+      appearance.heroIntroVideoUrl = /^https?:\/\//i.test(url)
+        ? url
+        : buildPublicUrl(url);
+    }
     res.json(appearance);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

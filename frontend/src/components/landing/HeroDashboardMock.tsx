@@ -33,7 +33,9 @@ const NAV: { icon: typeof LayoutDashboard; titleKey: TranslationKey }[] = [
 
 /** Falls back to the current uploaded landing intro video when no custom override is configured. */
 const DEFAULT_INTRO_VIDEO_URL =
-  "/api/uploads/video/1789914018184-7flk6bkl96.mp4";
+  (typeof import.meta.env.VITE_HERO_INTRO_VIDEO_URL === "string" &&
+    import.meta.env.VITE_HERO_INTRO_VIDEO_URL.trim()) ||
+  "https://alpha-api-zeky.onrender.com/api/uploads/video/1789914018184-7flk6bkl96.mp4";
 
 const NATIVE_SEEK_SEC = 10;
 
