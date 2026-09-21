@@ -95,6 +95,8 @@ const AddCourse: React.FC = () => {
   const [duration, setDuration] = useState("");
   const [thumbnail, setThumbnail] = useState("");
   const [price, setPrice] = useState(0);
+  const [introVideoUrl, setIntroVideoUrl] = useState("");
+  const [introVideoTitle, setIntroVideoTitle] = useState("");
 
   // Lessons
   const [lessons, setLessons] = useState<LessonWithQuiz[]>([]);
@@ -284,6 +286,8 @@ const AddCourse: React.FC = () => {
         description,
         category,
         thumbnail,
+        introVideoUrl: introVideoUrl.trim(),
+        introVideoTitle: introVideoTitle.trim(),
         videoLinks: filteredLessons,
         totalVideos: filteredLessons.length,
         instructorId: user.id,
@@ -434,6 +438,38 @@ const AddCourse: React.FC = () => {
                     value={thumbnail}
                     onChange={setThumbnail}
                     label={t("course.form.uploadThumbnail")}
+                  />
+                </div>
+
+                <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-4">
+                  <Label htmlFor="intro-video-url">
+                    Free intro video (optional)
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Public preview before enrollment. If empty, the first lesson
+                    in the Lessons tab is the free preview.
+                  </p>
+                  <VideoUpload
+                    value={introVideoUrl}
+                    onChange={setIntroVideoUrl}
+                    label="Upload intro video"
+                    maxSizeLabel="Up to 200MB"
+                    visibility="public"
+                  />
+                  <Input
+                    id="intro-video-url"
+                    value={introVideoUrl}
+                    onChange={(e) => setIntroVideoUrl(e.target.value)}
+                    placeholder="https://youtube.com/watch?v=..."
+                  />
+                  <Label htmlFor="intro-video-title" className="pt-2 block">
+                    Intro title (optional)
+                  </Label>
+                  <Input
+                    id="intro-video-title"
+                    value={introVideoTitle}
+                    onChange={(e) => setIntroVideoTitle(e.target.value)}
+                    placeholder="e.g., Welcome to this course"
                   />
                 </div>
 

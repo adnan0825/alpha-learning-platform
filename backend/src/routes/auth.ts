@@ -26,8 +26,8 @@ function clearAuthCookie(res: Response) {
   });
 }
 
-function authResponse(result: { user: unknown }) {
-  return { user: result.user };
+function authResponse(result: { user: unknown; token: string }) {
+  return { user: result.user, token: result.token };
 }
 
 /** Password auth is off unless explicitly enabled (local testing only). Google Sign-In is always available when configured. */

@@ -135,6 +135,12 @@ router.delete(
           .status(400)
           .json({ error: "Admins cannot delete their own account" });
       }
+
+      await pool.query(
+        "UPDATE media SET created_by = $1 WHERE created_by = $2",
+        [req.user!.id, targetId],
+      );
+
       const result = await pool.query(
         "DELETE FROM users WHERE id = $1 RETURNING id",
         [targetId],

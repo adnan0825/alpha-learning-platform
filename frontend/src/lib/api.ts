@@ -8,6 +8,8 @@
  * Default `/api` (same origin): dev server proxies to the real API (see vite.config.ts) so the browser never cross-origin calls production — avoids CORS during local dev.
  * Override with VITE_API_URL (e.g. http://localhost:3000/api for a local backend without proxy).
  */
+import { getStoredToken } from "@/lib/authStorage";
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 export function getPublicFileUrl(fileUrl: string): string {
@@ -352,6 +354,11 @@ async function apiCall<T>(
     ...(fetchOptions.headers as Record<string, string> | undefined),
   };
 
+  const sessionToken = getStoredToken();
+  if (sessionToken) {
+    headers.Authorization = `Bearer ${sessionToken}`;
+  }
+
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...fetchOptions,
     credentials: "include",
@@ -382,7 +389,10 @@ async function apiCall<T>(
 
 // ============ AUTH API ============
 export const authAPI = {
-  async login(email: string, password: string): Promise<{ user: UserProfile }> {
+  async login(
+    email: string,
+    password: string,
+  ): Promise<{ user: UserProfile; token: string }> {
     return apiCall("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
@@ -402,7 +412,7 @@ export const authAPI = {
     password: string,
     name: string,
     role: UserProfile["role"],
-  ): Promise<{ user: UserProfile }> {
+  ): Promise<{ user: UserProfile; token: string }> {
     return apiCall("/auth/signup", {
       method: "POST",
       body: JSON.stringify({ email, password, name, role }),
@@ -411,7 +421,9 @@ export const authAPI = {
   },
 
   /** `credential` is the JWT from Google Identity Services (GoogleLogin onSuccess). */
-  async loginWithGoogle(credential: string): Promise<{ user: UserProfile }> {
+  async loginWithGoogle(
+    credential: string,
+  ): Promise<{ user: UserProfile; token: string }> {
     return apiCall("/auth/google", {
       method: "POST",
       body: JSON.stringify({ credential }),
@@ -759,6 +771,12 @@ export const uploadsAPI = {
       const request = new XMLHttpRequest();
       request.open("POST", `${API_BASE_URL}/uploads/video`);
       request.withCredentials = true;
+
+      const sessionToken = getStoredToken();
+      if (sessionToken) {
+        request.setRequestHeader("Authorization", `Bearer ${sessionToken}`);
+      }
+
       request.upload.onprogress = (event) => {
         if (event.lengthComputable) {
           onProgress?.(Math.round((event.loaded / event.total) * 100));
