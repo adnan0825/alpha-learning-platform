@@ -1,6 +1,7 @@
 import { Router, Response } from "express";
 import { authenticate, AuthRequest, requireAdmin } from "../middleware/auth";
 import { query, pool } from "../config/db";
+import { buildPublicUrl } from "../config/runtime";
 import * as feedbackService from "../services/feedbackService";
 
 const router = Router();
@@ -41,15 +42,25 @@ router.get(
         primaryColor: "#fbbf24",
         logo: "",
         fontFamily: "Inter",
-        heroIntroVideoUrl: "/api/uploads/video/1789914018184-7flk6bkl96.mp4",
+        heroIntroVideoUrl: buildPublicUrl(
+          "/api/uploads/video/1789914018184-7flk6bkl96.mp4",
+        ),
       };
+
+      const appearance = {
+        ...defaultAppearance,
+        ...((settingsMap.appearance as object) || {}),
+      } as Record<string, unknown>;
+      if (typeof appearance.heroIntroVideoUrl === "string") {
+        const url = appearance.heroIntroVideoUrl.trim();
+        appearance.heroIntroVideoUrl = /^https?:\/\//i.test(url)
+          ? url
+          : buildPublicUrl(url);
+      }
 
       res.json({
         platform: stats.rows[0],
-        appearance: {
-          ...defaultAppearance,
-          ...((settingsMap.appearance as object) || {}),
-        },
+        appearance,
         features: settingsMap.features || {
           certificates_enabled: true,
           quizzes_enabled: true,
