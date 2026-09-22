@@ -55,19 +55,35 @@ export function getPublicIntroVideo(
 
 /** Ordered lessons for the player + sidebar: optional dedicated intro, then curriculum `videoLinks` with free-preview metadata. */
 export function getOrderedLessons(
-  course: Pick<CourseData, "introVideoUrl" | "introVideoTitle" | "videoLinks">,
+  course: Pick<
+    CourseData,
+    "introVideoUrl" | "introVideoTitle" | "videoLinks" | "modules"
+  >,
 ): Array<{
   title: string;
   url: string;
   duration?: string;
   isFree?: boolean;
+  moduleId?: string | null;
+  moduleTitle?: string;
 }> {
   const intro = course.introVideoUrl?.trim();
+  const moduleLookup = new Map(
+    (course.modules ?? []).map((module) => [
+      String(module.id),
+      module.title || "",
+    ]),
+  );
+
   const lessons = (course.videoLinks ?? []).map((lesson, index) => ({
     title: lesson.title?.trim() || `Lesson ${index + 1}`,
     url: lesson.url?.trim() || "",
     duration: lesson.duration,
     isFree: Boolean(lesson.isFree),
+    moduleId: lesson.moduleId ?? null,
+    moduleTitle:
+      lesson.moduleTitle?.trim() ||
+      (lesson.moduleId ? moduleLookup.get(String(lesson.moduleId)) || "" : ""),
   }));
 
   if (intro) {
@@ -77,6 +93,8 @@ export function getOrderedLessons(
         url: intro,
         duration: "",
         isFree: true,
+        moduleId: null,
+        moduleTitle: "",
       },
       ...lessons,
     ];

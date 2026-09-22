@@ -46,6 +46,72 @@ function toPlainVideoLinksArray(raw: unknown): VideoLinkRow[] {
   });
 }
 
+async function attachModulesForCourses(rows: any[]) {
+  if (!rows.length) return rows;
+
+  const ids = rows.map((row) => Number(row.id)).filter(Number.isFinite);
+  if (!ids.length) return rows;
+
+  const moduleResult = await query(
+    `
+      SELECT m.id,
+             m.course_id,
+             m.title,
+             m.description,
+             m.position,
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'id', l.id,
+                   'title', l.title,
+                   'content', l.content,
+                   'video_url', l.video_url,
+                   'duration', l.duration,
+                   'position', l.position,
+                   'is_free', l.is_free,
+                   'moduleId', l.module_id,
+                   'moduleTitle', m.title
+                 ) ORDER BY l.position
+               ) FILTER (WHERE l.id IS NOT NULL),
+               '[]'::json
+             ) AS lessons
+      FROM modules m
+      LEFT JOIN lessons l ON l.module_id = m.id
+      WHERE m.course_id = ANY($1)
+      GROUP BY m.id, m.course_id, m.title, m.description, m.position
+      ORDER BY m.position
+    `,
+    [ids],
+  );
+
+  const modulesByCourse = new Map<number, any[]>();
+
+  for (const moduleRow of moduleResult.rows) {
+    const module = {
+      id: String(moduleRow.id),
+      courseId: String(moduleRow.course_id),
+      title: moduleRow.title,
+      description: moduleRow.description || "",
+      position: Number(moduleRow.position || 0),
+      lessons: Array.isArray(moduleRow.lessons) ? moduleRow.lessons : [],
+    };
+
+    const courseId = Number(moduleRow.course_id);
+    const existing = modulesByCourse.get(courseId) || [];
+    existing.push(module);
+    modulesByCourse.set(courseId, existing);
+  }
+
+  for (const row of rows) {
+    const courseId = Number(row.id);
+    const modules = modulesByCourse.get(courseId) || [];
+    row.modules = modules;
+    row.module_count = modules.length;
+  }
+
+  return rows;
+}
+
 // Helper to transform course data to match frontend expectations
 const transformCourse = (row: any) => {
   return {
@@ -57,6 +123,7 @@ const transformCourse = (row: any) => {
     introVideoUrl: row.intro_video_url || "",
     introVideoTitle: row.intro_video_title || "",
     videoLinks: row.video_links || [],
+    modules: Array.isArray(row.modules) ? row.modules : [],
     totalVideos: row.total_videos || 0,
     instructorId: String(row.instructor_id),
     instructorName: row.instructor_name || row.instructor_name,
@@ -141,7 +208,8 @@ export const getCourses = async (filters?: {
 
   sql += " ORDER BY c.created_at DESC";
   const result = await query(sql, params);
-  return result.rows.map(transformCourse);
+  const rows = await attachModulesForCourses(result.rows);
+  return rows.map(transformCourse);
 };
 
 export const getCourseById = async (id: number) => {
@@ -152,7 +220,8 @@ export const getCourseById = async (id: number) => {
   );
   const row = result.rows[0];
   if (!row) return null;
-  return transformCourse(row);
+  const rows = await attachModulesForCourses([row]);
+  return transformCourse(rows[0]);
 };
 
 export const updateCourse = async (

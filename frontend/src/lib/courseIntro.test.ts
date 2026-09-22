@@ -49,4 +49,30 @@ describe("courseIntro", () => {
 
     expect(getPreviewableLessonIndexes(course)).toEqual([1]);
   });
+
+  it("keeps module metadata attached to lessons", () => {
+    const course = {
+      introVideoUrl: "",
+      introVideoTitle: "",
+      modules: [
+        { id: "mod-1", courseId: "course-1", title: "Module 1", position: 1 },
+      ],
+      videoLinks: [
+        {
+          title: "Lesson 1",
+          url: "https://example.com/lesson-1.mp4",
+          isFree: true,
+          moduleId: "mod-1",
+        },
+      ],
+    } as any;
+
+    const result = getOrderedLessons(course);
+    expect(result[0]).toMatchObject({
+      title: "Lesson 1",
+      moduleId: "mod-1",
+      moduleTitle: "Module 1",
+      isFree: true,
+    });
+  });
 });

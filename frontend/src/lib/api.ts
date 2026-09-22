@@ -31,6 +31,15 @@ export interface UserProfile {
   createdAt: string;
 }
 
+export interface CourseModule {
+  id: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  position: number;
+  lessons?: VideoLesson[];
+}
+
 export interface CourseData {
   id: string;
   title: string;
@@ -41,6 +50,7 @@ export interface CourseData {
   introVideoUrl?: string;
   introVideoTitle?: string;
   videoLinks: VideoLesson[];
+  modules?: CourseModule[];
   totalVideos: number;
   instructorId: string;
   instructorName: string;
@@ -58,6 +68,8 @@ export interface VideoLesson {
   duration?: string;
   description?: string;
   isFree?: boolean;
+  moduleId?: string | null;
+  moduleTitle?: string;
 }
 
 export interface Enrollment {
@@ -530,7 +542,7 @@ export const coursesAPI = {
   async delete(id: string): Promise<void> {
     await apiCall(`/courses/${id}`, { method: "DELETE" });
   },
-  async getModules(courseId: string): Promise<any[]> {
+  async getModules(courseId: string): Promise<CourseModule[]> {
     return apiCall(`/courses/${courseId}/modules`);
   },
 };
