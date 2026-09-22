@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { clearStoredToken } from "./authStorage";
+import { clearStoredToken, getStoredToken, setStoredToken } from "./authStorage";
 
 describe("authStorage", () => {
   beforeEach(() => {
@@ -7,17 +7,26 @@ describe("authStorage", () => {
     localStorage.clear();
   });
 
-  it("keeps the current browser session isolated from shared local storage", () => {
-    sessionStorage.setItem("alpha_token", "session-token");
-    localStorage.setItem("alpha_token", "legacy-token");
+  it("reads a shared token from localStorage so a new tab stays signed in", () => {
+    localStorage.setItem("alpha_token", "shared-token");
+
+    expect(getStoredToken()).toBe("shared-token");
+  });
+
+  it("writes auth state to shared storage and clears both scopes on logout", () => {
+    setStoredToken("shared-token");
+    sessionStorage.setItem("alpha_token", "stale-session-token");
+
+    expect(getStoredToken()).toBe("shared-token");
 
     clearStoredToken();
 
+    expect(getStoredToken()).toBeNull();
     expect(sessionStorage.getItem("alpha_token")).toBeNull();
-    expect(localStorage.getItem("alpha_token")).toBe("legacy-token");
+    expect(localStorage.getItem("alpha_token")).toBeNull();
   });
 
-  it("does not clear unrelated browser-session data", () => {
+  it("does not clear unrelated browser state", () => {
     sessionStorage.setItem("alpha_token", "session-token");
     sessionStorage.setItem("other_session_data", "keep-me");
     localStorage.setItem("some_other_app_key", "still-here");

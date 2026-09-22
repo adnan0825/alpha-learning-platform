@@ -47,10 +47,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const userProfile = await authAPI.getProfile();
         setUser(userProfile);
         setProfile(userProfile);
+        localStorage.setItem("alpha_user", JSON.stringify(userProfile));
         sessionStorage.setItem("alpha_user", JSON.stringify(userProfile));
       } catch (error) {
         console.error("Failed to fetch profile:", error);
         clearStoredToken();
+        localStorage.removeItem("alpha_user");
         sessionStorage.removeItem("alpha_user");
         setUser(null);
         setProfile(null);
@@ -65,8 +67,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setUser(u);
     setProfile(u);
     if (u) {
+      localStorage.setItem("alpha_user", JSON.stringify(u));
       sessionStorage.setItem("alpha_user", JSON.stringify(u));
     } else {
+      localStorage.removeItem("alpha_user");
       sessionStorage.removeItem("alpha_user");
     }
   };
@@ -122,9 +126,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const userProfile = await authAPI.getProfile();
       setUser(userProfile);
       setProfile(userProfile);
+      localStorage.setItem("alpha_user", JSON.stringify(userProfile));
       sessionStorage.setItem("alpha_user", JSON.stringify(userProfile));
     } catch {
       clearStoredToken();
+      localStorage.removeItem("alpha_user");
       sessionStorage.removeItem("alpha_user");
       setUser(null);
       setProfile(null);

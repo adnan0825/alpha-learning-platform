@@ -2,21 +2,26 @@ const TOKEN_KEY = "alpha_token";
 
 export function getStoredToken(): string | null {
   if (typeof window === "undefined") return null;
+
+  const localToken = localStorage.getItem(TOKEN_KEY);
+  if (localToken) return localToken;
+
   return sessionStorage.getItem(TOKEN_KEY);
 }
 
 export function setStoredToken(token: string): void {
   if (typeof window === "undefined") return;
+
+  localStorage.setItem(TOKEN_KEY, token);
   sessionStorage.setItem(TOKEN_KEY, token);
 }
 
 /**
- * Keep auth state in the current browser session only. Using sessionStorage here
- * prevents one user/logout flow from clearing another tab or browser session's
- * independent identity.
+ * Clear the shared auth state so logout is consistent across tabs.
  */
 export function clearStoredToken(): void {
   if (typeof window === "undefined") return;
 
+  localStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(TOKEN_KEY);
 }
