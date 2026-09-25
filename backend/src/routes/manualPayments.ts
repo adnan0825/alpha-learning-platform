@@ -1,11 +1,12 @@
 import { Router, Response } from "express";
 import { authenticate, AuthRequest, requireAdmin } from "../middleware/auth";
 import { pool, query } from "../config/db";
+import { getConfiguredCorsOrigins, getPublicBaseUrl } from "../config/runtime";
 import * as analyticsService from "../services/analyticsService";
 
 const router = Router();
 
-function isAllowedReceiptFileUrl(value: unknown): value is string {
+export function isAllowedReceiptFileUrl(value: unknown): value is string {
   if (typeof value !== "string" || value.length > 1000) return false;
 
   if (/^\/(?:uploads\/|api\/uploads\/)/.test(value)) return true;
@@ -14,20 +15,34 @@ function isAllowedReceiptFileUrl(value: unknown): value is string {
     const url = new URL(value);
     const allowedOrigins = new Set<string>();
 
-    const configuredApiUrl = process.env.API_URL?.trim();
-    if (configuredApiUrl) {
+    for (const candidate of [
+      process.env.API_URL,
+      process.env.PUBLIC_BASE_URL,
+      process.env.APP_PUBLIC_URL,
+      process.env.R2_PUBLIC_URL,
+      process.env.R2_CUSTOM_DOMAIN,
+      ...getConfiguredCorsOrigins(),
+      getPublicBaseUrl(),
+    ]) {
+      if (!candidate?.trim()) continue;
       try {
-        allowedOrigins.add(new URL(configuredApiUrl).origin);
+        allowedOrigins.add(new URL(candidate.trim()).origin);
       } catch {
-        // ignore invalid configured URL
+        // ignore invalid configured URLs
       }
     }
 
-    ["http://localhost:3000", "http://127.0.0.1:3000"].forEach((origin) =>
-      allowedOrigins.add(origin),
-    );
+    [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:8080",
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:5173",
+      "http://127.0.0.1:8080",
+    ].forEach((origin) => allowedOrigins.add(origin));
 
-    return allowedOrigins.has(url.origin) && /^\/uploads\//.test(url.pathname);
+    const isUploadPath = /^\/(?:uploads\/|api\/uploads\/)/.test(url.pathname);
+    return allowedOrigins.has(url.origin) && isUploadPath;
   } catch {
     return false;
   }
