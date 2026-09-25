@@ -40,6 +40,8 @@ dist-ssr
 
 # User uploads (avatars, receipts); create dir on deploy or use .gitkeep
 backend/uploads/*
+backend/private-media/*
+
 !backend/uploads/.gitkeep
 
 # Cursor / local agent state
