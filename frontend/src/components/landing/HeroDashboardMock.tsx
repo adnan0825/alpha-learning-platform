@@ -35,7 +35,7 @@ const NAV: { icon: typeof LayoutDashboard; titleKey: TranslationKey }[] = [
 const DEFAULT_INTRO_VIDEO_URL =
   (typeof import.meta.env.VITE_HERO_INTRO_VIDEO_URL === "string" &&
     import.meta.env.VITE_HERO_INTRO_VIDEO_URL.trim()) ||
-  "https://alpha-api-zeky.onrender.com/api/uploads/video/1789914018184-7flk6bkl96.mp4";
+  "https://alpha-api-zeky.onrender.com/api/uploads/video/1790018209706-ct3hjnqy3fo.mp4.mp4";
 
 const NATIVE_SEEK_SEC = 10;
 
