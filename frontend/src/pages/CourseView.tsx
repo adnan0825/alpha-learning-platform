@@ -335,7 +335,7 @@ const CourseView: React.FC = () => {
       toast({
         title: "Watch the lesson video first",
         description:
-          "The completion action unlocks after the video reaches the end.",
+          "The completion action unlocks after the video reaches 90% watched progress.",
         variant: "destructive",
       });
       return;

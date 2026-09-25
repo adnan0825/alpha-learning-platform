@@ -29,7 +29,7 @@ function parseDuration(value: unknown): number | null {
 
 export function getVideoCompletionThreshold(durationSeconds: number): number {
   const safeDuration = Math.max(0, Number(durationSeconds) || 0);
-  return safeDuration > 0 ? Math.max(safeDuration * 0.95, safeDuration - 2) : 0;
+  return safeDuration > 0 ? safeDuration * 0.9 : 0;
 }
 
 export function isVideoCompletionReached({
@@ -52,9 +52,10 @@ export function isVideoCompletionReached({
     safeDuration,
   );
   const requiredWatchedSeconds = getVideoCompletionThreshold(safeDuration);
-  const hasReachedEnd = ended || safePosition >= safeDuration * 0.985;
+  const hasReachedProgressThreshold =
+    ended || safePosition >= safeDuration * 0.9;
 
-  return safeWatched >= requiredWatchedSeconds && hasReachedEnd;
+  return safeWatched >= requiredWatchedSeconds && hasReachedProgressThreshold;
 }
 
 async function getEnrollmentCourse(userId: number, courseId: number) {
