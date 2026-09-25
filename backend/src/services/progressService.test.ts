@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { isVideoCompletionReached } from "./progressService";
 
-test("marks a video complete only after actual watching reaches the required threshold", () => {
+test("marks a video complete once the user has watched at least 90% of the video", () => {
   assert.equal(
     isVideoCompletionReached({
       watchedSeconds: 0,
@@ -16,9 +16,19 @@ test("marks a video complete only after actual watching reaches the required thr
 
   assert.equal(
     isVideoCompletionReached({
-      watchedSeconds: 9.5,
+      watchedSeconds: 8.9,
       durationSeconds: 10,
-      positionSeconds: 9.9,
+      positionSeconds: 8.9,
+      ended: false,
+    }),
+    false,
+  );
+
+  assert.equal(
+    isVideoCompletionReached({
+      watchedSeconds: 9,
+      durationSeconds: 10,
+      positionSeconds: 9,
       ended: false,
     }),
     true,
@@ -26,7 +36,7 @@ test("marks a video complete only after actual watching reaches the required thr
 
   assert.equal(
     isVideoCompletionReached({
-      watchedSeconds: 9.5,
+      watchedSeconds: 9,
       durationSeconds: 10,
       positionSeconds: 10,
       ended: true,
